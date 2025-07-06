@@ -45,7 +45,8 @@ body {
     font-weight: 700;
     margin: 0;
     letter-spacing: 0.5px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    color: var(--white) !important;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .logo-container {
@@ -249,22 +250,98 @@ body {
 [data-theme="dark"] {
     --light-gray: #1a1a1a;
     --white: #2d2d2d;
-    --dark-gray: #e0e0e0;
-    --gray: #b0b0b0;
+    --dark-gray: #ffffff;
+    --gray: #e0e0e0;
+    --card-bg: #2d2d2d;
+    --card-border: rgba(172, 150, 90, 0.3);
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #b0b0b0;
 }
 
 [data-theme="dark"] body {
     background-color: var(--light-gray);
-    color: var(--dark-gray);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] .news-card {
-    background: var(--white);
-    border-color: rgba(172, 150, 90, 0.3);
+    background: var(--card-bg);
+    border-color: var(--card-border);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .news-title {
+    color: var(--primary-gold) !important;
 }
 
 [data-theme="dark"] .news-description {
-    color: var(--gray);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .section-title {
+    color: var(--primary-gold) !important;
+}
+
+[data-theme="dark"] .main-title {
+    color: var(--white) !important;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="dark"] .footer-text {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .current-time {
+    color: var(--primary-gold);
+}
+
+/* Mejorar contraste en elementos específicos */
+[data-theme="dark"] .news-link {
+    color: var(--light-gold);
+}
+
+[data-theme="dark"] .news-link:hover {
+    color: var(--primary-gold);
+}
+
+/* Asegurar que todos los textos sean legibles */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .main-title {
+    color: var(--white) !important;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] div {
+    color: var(--text-primary);
+}
+
+/* Mejorar visibilidad de elementos interactivos */
+[data-theme="dark"] .navbar-nav .nav-link {
+    color: var(--white) !important;
+}
+
+[data-theme="dark"] .navbar-nav .nav-link:hover {
+    color: var(--white) !important;
+    background-color: var(--dark-gold);
+}
+
+/* Asegurar contraste en el header */
+[data-theme="dark"] .header-section {
+    background: linear-gradient(135deg, #1a2347 0%, #202c56 100%);
+}
+
+[data-theme="dark"] .logo-text {
+    color: var(--white);
 }
 
 /* Responsive Design */
