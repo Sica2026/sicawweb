@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armador de Horario</title>
+    <link rel="stylesheet" href="css/armador.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-section">
+            <h1>Armador de horario</h1>
+            
+            <div class="form-group">
+                <label for="horario">Horario:</label>
+                <select id="horario" name="horario">
+                    <option value="">Selecciona una opción</option>
+                    <option value="matutino">Matutino</option>
+                    <option value="vespertino">Vespertino</option>
+                    <option value="nocturno">Nocturno</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="nombre-curso">Nombre del curso:</label>
+                <select id="nombre-curso" name="nombre-curso">
+                    <option value="">Selecciona un curso</option>
+                    <option value="SICA">SICA</option>
+                    <option value="Matemáticas">Matemáticas</option>
+                    <option value="Español">Español</option>
+                    <option value="Ciencias">Ciencias</option>
+                    <option value="Historia">Historia</option>
+                    <option value="Inglés">Inglés</option>
+                    <option value="Otro">Otro...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="curso-personalizado" style="display: none;">
+                <label for="nombre-curso-custom">Nombre personalizado:</label>
+                <input type="text" id="nombre-curso-custom" name="nombre-curso-custom" placeholder="Escribe el nombre del curso">
+            </div>
+
+            <div class="form-group">
+                <label for="edificio">Edificio:</label>
+                <input type="text" id="edificio" name="edificio" placeholder="Edificio">
+            </div>
+
+            <div class="form-group">
+                <label for="salon">Salón:</label>
+                <input type="text" id="salon" name="salon" placeholder="Salón">
+            </div>
+
+            <div class="form-group">
+                <label for="nombre-asesor">Nombre del asesor:</label>
+                <input type="text" id="nombre-asesor" name="nombre-asesor" placeholder="Nombre completo del asesor">
+            </div>
+
+            <div class="form-group">
+                <label for="asesor">Administrador:</label>
+                <select id="asesor" name="asesor">
+                    <option value="">Selecciona</option>
+                    <option value="admin1">Administrador 1</option>
+                    <option value="admin2">Administrador 2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fecha-inicio">Válido desde:</label>
+                <input type="date" id="fecha-inicio" name="fecha-inicio" value="2025-07-10">
+            </div>
+
+            <div class="form-group">
+                <label for="fecha-fin">Válido hasta:</label>
+                <input type="date" id="fecha-fin" name="fecha-fin" value="2025-07-17">
+            </div>
+
+            <div class="date-range">
+                <span>Del 10 de julio de 2025 al 17 de julio de 2025</span>
+            </div>
+
+            <div class="form-group">
+                <label for="color">Color:</label>
+                <input type="color" id="color" name="color" value="#90EE90">
+            </div>
+
+            <div class="sica-counter" id="sica-counter-fixed">
+                <div class="counter-info">
+                    <strong>Horas SICA:</strong>
+                    <span id="sica-hours">0h 0m</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" id="btn-agregar" class="btn-primary">Agregar Curso</button>
+                <button type="button" id="btn-limpiar" class="btn-secondary">Limpiar Horario</button>
+                <button type="button" id="btn-generar" class="btn-print">Generar PDF</button>
+            </div>
+        </div>
+
+        <div class="schedule-section">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-body">
+                    <!-- Las filas se generarán dinámicamente con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/armador.js"></script>
+</body>
+</html>
