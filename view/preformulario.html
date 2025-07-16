@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SALA DE INFORMÁTICA DE CÓMPUTO PARA ALUMNOS</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Tesseract.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+    <!-- Custom CSS -->
+    <link href="../css/preformulario.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header-section">
+        <div class="container-fluid">
+            <div class="row align-items-center py-3">
+                <div class="col-md-2 text-center">
+                    <div class="logo-container">
+                        <i class="bi bi-laptop logo-icon"></i>
+                        <span class="logo-text">SICA</span>
+                    </div>
+                </div>
+                <div class="col-md-8 text-center">
+                    <h1 class="main-title">FORMULARIO DE REGISTRO ACADÉMICO</h1>
+                </div>
+                <div class="col-md-2 text-center">
+                    <div class="logo-container">
+                        <i class="bi bi-mortarboard logo-icon"></i>
+                        <span class="logo-text">UNAM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Menu -->
+    <nav class="navbar navbar-expand-lg custom-navbar">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="formulario">
+                            <i class="bi bi-file-earmark-text me-2"></i>Formulario
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="ocr">
+                            <i class="bi bi-file-pdf me-2"></i>OCR Automático
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="darkModeToggle">
+                            <i class="bi bi-moon me-2"></i>Modo Oscuro
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="ayuda">
+                            <i class="bi bi-question-circle me-2"></i>Ayuda
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- OCR Section -->
+            <section class="ocr-section mb-5">
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="section-title mb-4">
+                            <i class="bi bi-file-pdf me-2"></i>Extracción Automática (OCR)
+                        </h2>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="upload-card">
+                            <div class="upload-area" id="uploadArea">
+                                <span class="upload-icon">📁</span>
+                                <div class="upload-text">Arrastra tu Historia Académica aquí</div>
+                                <div class="upload-subtext">PDF, JPG, PNG (máx. 10MB) - Se llenarán automáticamente algunos campos</div>
+                                <input type="file" id="fileInput" class="file-input" accept=".pdf,.jpg,.jpeg,.png">
+                                <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+                                    <i class="bi bi-cloud-upload me-2"></i>Seleccionar Archivo
+                                </button>
+                            </div>
+
+                            <!-- Progress -->
+                            <div class="progress-section" id="progressSection">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                                <div class="progress-text" id="progressText">Procesando archivo...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Form Section -->
+            <section class="form-section">
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="section-title mb-4">
+                            <i class="bi bi-person-badge me-2"></i>Datos del Estudiante
+                        </h2>
+                    </div>
+                </div>
+
+                <form id="registroForm" class="registro-form">
+                    <!-- Datos Personales -->
+                    <div class="form-card mb-4">
+                        <h3 class="form-card-title">👤 Datos Personales</h3>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="apellidoPaterno" class="form-label">Apellido Paterno <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="apellidoPaterno" name="apellidoPaterno" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="apellidoMaterno" class="form-label">Apellido Materno <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="apellidoMaterno" name="apellidoMaterno" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="nombre" class="form-label">Nombre(s) <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="curp" class="form-label">CURP</label>
+                                <input type="text" class="form-control" id="curp" name="curp" maxlength="18" pattern="[A-Z0-9]{18}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="nacionalidad" class="form-label">Nacionalidad</label>
+                                <select class="form-control" id="nacionalidad" name="nacionalidad" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="mexicana">Mexicana</option>
+                                    <option value="extranjera">Extranjera</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="estadoCivil" class="form-label">Estado Civil</label>
+                                <select class="form-control" id="estadoCivil" name="estadoCivil" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="soltero">Soltero(a)</option>
+                                    <option value="casado">Casado(a)</option>
+                                    <option value="union_libre">Unión Libre</option>
+                                    <option value="divorciado">Divorciado(a)</option>
+                                    <option value="viudo">Viudo(a)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contacto -->
+                    <div class="form-card mb-4">
+                        <h3 class="form-card-title">📞 Información de Contacto</h3>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="telefonoCasa" class="form-label">Teléfono de Casa</label>
+                                <input type="tel" class="form-control" id="telefonoCasa" name="telefonoCasa" pattern="[0-9]{10}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="telefonoCelular" class="form-label">Teléfono Celular</label>
+                                <input type="tel" class="form-control" id="telefonoCelular" name="telefonoCelular" pattern="[0-9]{10}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="correoElectronico" class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" id="correoElectronico" name="correoElectronico" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="form-card mb-4">
+                        <h3 class="form-card-title">🏠 Dirección</h3>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="entidad" class="form-label">Entidad Federativa</label>
+                                <select class="form-control" id="entidad" name="entidad" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="cdmx">Ciudad de México</option>
+                                    <option value="estado_mexico">Estado de México</option>
+                                    <option value="aguascalientes">Aguascalientes</option>
+                                    <option value="baja_california">Baja California</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="municipio" class="form-label">Municipio/Alcaldía</label>
+                                <input type="text" class="form-control" id="municipio" name="municipio" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="colonia" class="form-label">Colonia</label>
+                                <input type="text" class="form-control" id="colonia" name="colonia" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="calle" class="form-label">Calle y Número</label>
+                                <input type="text" class="form-control" id="calle" name="calle" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos Académicos -->
+                    <div class="form-card mb-4">
+                        <h3 class="form-card-title">🎓 Datos Académicos</h3>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="numeroCuenta" class="form-label">Número de Cuenta <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="numeroCuenta" name="numeroCuenta" pattern="[0-9]+" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="plantel" class="form-label">Plantel <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="plantel" name="plantel" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="carrera" class="form-label">Carrera <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="carrera" name="carrera" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="promedio" class="form-label">Promedio <span class="ocr-indicator">🤖</span></label>
+                                <input type="number" class="form-control" id="promedio" name="promedio" step="0.01" min="0" max="10">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="avance" class="form-label">Avance <span class="ocr-indicator">🤖</span></label>
+                                <input type="text" class="form-control" id="avance" name="avance" pattern="[0-9]+\.?[0-9]*%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Beca -->
+                    <div class="form-card mb-4">
+                        <h3 class="form-card-title">💰 Información de Beca</h3>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="tieneBeca" class="form-label">¿Cuenta con Beca?</label>
+                                <select class="form-control" id="tieneBeca" name="tieneBeca" onchange="toggleBecaType()" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="si">Sí</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="tipoBecaGroup" style="display: none;">
+                                <label for="tipoBeca" class="form-label">Tipo de Beca</label>
+                                <select class="form-control" id="tipoBeca" name="tipoBeca">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="excelencia">Excelencia Académica</option>
+                                    <option value="bobjohnson">Bob Johnson</option>
+                                    <option value="manuntencion">Manuntencion</option>
+                                    <option value="cultural">Cultural</option>
+                                    <option value="indigena">Indígena</option>
+                                    <option value="discapacidad">Discapacidad</option>
+                                    <option value="otra">Otra</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="form-actions text-center">
+                        <button type="button" class="btn btn-secondary me-3" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Limpiar Formulario
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Guardar Registro
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <!-- Messages -->
+        <div class="alert alert-danger" id="errorMessage" style="display: none;"></div>
+        <div class="alert alert-success" id="successMessage" style="display: none;"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="current-time">
+                        <i class="bi bi-clock me-2"></i>
+                        <span id="currentTime">--:--:--</span>
+                    </div>
+                </div>
+                <div class="col-md-8 text-end">
+                    <p class="footer-text mb-0">
+                        Desarrollado por <strong>SICA</strong> - Facultad de Química, UNAM
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="../js/preformulario.js"></script>
+</body>
+</html>
