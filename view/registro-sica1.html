@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Registro de Préstamos SICA 1</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/registro-sica1.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-md-10">
+                    <div class="card-modern">
+                        <div class="card-header text-center">
+                            <h2 class="text-primary mb-0">
+                                <i class="bi bi-laptop me-2"></i>
+                                Registro de préstamos de COMPUTADORAS SICA 1
+                            </h2>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="registroForm">
+                                <!-- Número de cuenta -->
+                                <div class="mb-4">
+                                    <label for="numeroCuenta" class="form-label-sica">
+                                        <i class="bi bi-person-badge me-2"></i>
+                                        Número de cuenta
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="numeroCuenta" 
+                                        class="form-control form-control-sica" 
+                                        placeholder="Ingrese el número de cuenta"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Selección del equipo -->
+                                <div class="mb-4">
+                                    <label for="equipoSelect" class="form-label-sica">
+                                        <i class="bi bi-pc-display me-2"></i>
+                                        Selecciona el número del equipo
+                                    </label>
+                                    <select id="equipoSelect" class="form-control form-control-sica" required>
+                                        <option value="">Selecciona un equipo...</option>
+                                        <!-- Los elementos se generarán con JavaScript -->
+                                    </select>
+                                </div>
+
+                                <!-- Botón de envío -->
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-sica btn-lg">
+                                        <i class="bi bi-send me-2"></i>
+                                        Enviar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/registro-sica1.js"></script>
+</body>
+</html>
