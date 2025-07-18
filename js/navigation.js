@@ -215,48 +215,45 @@ class ModernNavigation {
         });
     }
     
-handleSicaSelection(sicaNumber, button) {
-    // Efecto visual en el botón seleccionado (más rápido)
-    this.addSelectionEffect(button);
-    
-    // Mostrar notificación moderna (opcional, más breve)
-    this.showModernNotification(
-        `SICA ${sicaNumber}`,
-        `Accediendo...`,
-        'success',
-        'bi-pc-display'
-    );
-    
-    // ✅ NAVEGACIÓN OPTIMIZADA - Sin simulateLoading innecesario
-    console.log(`🖥️ Accediendo a SICA ${sicaNumber}`);
-    
-    // Mapear cada SICA a su página específica en la carpeta view
-    const sicaPages = {
-        '1': 'view/registro-sica1.html',
-        '2': 'view/registro-sica2.html',
-        '3': 'view/registro-sica3.html',
-        '4': 'view/registro-sica4.html'
-    };
-    
-    const targetPage = sicaPages[sicaNumber];
-    
-    // ✅ NAVEGACIÓN INMEDIATA - Sin delays innecesarios
-    if (targetPage) {
-        // Redirigir directamente a la página (más rápido)
-        window.location.href = targetPage;
-    } else {
-        // Fallback: usar router si está disponible
-        if (window.sicaRouter) {
-            window.sicaRouter.navigate(`/sica${sicaNumber}`);
+    // ✅ FUNCIÓN ÚNICA Y CORRECTA - Navega al menú de selección
+    handleSicaSelection(sicaNumber, button) {
+        // Efecto visual en el botón seleccionado (más rápido)
+        this.addSelectionEffect(button);
+        
+        // Mostrar notificación moderna (opcional, más breve)
+        this.showModernNotification(
+            `SICA ${sicaNumber}`,
+            `Accediendo al menú de selección...`,
+            'success',
+            'bi-pc-display'
+        );
+        
+        // ✅ NAVEGACIÓN OPTIMIZADA - Sin simulateLoading innecesario
+        console.log(`🖥️ Accediendo a SICA ${sicaNumber}`);
+        
+        // ✅ DETECCIÓN INTELIGENTE DE UBICACIÓN
+        const currentPath = window.location.pathname;
+        const isInViewFolder = currentPath.includes('/view/') || currentPath.includes('view/');
+        
+        let targetPage;
+        
+        if (isInViewFolder) {
+            // Si ya estamos en la carpeta view/, usar ruta relativa
+            targetPage = `menu-seleccion.html?sica=${sicaNumber}`;
         } else {
-            // Último fallback: página genérica
-            window.location.href = `sica${sicaNumber}.html`;
+            // Si estamos en la raíz, usar ruta completa
+            targetPage = `view/menu-seleccion.html?sica=${sicaNumber}`;
         }
+        
+        console.log(`📍 Ubicación actual: ${currentPath}`);
+        console.log(`🎯 Navegando a: ${targetPage}`);
+        
+        // ✅ NAVEGACIÓN INMEDIATA - Sin delays innecesarios
+        window.location.href = targetPage;
+        
+        // ✅ CERRAR PANEL INMEDIATAMENTE - Sin esperar 1.5 segundos
+        this.closeAllPanels();
     }
-    
-    // ✅ CERRAR PANEL INMEDIATAMENTE - Sin esperar 1.5 segundos
-    this.closeAllPanels();
-}
     
     handleAsesorAction(action, button) {
         // Efecto visual en el botón seleccionado
@@ -724,19 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Configurar sonidos (deshabilitados por defecto)
         window.sicaSoundsEnabled = localStorage.getItem('sica-sounds') === 'true';
-        
-        // Mensaje de bienvenida
-        setTimeout(() => {
-            if (window.modernNav) {
-                window.modernNav.showModernNotification(
-                    '¡Bienvenido a SICA!',
-                    'Sistema moderno de navegación activado',
-                    'success',
-                    'bi-check-circle-fill'
-                );
-            }
-        }, 1000);
-        
+       
         console.log('🎨 Sistema de navegación moderno SICA cargado exitosamente');
     }, 500);
 });

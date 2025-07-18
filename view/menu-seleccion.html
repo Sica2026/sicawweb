@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Selección de Equipo</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Menu Styles -->
+    <link href="../css/menu-seleccion.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <div class="row min-vh-100 justify-content-center align-items-center">
+                <div class="col-12">
+                    <!-- Título dinámico -->
+                    <div class="text-center mb-5">
+                        <h1 class="display-4 fw-bold text-gradient mb-3" id="main-title">
+                            <i class="bi bi-gear-fill me-3"></i>
+                            <span id="sica-name">SICA 1</span>
+                        </h1>
+                        <p class="lead text-muted" id="subtitle">
+                            Selecciona el tipo de equipo que deseas registrar
+                        </p>
+                    </div>
+
+                    <!-- Opciones de selección -->
+                    <div class="row justify-content-center g-4">
+                        <!-- Opción Computadora -->
+                        <div class="col-lg-5 col-md-6">
+                            <div class="selection-card computadora-card" data-type="computadora">
+                                <div class="card-background"></div>
+                                <div class="card-content">
+                                    <div class="icon-container">
+                                        <i class="bi bi-laptop selection-icon"></i>
+                                        <div class="icon-glow"></div>
+                                    </div>
+                                    <h3 class="card-title">Computadora</h3>
+                                    <p class="card-description">
+                                        Registra el préstamo de computadoras<br>
+                                        usando elementos de la tabla periódica
+                                    </p>
+                                    <div class="card-footer">
+                                        <span class="equipment-count" id="computadora-count">65 equipos</span>
+                                        <i class="bi bi-arrow-right-circle selection-arrow"></i>
+                                    </div>
+                                </div>
+                                <div class="card-overlay">
+                                    <div class="overlay-content">
+                                        <i class="bi bi-check-circle-fill overlay-icon"></i>
+                                        <span>Seleccionado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opción Mesa -->
+                        <div class="col-lg-5 col-md-6">
+                            <div class="selection-card mesa-card" data-type="mesa">
+                                <div class="card-background"></div>
+                                <div class="card-content">
+                                    <div class="icon-container">
+                                        <i class="bi bi-table selection-icon"></i>
+                                        <div class="icon-glow"></div>
+                                    </div>
+                                    <h3 class="card-title">Mesa</h3>
+                                    <p class="card-description">
+                                        Registra el préstamo de mesas<br>
+                                        usando aminoácidos esenciales
+                                    </p>
+                                    <div class="card-footer">
+                                        <span class="equipment-count">5 mesas</span>
+                                        <i class="bi bi-arrow-right-circle selection-arrow"></i>
+                                    </div>
+                                </div>
+                                <div class="card-overlay">
+                                    <div class="overlay-content">
+                                        <i class="bi bi-check-circle-fill overlay-icon"></i>
+                                        <span>Seleccionado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de regresar removido por solicitud del usuario -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Menu JS -->
+    <script src="../js/menu-seleccion.js"></script>
+</body>
+</html>

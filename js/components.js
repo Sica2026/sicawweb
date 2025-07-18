@@ -126,7 +126,7 @@ class SICAComponents {
                                                 <div class="option-icon">
                                                     <i class="bi bi-3-circle-fill"></i>
                                                 </div>
-                                                <span>SICA 3</span>
+                                                <span>S.I 1</span>
                                             </div>
                                         </button>
                                         <button class="option-btn" data-sica="4">

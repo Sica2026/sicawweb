@@ -1,0 +1,420 @@
+/* Estilos para el menú de selección */
+
+/* Título principal con gradiente UNAM */
+.text-gradient {
+    background: linear-gradient(135deg, #003f7f, #daa520, #1e5aa8); /* Azul UNAM → Dorado → Azul claro */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    0% { filter: brightness(1); }
+    100% { filter: brightness(1.2); }
+}
+
+/* Cards de selección */
+.selection-card {
+    position: relative;
+    height: 350px;
+    border-radius: 24px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+}
+
+.selection-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+}
+
+/* ✅ HOVER MEJORADO PARA MODO OSCURO */
+[data-theme="dark"] .selection-card:hover {
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6); /* Sombra más intensa en modo oscuro */
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Borde sutil */
+}
+
+[data-theme="dark"] .selection-card:hover .card-background {
+    opacity: 1;
+    filter: brightness(1.1); /* Ligeramente más brillante al hacer hover */
+}
+
+/* Fondos específicos con colores UNAM */
+.computadora-card {
+    background: linear-gradient(135deg, #003f7f 0%, #1e5aa8 50%, #4a90e2 100%); /* Azul UNAM degradado */
+}
+
+.mesa-card {
+    background: linear-gradient(135deg, #b8860b 0%, #daa520 50%, #ffd700 100%); /* Dorado UNAM degradado */
+}
+
+/* Fondo animado */
+.card-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
+}
+
+.selection-card:hover .card-background {
+    opacity: 1;
+}
+
+/* Contenido de la card */
+.card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+}
+
+/* Contenedor del ícono */
+.icon-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.selection-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: iconFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+/* Resplandor del ícono */
+.icon-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Título de la card */
+.card-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Descripción */
+.card-description {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+/* Footer de la card */
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: auto;
+}
+
+.equipment-count {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.selection-arrow {
+    font-size: 1.5rem;
+    opacity: 0.8;
+    transition: transform 0.3s ease;
+}
+
+.selection-card:hover .selection-arrow {
+    transform: translateX(5px);
+    opacity: 1;
+}
+
+/* Overlay de selección */
+.card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+.card-overlay.active {
+    opacity: 1;
+}
+
+.overlay-content {
+    text-align: center;
+    color: white;
+    animation: overlayPop 0.5s ease-out;
+}
+
+@keyframes overlayPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.overlay-icon {
+    font-size: 3rem;
+    color: var(--primary-gold);
+    margin-bottom: 0.5rem;
+    animation: checkmarkBounce 0.6s ease-out;
+}
+
+@keyframes checkmarkBounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Botón de regresar con colores UNAM */
+.back-button {
+    border: 2px solid #003f7f; /* Azul UNAM */
+    color: #003f7f;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+.back-button:hover {
+    background: #003f7f; /* Azul UNAM */
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 63, 127, 0.3);
+}
+
+/* Efectos de partículas */
+.selection-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="70" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    animation: particleMove 20s linear infinite;
+}
+
+@keyframes particleMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100px); }
+}
+
+.selection-card:hover::before {
+    opacity: 1;
+}
+
+/* ✅ PARTÍCULAS MEJORADAS PARA MODO OSCURO */
+[data-theme="dark"] .selection-card::before {
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.2)"/><circle cx="80" cy="30" r="1" fill="rgba(255,255,255,0.2)"/><circle cx="40" cy="70" r="1" fill="rgba(255,255,255,0.2)"/><circle cx="70" cy="80" r="1" fill="rgba(255,255,255,0.2)"/></svg>') repeat;
+}
+
+/* ✅ RESPLANDOR ADICIONAL PARA MODO OSCURO */
+[data-theme="dark"] .selection-card::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    border-radius: 26px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+[data-theme="dark"] .selection-card:hover::after {
+    opacity: 1;
+}
+
+/* Estados de selección con colores UNAM */
+.selection-card.selected {
+    border-color: var(--primary-gold);
+    box-shadow: 0 0 0 3px rgba(172, 150, 90, 0.3);
+}
+
+.selection-card.selected .card-overlay {
+    opacity: 1;
+}
+
+/* ✅ EFECTOS DE SELECCIÓN MEJORADOS */
+.computadora-card.selected {
+    box-shadow: 0 0 0 3px rgba(30, 90, 168, 0.4); /* Resplandor azul UNAM */
+}
+
+.mesa-card.selected {
+    box-shadow: 0 0 0 3px rgba(218, 165, 32, 0.4); /* Resplandor dorado UNAM */
+}
+
+/* ✅ HOVER MEJORADO CON COLORES UNAM */
+.computadora-card:hover {
+    box-shadow: 0 25px 50px rgba(30, 90, 168, 0.3);
+}
+
+.mesa-card:hover {
+    box-shadow: 0 25px 50px rgba(218, 165, 32, 0.3);
+}
+
+/* Modo oscuro */
+[data-theme="dark"] .text-gradient {
+    background: linear-gradient(135deg, var(--primary-gold), var(--light-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .back-button {
+    border-color: var(--primary-gold);
+    color: var(--primary-gold);
+}
+
+[data-theme="dark"] .back-button:hover {
+    background: var(--primary-gold);
+    color: var(--primary-blue);
+}
+
+/* ✅ NUEVOS ESTILOS PARA MODO OSCURO */
+[data-theme="dark"] #subtitle {
+    color: white !important; /* ✅ Texto blanco para el subtítulo */
+}
+
+[data-theme="dark"] .lead {
+    color: white !important; /* ✅ Texto blanco para elementos con clase lead */
+}
+
+/* ✅ GRADIENTES AZULES PARA MODO OSCURO */
+[data-theme="dark"] .computadora-card {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1d4ed8 100%); /* Azul oscuro a azul claro */
+}
+
+[data-theme="dark"] .mesa-card {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #1e3a8a 100%); /* Variante azul para mesa */
+}
+
+/* ✅ MEJORAR CONTRASTE EN MODO OSCURO */
+[data-theme="dark"] .card-content {
+    color: white; /* Asegurar que todo el texto sea blanco */
+}
+
+[data-theme="dark"] .card-title {
+    color: white !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); /* Sombra más fuerte para mejor legibilidad */
+}
+
+[data-theme="dark"] .card-description {
+    color: rgba(255, 255, 255, 0.95) !important; /* Blanco con ligera transparencia */
+}
+
+[data-theme="dark"] .equipment-count {
+    background: rgba(255, 255, 255, 0.25); /* Fondo más visible */
+    color: white !important;
+    backdrop-filter: blur(15px);
+}
+
+[data-theme="dark"] .selection-arrow {
+    color: white !important;
+}
+
+/* Animaciones de entrada */
+.selection-card {
+    animation: cardSlideIn 0.8s ease-out forwards;
+    opacity: 0;
+}
+
+.selection-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.selection-card:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+@keyframes cardSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(50px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .selection-card {
+        height: 280px;
+        margin-bottom: 2rem;
+    }
+    
+    .card-title {
+        font-size: 1.5rem;
+    }
+    
+    .selection-icon {
+        font-size: 3rem;
+    }
+    
+    .card-description {
+        font-size: 1rem;
+    }
+    
+    .text-gradient {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .selection-card {
+        height: 250px;
+    }
+    
+    .card-content {
+        padding: 1.5rem;
+    }
+}
