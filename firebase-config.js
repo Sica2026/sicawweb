@@ -1,5 +1,3 @@
-// Firebase config usando CDN - para usar en navegadores directamente
-
 // Este archivo debe ser cargado DESPUÉS de los scripts de Firebase CDN
 const firebaseConfig = {
   apiKey: "AIzaSyCKbsV-F63jAHT342uw-XBF1DWPKJKrxmY",
@@ -16,7 +14,11 @@ const app = firebase.initializeApp(firebaseConfig);
 // Initialize Firestore
 const db = firebase.firestore();
 
+// ✅ Initialize Authentication
+const auth = firebase.auth();
+
 // Hacer disponible globalmente
 window.firebaseDB = db;
+window.firebaseAuth = auth;
 
-console.log('🔥 Firebase inicializado correctamente');
+console.log('🔥 Firebase inicializado correctamente (App + Firestore + Auth)');

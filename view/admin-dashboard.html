@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Dashboard Styles -->
+    <link href="../css/admin-dashboard.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="welcome-section">
+                            <h1 class="dashboard-title">
+                                <i class="bi bi-speedometer2 me-3"></i>
+                                Panel de Administración
+                            </h1>
+                            <p class="dashboard-subtitle" id="welcomeMessage">
+                                Bienvenido de nuevo, administrador
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="admin-info">
+                            <div class="admin-avatar">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <div class="admin-details">
+                                <span class="admin-name" id="adminName">Administrador</span>
+                                <span class="admin-role">Sistema SICA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard Content -->
+            <div class="row g-4">
+                <!-- Pendientes Panel -->
+                <div class="col-lg-8">
+                    <div class="dashboard-card pendientes-card">
+                        <div class="card-header">
+                            <div class="header-content">
+                                <div class="header-info">
+                                    <h3 class="card-title">
+                                        <i class="bi bi-list-task me-2"></i>
+                                        Tareas Pendientes
+                                    </h3>
+                                    <p class="card-subtitle">Gestiona las tareas asignadas al equipo</p>
+                                </div>
+                                <div class="header-actions">
+                                    <button class="btn btn-outline-primary btn-sm" id="refreshPendientes">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>
+                                        Actualizar
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" id="addPendiente">
+                                        <i class="bi bi-plus-circle me-1"></i>
+                                        Nueva Tarea
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Loading State -->
+                            <div class="loading-state" id="pendientesLoading">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
+                                    <p>Cargando tareas pendientes...</p>
+                                </div>
+                            </div>
+
+                            <!-- Pendientes List -->
+                            <div class="pendientes-list" id="pendientesList" style="display: none;">
+                                <!-- Las tareas se cargarán dinámicamente aquí -->
+                            </div>
+
+                            <!-- Empty State -->
+                            <div class="empty-state" id="emptyState" style="display: none;">
+                                <div class="empty-icon">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <h4>¡Todo completado!</h4>
+                                <p>No hay tareas pendientes en este momento.</p>
+                                <button class="btn btn-primary" id="addFirstPendiente">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Crear Primera Tarea
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Panel -->
+                <div class="col-lg-4">
+                    <div class="dashboard-card actions-card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-lightning-fill me-2"></i>
+                                Acciones Rápidas
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="quick-actions">
+                                <button class="action-btn" id="viewRegistros">
+                                    <div class="action-icon">
+                                        <i class="bi bi-database"></i>
+                                    </div>
+                                    <div class="action-content">
+                                        <span class="action-title">Ver Registros</span>
+                                        <span class="action-desc">Consultar base de datos</span>
+                                    </div>
+                                    <i class="bi bi-arrow-right action-arrow"></i>
+                                </button>
+
+                                <button class="action-btn" id="manageUsers">
+                                    <div class="action-icon">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                    <div class="action-content">
+                                        <span class="action-title">Gestionar Usuarios</span>
+                                        <span class="action-desc">Administrar cuentas</span>
+                                    </div>
+                                    <i class="bi bi-arrow-right action-arrow"></i>
+                                </button>
+
+                                <button class="action-btn" id="systemSettings">
+                                    <div class="action-icon">
+                                        <i class="bi bi-gear"></i>
+                                    </div>
+                                    <div class="action-content">
+                                        <span class="action-title">Configuración</span>
+                                        <span class="action-desc">Ajustes del sistema</span>
+                                    </div>
+                                    <i class="bi bi-arrow-right action-arrow"></i>
+                                </button>
+
+                                <button class="action-btn" id="generateReport">
+                                    <div class="action-icon">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
+                                    <div class="action-content">
+                                        <span class="action-title">Generar Reporte</span>
+                                        <span class="action-desc">Exportar estadísticas</span>
+                                    </div>
+                                    <i class="bi bi-arrow-right action-arrow"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal para Nueva Tarea -->
+    <div class="modal fade" id="nuevaTareaModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Nueva Tarea Pendiente
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="nuevaTareaForm">
+                        <div class="mb-3">
+                            <label for="tareaTitle" class="form-label">Título de la Tarea</label>
+                            <input type="text" class="form-control" id="tareaTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tareaContent" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="tareaContent" rows="3" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="tareaAssignee" class="form-label">Asignar a</label>
+                                <input type="text" class="form-control" id="tareaAssignee" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="tareaImportancia" class="form-label">Importancia</label>
+                                <select class="form-control" id="tareaImportancia" required>
+                                    <option value="normal">Normal</option>
+                                    <option value="urgente">Urgente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="tareaDeadline" class="form-label">Fecha Límite</label>
+                                <input type="datetime-local" class="form-control" id="tareaDeadline" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveTarea">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Crear Tarea
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Dashboard JS -->
+    <script src="../js/admin-dashboard.js"></script>
+</body>
+</html>

@@ -12,6 +12,12 @@ class SICAComponents {
     init() {
         this.loadComponents();
         this.setupClock();
+        
+        // ✅ AGREGAR: Verificar estado de autenticación
+        setTimeout(() => {
+            SICAComponents.checkAuthState();
+        }, 1000);
+        
         console.log('🧩 Componentes SICA cargados exitosamente');
     }
 
@@ -62,12 +68,14 @@ class SICAComponents {
     }
 
     getNavbarComponent() {
-        return `
-            <nav class="modern-navbar">
-                <div class="container">
-                    <div class="navbar-content">
-                        <!-- Main Navigation Buttons -->
-                        <div class="main-nav-buttons">
+    return `
+        <nav class="modern-navbar">
+            <div class="container">
+                <div class="navbar-content">
+                    <!-- UN SOLO CONTENEDOR PRINCIPAL -->
+                    <div class="main-nav-buttons">
+                        <!-- Botones de Usuario (visibles por defecto) -->
+                        <div class="user-mode" id="userNavButtons" style="display: flex; gap: inherit;">
                             <button class="nav-btn registro-btn" id="registroBtn">
                                 <div class="btn-content">
                                     <i class="bi bi-person-plus-fill"></i>
@@ -83,26 +91,39 @@ class SICAComponents {
                                     <i class="bi bi-chevron-down chevron-icon"></i>
                                 </div>
                             </button>
-                            
-                            <button class="nav-btn" id="darkModeToggle">
-                                <div class="btn-content">
-                                    <i class="bi bi-moon"></i>
-                                    <span>Modo Oscuro</span>
-                                </div>
-                            </button>
+                        </div>
 
-                            <button class="nav-btn" id="homeBtn">
+                        <!-- Botones de Administrador (ocultos por defecto) -->
+                        <div class="admin-mode" id="adminNavButtons" style="display: none; gap: inherit;">
+                            <button class="nav-btn admin-btn" id="administracionBtn">
                                 <div class="btn-content">
-                                    <i class="bi bi-house-fill"></i>
-                                    <span>Inicio</span>
+                                    <i class="bi bi-shield-lock-fill"></i>
+                                    <span>Administración</span>
+                                    <i class="bi bi-chevron-down chevron-icon"></i>
                                 </div>
                             </button>
                         </div>
 
+                        <!-- Botones Comunes (siempre visibles) -->
+                        <button class="nav-btn" id="darkModeToggle">
+                            <div class="btn-content">
+                                <i class="bi bi-moon"></i>
+                                <span>Modo Oscuro</span>
+                            </div>
+                        </button>
+
+                        <button class="nav-btn" id="homeBtn">
+                            <div class="btn-content">
+                                <i class="bi bi-house-fill"></i>
+                                <span id="homeBtnText">Inicio</span>
+                            </div>
+                        </button>
+                    </div>
+
                         <!-- Expandable Panels -->
                         <div class="expandable-panels">
-                            <!-- Panel Registro -->
-                            <div class="nav-panel registro-panel" id="registroPanel">
+                            <!-- Panel Registro (solo visible en modo usuario) -->
+                            <div class="nav-panel registro-panel user-mode" id="registroPanel">
                                 <div class="panel-content">
                                     <div class="panel-options">
                                         <button class="option-btn" data-sica="1">
@@ -141,8 +162,8 @@ class SICAComponents {
                                 </div>
                             </div>
 
-                            <!-- Panel Asesor -->
-                            <div class="nav-panel asesor-panel" id="asesorPanel">
+                            <!-- Panel Asesor (solo visible en modo usuario) -->
+                            <div class="nav-panel asesor-panel user-mode" id="asesorPanel">
                                 <div class="panel-content">
                                     <div class="panel-options">
                                         <button class="option-btn" data-action="lista">
@@ -175,6 +196,46 @@ class SICAComponents {
                                                     <i class="bi bi-gear"></i>
                                                 </div>
                                                 <span>Configuración</span>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel Administración (solo visible en modo admin) -->
+                            <div class="nav-panel admin-panel admin-mode" id="administracionPanel" style="display: none;">
+                                <div class="panel-content">
+                                    <div class="panel-options">
+                                        <button class="option-btn" data-admin-action="dashboard">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-speedometer2"></i>
+                                                </div>
+                                                <span>Dashboard</span>
+                                            </div>
+                                        </button>
+                                        <button class="option-btn" data-admin-action="usuarios">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-people"></i>
+                                                </div>
+                                                <span>Usuarios</span>
+                                            </div>
+                                        </button>
+                                        <button class="option-btn" data-admin-action="registros">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-database"></i>
+                                                </div>
+                                                <span>Registros</span>
+                                            </div>
+                                        </button>
+                                        <button class="option-btn" data-admin-action="logout">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-box-arrow-right"></i>
+                                                </div>
+                                                <span>Cerrar Sesión</span>
                                             </div>
                                         </button>
                                     </div>
@@ -314,6 +375,87 @@ class SICAComponents {
             path: window.location.pathname,
             theme: document.documentElement.getAttribute('data-theme') || 'light'
         };
+    }
+
+    // ✅ FUNCIÓN PARA ALTERNAR ENTRE MODO USUARIO Y ADMIN
+    static toggleAdminMode(isAdmin = false) {
+        const userElements = document.querySelectorAll('.user-mode');
+        const adminElements = document.querySelectorAll('.admin-mode');
+        const homeBtnText = document.getElementById('homeBtnText');
+        
+        if (isAdmin) {
+            // Ocultar elementos de usuario
+            userElements.forEach(el => el.style.display = 'none');
+            // Mostrar elementos de admin
+            adminElements.forEach(el => el.style.display = 'flex');
+            // Cambiar texto del botón inicio
+            if (homeBtnText) homeBtnText.textContent = 'Panel Admin';
+            
+            document.body.classList.add('admin-authenticated');
+            
+            // Configurar navegación del botón inicio para admin
+            SICAComponents.updateHomeButton('admin');
+            
+        } else {
+            // Mostrar elementos de usuario
+            userElements.forEach(el => el.style.display = 'flex');
+            // Ocultar elementos de admin
+            adminElements.forEach(el => el.style.display = 'none');
+            // Restaurar texto del botón inicio
+            if (homeBtnText) homeBtnText.textContent = 'Inicio';
+            
+            document.body.classList.remove('admin-authenticated');
+            
+            // Configurar navegación del botón inicio para usuario
+            SICAComponents.updateHomeButton('user');
+        }
+    }
+
+    // ✅ FUNCIÓN PARA ACTUALIZAR COMPORTAMIENTO DEL BOTÓN INICIO
+    static updateHomeButton(mode) {
+        const homeBtn = document.getElementById('homeBtn');
+        
+        if (homeBtn) {
+            // Remover listeners anteriores
+            const newHomeBtn = homeBtn.cloneNode(true);
+            homeBtn.parentNode.replaceChild(newHomeBtn, homeBtn);
+            
+            // Agregar nuevo listener según el modo
+            newHomeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                if (mode === 'admin') {
+                    // Redirigir al dashboard de admin
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    // Redirigir al inicio normal
+                    const currentPath = window.location.pathname;
+                    const isInSubdirectory = currentPath.includes('/view/');
+                    
+                    if (isInSubdirectory) {
+                        window.location.href = '../index.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }
+            });
+        }
+    }
+
+    // ✅ FUNCIÓN PARA VERIFICAR AUTENTICACIÓN AL CARGAR
+    static checkAuthState() {
+        // Verificar si hay usuario autenticado en Firebase
+        if (window.firebaseAuth) {
+            window.firebaseAuth.onAuthStateChanged((user) => {
+                SICAComponents.toggleAdminMode(!!user);
+            });
+        }
+        
+        // También verificar parámetro URL para login directo
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('admin') === 'true') {
+            SICAComponents.toggleAdminMode(true);
+        }
     }
 }
 

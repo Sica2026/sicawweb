@@ -93,7 +93,7 @@ body {
 
 .main-nav-buttons {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
     align-items: center;
 }
 
@@ -916,3 +916,19 @@ body {
         font-size: 0.85rem;
     }
 }
+
+/* Ocultar por defecto */
+.admin-mode {
+    display: none;
+}
+
+/* Mostrar cuando está autenticado */
+.authenticated .admin-mode {
+    display: flex;
+}
+
+/* Ocultar botones de usuario cuando está autenticado */
+.authenticated .user-mode {
+    display: none;
+}
+

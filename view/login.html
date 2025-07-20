@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Administrador - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Login Styles -->
+    <link href="../css/admin-login.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Fondo animado -->
+    <div class="animated-background">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+            <div class="shape shape-5"></div>
+        </div>
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="login-container">
+        <div class="container-fluid h-100">
+            <div class="row h-100 justify-content-center align-items-center">
+                <div class="col-lg-5 col-md-7 col-sm-9">
+                    
+                    <!-- Card de login -->
+                    <div class="login-card">
+                        <!-- Header con logo UNAM -->
+                        <div class="login-header">
+                            <div class="logo-container">
+                                <div class="logo-circle">
+                                    <i class="bi bi-shield-lock-fill"></i>
+                                </div>
+                                <div class="logo-glow"></div>
+                            </div>
+                            <h1 class="login-title">Acceso Administrador</h1>
+                            <p class="login-subtitle">Sistema SICA - UNAM</p>
+                        </div>
+
+                        <!-- Formulario -->
+                        <div class="login-body">
+                            <form id="loginForm" class="login-form">
+                                <!-- Campo Email -->
+                                <div class="form-group">
+                                    <div class="input-container">
+                                        <div class="input-icon">
+                                            <i class="bi bi-envelope-fill"></i>
+                                        </div>
+                                        <input 
+                                            type="email" 
+                                            id="email" 
+                                            class="form-input" 
+                                            placeholder="Correo electrónico"
+                                            required
+                                            autocomplete="email"
+                                        >
+                                        <div class="input-line"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Campo Password -->
+                                <div class="form-group">
+                                    <div class="input-container">
+                                        <div class="input-icon">
+                                            <i class="bi bi-lock-fill"></i>
+                                        </div>
+                                        <input 
+                                            type="password" 
+                                            id="password" 
+                                            class="form-input" 
+                                            placeholder="Contraseña"
+                                            required
+                                            autocomplete="current-password"
+                                        >
+                                        <button type="button" class="password-toggle" id="passwordToggle">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </button>
+                                        <div class="input-line"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Recordar sesión -->
+                                <div class="form-group">
+                                    <div class="remember-container">
+                                        <label class="remember-checkbox">
+                                            <input type="checkbox" id="rememberMe">
+                                            <span class="checkmark">
+                                                <i class="bi bi-check"></i>
+                                            </span>
+                                            <span class="remember-text">Recordar sesión</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Botón de login -->
+                                <div class="form-group">
+                                    <button type="submit" class="login-btn" id="loginBtn">
+                                        <span class="btn-text">Iniciar Sesión</span>
+                                        <div class="btn-loader">
+                                            <div class="spinner"></div>
+                                        </div>
+                                        <div class="btn-success">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                        </div>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="login-footer">
+                            <p class="footer-text">
+                                <i class="bi bi-shield-check me-2"></i>
+                                Acceso seguro protegido por Firebase
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Botón de regresar -->
+                    <div class="back-to-home">
+                        <button class="back-btn" id="backToHome">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Regresar al sistema
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Login JS -->
+    <script src="../js/admin-login.js"></script>
+</body>
+</html>

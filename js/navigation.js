@@ -108,6 +108,34 @@ class ModernNavigation {
             'bi-house-fill'
         );
     }
+
+    showAdminAccess() {
+        // Efecto visual sutil
+        document.body.style.filter = 'brightness(0.95)';
+        setTimeout(() => document.body.style.filter = '', 200);
+        
+        this.showModernNotification(
+            'Acceso Administrador',
+            'Iniciando autenticación...',
+            'info',
+            'bi-shield-lock-fill'
+        );
+        
+        // Redirigir después de la notificación
+        setTimeout(() => {
+            // Detectar si estamos en subdirectorio
+            const currentPath = window.location.pathname;
+            const isInSubdirectory = currentPath.includes('/view/') || currentPath.includes('view/');
+            
+            if (isInSubdirectory) {
+                // Si ya estamos en view/, ir al login.html en la misma carpeta
+                window.location.href = 'login.html';
+            } else {
+                // Si estamos en la raíz, ir a view/login.html
+                window.location.href = 'view/login.html';
+            }
+        }, 1500);
+    }
     
     async togglePanel(panelType) {
         if (this.isAnimating) return;
@@ -195,24 +223,32 @@ class ModernNavigation {
     }
     
     setupOptionButtons() {
-        // Usar delegación de eventos para manejar botones dinámicos
-        document.addEventListener('click', (e) => {
-            // Opciones de SICA
-            if (e.target.closest('.option-btn[data-sica]')) {
-                e.preventDefault();
-                const btn = e.target.closest('.option-btn[data-sica]');
-                const sicaNumber = btn.getAttribute('data-sica');
-                this.handleSicaSelection(sicaNumber, btn);
-            }
-            
-            // Opciones de Asesor
-            if (e.target.closest('.option-btn[data-action]')) {
-                e.preventDefault();
-                const btn = e.target.closest('.option-btn[data-action]');
-                const action = btn.getAttribute('data-action');
-                this.handleAsesorAction(action, btn);
-            }
-        });
+    // Usar delegación de eventos para manejar botones dinámicos
+    document.addEventListener('click', (e) => {
+        // Opciones de SICA
+        if (e.target.closest('.option-btn[data-sica]')) {
+            e.preventDefault();
+            const btn = e.target.closest('.option-btn[data-sica]');
+            const sicaNumber = btn.getAttribute('data-sica');
+            this.handleSicaSelection(sicaNumber, btn);
+        }
+        
+        // Opciones de Asesor
+        if (e.target.closest('.option-btn[data-action]')) {
+            e.preventDefault();
+            const btn = e.target.closest('.option-btn[data-action]');
+            const action = btn.getAttribute('data-action');
+            this.handleAsesorAction(action, btn);
+        }
+
+        // ✅ AGREGAR: Opciones de Administrador
+        if (e.target.closest('.option-btn[data-admin-action]')) {
+            e.preventDefault();
+            const btn = e.target.closest('.option-btn[data-admin-action]');
+            const action = btn.getAttribute('data-admin-action');
+            this.handleAdminAction(action, btn);
+        }
+    });
     }
     
     // ✅ FUNCIÓN ÚNICA Y CORRECTA - Navega al menú de selección
@@ -637,7 +673,13 @@ class ModernNavigation {
                 e.preventDefault();
                 this.navigateToHome();
             }
-            
+
+            // Alt + E para acceso de administrador
+            if (e.altKey && e.key === 'e') {
+                e.preventDefault();
+                this.showAdminAccess();
+            }
+                        
             // Números 1-4 para SICA cuando panel registro está abierto
             if (this.activePanel === 'registro' && ['1', '2', '3', '4'].includes(e.key)) {
                 e.preventDefault();
@@ -649,6 +691,69 @@ class ModernNavigation {
         });
     }
     
+    handleAdminAction(action, button) {
+    this.addSelectionEffect(button);
+    
+    const adminActions = {
+        'dashboard': {
+            title: 'Dashboard',
+            message: 'Accediendo al panel de control...',
+            icon: 'bi-speedometer2',
+            route: 'admin-dashboard.html'
+        },
+        'usuarios': {
+            title: 'Gestión de Usuarios',
+            message: 'Cargando gestión de usuarios...',
+            icon: 'bi-people',
+            route: 'admin-users.html'
+        },
+        'registros': {
+            title: 'Registros del Sistema',
+            message: 'Accediendo a los registros...',
+            icon: 'bi-database',
+            route: 'admin-records.html'
+        },
+        'logout': {
+            title: 'Cerrar Sesión',
+            message: 'Cerrando sesión de administrador...',
+            icon: 'bi-box-arrow-right',
+            route: null // Acción especial
+        }
+    };
+    
+    const actionData = adminActions[action];
+    
+    if (actionData) {
+        this.showModernNotification(
+            actionData.title,
+            actionData.message,
+            action === 'logout' ? 'warning' : 'info',
+            actionData.icon
+        );
+        
+        if (action === 'logout') {
+            // Cerrar sesión de Firebase
+            if (window.currentAuth) {
+                window.currentAuth.signOut().then(() => {
+                    window.location.href = 'index.html';
+                });
+            } else {
+                window.location.href = 'index.html';
+            }
+        } else {
+            // Redirigir a la página correspondiente
+            setTimeout(() => {
+                window.location.href = actionData.route;
+            }, 1000);
+        }
+    }
+    
+    // Cerrar panel
+    setTimeout(() => {
+        this.closeAllPanels();
+    }, 1000);
+}
+
     // Método para habilitar/deshabilitar sonidos
     toggleSounds() {
         window.sicaSoundsEnabled = !window.sicaSoundsEnabled;
