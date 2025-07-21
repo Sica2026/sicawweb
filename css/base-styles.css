@@ -202,7 +202,19 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
 }
+/* Específico para panel de administración */
+.admin-panel .panel-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 2 columnas fijas */
+    gap: 1.5rem;
+}
 
+/* Para móviles */
+@media (max-width: 768px) {
+    .admin-panel .panel-options {
+        grid-template-columns: 1fr; /* 1 columna en móvil */
+    }
+}
 /* Option Buttons */
 .option-btn {
     background: rgba(255, 255, 255, 0.08);

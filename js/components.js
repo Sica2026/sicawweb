@@ -102,6 +102,12 @@ class SICAComponents {
                                     <i class="bi bi-chevron-down chevron-icon"></i>
                                 </div>
                             </button>
+                            <button class="nav-btn logout-btn" id="logoutBtn">
+                                <div class="btn-content">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                        <span>Cerrar Sesión</span>
+                                </div>
+                            </button>
                         </div>
 
                         <!-- Botones Comunes (siempre visibles) -->
@@ -206,36 +212,28 @@ class SICAComponents {
                             <div class="nav-panel admin-panel admin-mode" id="administracionPanel" style="display: none;">
                                 <div class="panel-content">
                                     <div class="panel-options">
-                                        <button class="option-btn" data-admin-action="dashboard">
+                                        <button class="option-btn" data-admin-action="formularios">
                                             <div class="option-content">
                                                 <div class="option-icon">
-                                                    <i class="bi bi-speedometer2"></i>
+                                                    <i class="bi bi-file-earmark-text"></i>
                                                 </div>
-                                                <span>Dashboard</span>
+                                                <span>Formularios/Avisos</span>
                                             </div>
                                         </button>
-                                        <button class="option-btn" data-admin-action="usuarios">
+                                        <button class="option-btn" data-admin-action="asesores">
                                             <div class="option-content">
                                                 <div class="option-icon">
                                                     <i class="bi bi-people"></i>
                                                 </div>
-                                                <span>Usuarios</span>
+                                                <span>Gestión Asesores</span>
                                             </div>
                                         </button>
-                                        <button class="option-btn" data-admin-action="registros">
+                                        <button class="option-btn" data-admin-action="mas">
                                             <div class="option-content">
                                                 <div class="option-icon">
-                                                    <i class="bi bi-database"></i>
+                                                    <i class="bi bi-three-dots"></i>
                                                 </div>
-                                                <span>Registros</span>
-                                            </div>
-                                        </button>
-                                        <button class="option-btn" data-admin-action="logout">
-                                            <div class="option-content">
-                                                <div class="option-icon">
-                                                    <i class="bi bi-box-arrow-right"></i>
-                                                </div>
-                                                <span>Cerrar Sesión</span>
+                                                <span>Más...</span>
                                             </div>
                                         </button>
                                     </div>

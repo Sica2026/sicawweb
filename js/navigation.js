@@ -35,16 +35,19 @@ class ModernNavigation {
     }
     
     initializeElements() {
-        this.registroBtn = document.getElementById('registroBtn');
-        this.asesorBtn = document.getElementById('asesorBtn');
-        this.registroPanel = document.getElementById('registroPanel');
-        this.asesorPanel = document.getElementById('asesorPanel');
-        this.mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        this.mainNavButtons = document.querySelector('.main-nav-buttons');
-        this.darkModeToggle = document.getElementById('darkModeToggle');
-        this.homeBtn = document.getElementById('homeBtn');
-        
-        return this.registroBtn && this.asesorBtn && this.registroPanel && this.asesorPanel;
+    this.registroBtn = document.getElementById('registroBtn');
+    this.asesorBtn = document.getElementById('asesorBtn');
+    this.administracionBtn = document.getElementById('administracionBtn'); // ✅ AGREGAR
+    this.registroPanel = document.getElementById('registroPanel');
+    this.asesorPanel = document.getElementById('asesorPanel');
+    this.administracionPanel = document.getElementById('administracionPanel'); // ✅ AGREGAR
+    this.mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    this.mainNavButtons = document.querySelector('.main-nav-buttons');
+    this.darkModeToggle = document.getElementById('darkModeToggle');
+    this.homeBtn = document.getElementById('homeBtn');
+    this.logoutBtn = document.getElementById('logoutBtn'); // ✅ AGREGAR
+    
+    return this.registroBtn && this.asesorBtn && this.registroPanel && this.asesorPanel;
     }
     
     init() {
@@ -69,6 +72,16 @@ class ModernNavigation {
             e.preventDefault();
             this.togglePanel('asesor');
         });
+
+        this.administracionBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.togglePanel('administracion');
+        });
+
+        this.logoutBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.handleLogout();
+         });
         
         // Cerrar paneles al hacer clic fuera
         document.addEventListener('click', (e) => {
@@ -138,31 +151,44 @@ class ModernNavigation {
     }
     
     async togglePanel(panelType) {
-        if (this.isAnimating) return;
-        
-        this.isAnimating = true;
-        
-        const targetPanel = panelType === 'registro' ? this.registroPanel : this.asesorPanel;
-        const targetBtn = panelType === 'registro' ? this.registroBtn : this.asesorBtn;
-        const otherPanel = panelType === 'registro' ? this.asesorPanel : this.registroPanel;
-        const otherBtn = panelType === 'registro' ? this.asesorBtn : this.registroBtn;
-        
-        // Si el panel objetivo ya está activo, cerrarlo
-        if (this.activePanel === panelType) {
-            await this.closePanel(targetPanel, targetBtn);
-            this.activePanel = null;
-        } else {
-            // Cerrar el otro panel si está abierto
-            if (this.activePanel) {
-                await this.closePanel(otherPanel, otherBtn);
+    if (this.isAnimating) return;
+    
+    this.isAnimating = true;
+    
+    // ✅ CAMBIAR ESTAS LÍNEAS:
+    const panels = {
+        'registro': { panel: this.registroPanel, btn: this.registroBtn },
+        'asesor': { panel: this.asesorPanel, btn: this.asesorBtn },
+        'administracion': { panel: this.administracionPanel, btn: this.administracionBtn }
+    };
+    
+    const targetPanel = panels[panelType]?.panel;
+    const targetBtn = panels[panelType]?.btn;
+    
+    if (!targetPanel || !targetBtn) {
+        this.isAnimating = false;
+        return;
+    }
+    
+    // Si el panel objetivo ya está activo, cerrarlo
+    if (this.activePanel === panelType) {
+        await this.closePanel(targetPanel, targetBtn);
+        this.activePanel = null;
+    } else {
+        // Cerrar todos los otros paneles
+        if (this.activePanel) {
+            const currentPanel = panels[this.activePanel];
+            if (currentPanel) {
+                await this.closePanel(currentPanel.panel, currentPanel.btn);
             }
-            
-            // Abrir el panel objetivo
-            await this.openPanel(targetPanel, targetBtn);
-            this.activePanel = panelType;
         }
         
-        this.isAnimating = false;
+        // Abrir el panel objetivo
+        await this.openPanel(targetPanel, targetBtn);
+        this.activePanel = panelType;
+    }
+    
+    this.isAnimating = false;
     }
     
     async openPanel(panel, button) {
@@ -289,6 +315,41 @@ class ModernNavigation {
         
         // ✅ CERRAR PANEL INMEDIATAMENTE - Sin esperar 1.5 segundos
         this.closeAllPanels();
+    }
+
+    handleLogout() {
+    // Efecto visual
+    this.showModernNotification(
+        'Cerrando Sesión',
+        'Saliendo del panel de administración...',
+        'warning',
+        'bi-box-arrow-right'
+    );
+    
+    // Cerrar sesión de Firebase
+    if (window.firebaseAuth) {
+        window.firebaseAuth.signOut().then(() => {
+            // Redirigir según la ubicación actual
+            const currentPath = window.location.pathname;
+            const isInSubdirectory = currentPath.includes('/view/');
+            
+            if (isInSubdirectory) {
+                window.location.href = '../index.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+    } else {
+        // Fallback si no hay Firebase
+        const currentPath = window.location.pathname;
+        const isInSubdirectory = currentPath.includes('/view/');
+        
+        if (isInSubdirectory) {
+            window.location.href = '../index.html';
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
     }
     
     handleAsesorAction(action, button) {
@@ -691,33 +752,33 @@ class ModernNavigation {
         });
     }
     
-    handleAdminAction(action, button) {
+handleAdminAction(action, button) {
     this.addSelectionEffect(button);
     
     const adminActions = {
-        'dashboard': {
-            title: 'Dashboard',
-            message: 'Accediendo al panel de control...',
-            icon: 'bi-speedometer2',
-            route: 'admin-dashboard.html'
+        'formularios': {
+            title: 'Formularios y Avisos',
+            message: 'Accediendo al centro de comunicaciones...',
+            icon: 'bi-file-earmark-text',
+            route: 'formularios-avisos.html'
         },
-        'usuarios': {
-            title: 'Gestión de Usuarios',
-            message: 'Cargando gestión de usuarios...',
+        'asesores': {
+            title: 'Gestión de Asesores',
+            message: 'Cargando panel de asesores...',
             icon: 'bi-people',
-            route: 'admin-users.html'
+            route: 'gestion-asesores.html'
         },
-        'registros': {
-            title: 'Registros del Sistema',
-            message: 'Accediendo a los registros...',
-            icon: 'bi-database',
-            route: 'admin-records.html'
+        'mas': {
+            title: 'Más Opciones',
+            message: 'Cargando opciones adicionales...',
+            icon: 'bi-three-dots',
+            route: 'admin-mas.html'
         },
         'logout': {
             title: 'Cerrar Sesión',
             message: 'Cerrando sesión de administrador...',
             icon: 'bi-box-arrow-right',
-            route: null // Acción especial
+            route: null
         }
     };
     
@@ -732,16 +793,16 @@ class ModernNavigation {
         );
         
         if (action === 'logout') {
-            // Cerrar sesión de Firebase
-            if (window.currentAuth) {
-                window.currentAuth.signOut().then(() => {
-                    window.location.href = 'index.html';
+            // Cerrar sesión
+            if (window.firebaseAuth) {
+                window.firebaseAuth.signOut().then(() => {
+                    window.location.href = '../index.html';
                 });
             } else {
-                window.location.href = 'index.html';
+                window.location.href = '../index.html';
             }
         } else {
-            // Redirigir a la página correspondiente
+            // Redirigir a la página
             setTimeout(() => {
                 window.location.href = actionData.route;
             }, 1000);

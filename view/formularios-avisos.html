@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formularios y Avisos - SICA Admin</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Formularios Styles -->
+    <link href="../css/formularios-avisos.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="page-header mb-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="header-content">
+                            <div class="breadcrumb-path">
+                                <span class="breadcrumb-item">
+                                    <i class="bi bi-house-fill me-1"></i>
+                                    Dashboard
+                                </span>
+                                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                                <span class="breadcrumb-item active">Formularios y Avisos</span>
+                            </div>
+                            <h1 class="page-title">
+                                <i class="bi bi-megaphone-fill me-3"></i>
+                                Centro de Comunicaciones
+                            </h1>
+                            <p class="page-subtitle">
+                                Gestiona formularios, avisos y comunicaciones del sistema SICA
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="header-stats">
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalEnviados">0</span>
+                                <span class="stat-label">Enviados Hoy</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalPendientes">0</span>
+                                <span class="stat-label">Pendientes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Communication Types Grid -->
+            <div class="communication-grid">
+                
+                <!-- WhatsApp Section -->
+                <div class="communication-section">
+                    <div class="section-header">
+                        <div class="section-icon whatsapp-icon">
+                            <i class="bi bi-whatsapp"></i>
+                        </div>
+                        <h3 class="section-title">Avisos por WhatsApp</h3>
+                        <p class="section-subtitle">Comunicación y formularios vía WhatsApp</p>
+                    </div>
+
+                    <div class="options-grid">
+                        <!-- Formularios que antes eran por email -->
+                        <div class="option-card whatsapp-card" data-type="whatsapp" data-form="registro-asesor">
+                            <div class="card-icon">
+                                <i class="bi bi-person-plus"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Registro Asesores</h4>
+                                <p class="card-description">Formulario para nuevos asesores</p>
+                                <div class="card-badge whatsapp-badge">
+                                    <i class="bi bi-whatsapp me-1"></i>
+                                    WhatsApp
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <div class="option-card whatsapp-card" data-type="whatsapp" data-form="actualizacion-datos">
+                            <div class="card-icon">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Actualización de Datos</h4>
+                                <p class="card-description">Solicitud de actualización de información</p>
+                                <div class="card-badge whatsapp-badge">
+                                    <i class="bi bi-whatsapp me-1"></i>
+                                    WhatsApp
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <div class="option-card whatsapp-card" data-type="whatsapp" data-form="becas">
+                            <div class="card-icon">
+                                <i class="bi bi-trophy"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Avisos de Becas</h4>
+                                <p class="card-description">Notificación de entrega de becas</p>
+                                <div class="card-badge whatsapp-badge">
+                                    <i class="bi bi-whatsapp me-1"></i>
+                                    WhatsApp
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <div class="option-card whatsapp-card" data-type="whatsapp" data-form="protocolo-instalacion">
+                            <div class="card-icon">
+                                <i class="bi bi-gear"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Protocolo Instalación</h4>
+                                <p class="card-description">Guía de instalación de programas</p>
+                                <div class="card-badge whatsapp-badge">
+                                    <i class="bi bi-whatsapp me-1"></i>
+                                    WhatsApp
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <div class="option-card whatsapp-card" data-type="whatsapp" data-form="reunion-navidena">
+                            <div class="card-icon">
+                                <i class="bi bi-calendar-heart"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Reunión Navideña</h4>
+                                <p class="card-description">Invitación a evento navideño</p>
+                                <div class="card-badge whatsapp-badge">
+                                    <i class="bi bi-whatsapp me-1"></i>
+                                    WhatsApp
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <div class="option-card whatsapp-card" data-type="whatsapp" data-form="recordatorios">
+                            <div class="card-icon">
+                                <i class="bi bi-alarm"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Recordatorios</h4>
+                                <p class="card-description">Recordatorios importantes</p>
+                                <div class="card-badge whatsapp-badge">
+                                    <i class="bi bi-whatsapp me-1"></i>
+                                    WhatsApp
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Survey Section -->
+                <div class="communication-section">
+                    <div class="section-header">
+                        <div class="section-icon survey-icon">
+                            <i class="bi bi-clipboard-data"></i>
+                        </div>
+                        <h3 class="section-title">Encuestas y Evaluaciones</h3>
+                        <p class="section-subtitle">Recopilación de feedback y evaluaciones</p>
+                    </div>
+
+                    <div class="options-grid">
+                        <div class="option-card survey-card" data-type="survey" data-form="encuesta-usuarios">
+                            <div class="card-icon">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Encuesta Usuarios</h4>
+                                <p class="card-description">Evaluación del servicio para usuarios</p>
+                                <div class="card-badge survey-badge">
+                                    <i class="bi bi-clipboard-data me-1"></i>
+                                    Encuesta
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+
+                        <div class="option-card survey-card" data-type="survey" data-form="encuesta-asesores">
+                            <div class="card-icon">
+                                <i class="bi bi-headset"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4 class="card-title">Encuesta Asesores</h4>
+                                <p class="card-description">Evaluación del desempeño de asesores</p>
+                                <div class="card-badge survey-badge">
+                                    <i class="bi bi-clipboard-data me-1"></i>
+                                    Encuesta
+                                </div>
+                            </div>
+                            <div class="card-action">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-bar">
+                <button class="quick-action-btn" id="historialBtn">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Historial</span>
+                </button>
+                <button class="quick-action-btn" id="plantillasBtn">
+                    <i class="bi bi-file-text"></i>
+                    <span>Plantillas</span>
+                </button>
+                <button class="quick-action-btn" id="estadisticasBtn">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Estadísticas</span>
+                </button>
+                <button class="quick-action-btn" id="configBtn">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Configuración</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal de Configuración de Formulario -->
+    <div class="modal fade" id="formConfigModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="bi bi-gear me-2"></i>
+                        Configurar Formulario
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="config-form" id="configForm">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="enviarBtn">
+                        <i class="bi bi-send me-1"></i>
+                        Enviar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Formularios JS -->
+    <script src="../js/formularios-avisos.js"></script>
+</body>
+</html>
