@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Asesores - SICA Admin</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Gestión Asesores Styles -->
+    <link href="../css/gestion-asesores.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="page-header mb-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="header-content">
+                            <h1 class="page-title">
+                                <i class="bi bi-people-fill me-3"></i>
+                                Centro de Gestión de Asesores
+                            </h1>
+                            <p class="page-subtitle">
+                                Administra el equipo de asesores del sistema SICA
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="header-stats">
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalAsesores">0</span>
+                                <span class="stat-label">Asesores Activos</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="totalPendientes">0</span>
+                                <span class="stat-label">Pendientes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel mb-4">
+                <div class="panel-left">
+                    <button class="control-btn primary-btn" onclick="openEstadisticas()">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Estadísticas</span>
+                    </button>
+                    <button class="control-btn success-btn" onclick="openNuevoAsesor()">
+                        <i class="bi bi-person-plus"></i>
+                        <span>Nuevo Asesor</span>
+                    </button>
+                    <button class="control-btn warning-btn" onclick="openPreRegistros()">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Pre-registros</span>
+                    </button>
+                </div>
+                <div class="panel-right">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Buscar asesor...">
+                        <i class="bi bi-search search-icon"></i>
+                    </div>
+                    <div class="filter-container">
+                        <select id="filterSelect">
+                            <option value="todos">Todos</option>
+                            <option value="activos">Activos</option>
+                            <option value="inactivos">Inactivos</option>
+                            <option value="pendientes">Pendientes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asesores Grid -->
+            <div class="asesores-container">
+                <div class="asesores-grid" id="asesoresGrid">
+                    <!-- Las tarjetas se generarán dinámicamente -->
+                </div>
+                
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando asesores...</p>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+                    <h3>No hay asesores registrados</h3>
+                    <p>Comienza agregando tu primer asesor al sistema</p>
+                    <button class="btn btn-primary" onclick="openNuevoAsesor()">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Agregar Asesor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal de Estadísticas -->
+    <div class="modal fade" id="estadisticasModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Estadísticas de Asesores
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-primary">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="statTotalAsesores">0</h3>
+                                <p>Total Asesores</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-success">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="statActivosAsesores">0</h3>
+                                <p>Activos</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-warning">
+                                <i class="bi bi-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="statPendientesAsesores">0</h3>
+                                <p>Pendientes</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-info">
+                                <i class="bi bi-trophy"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="statBecarios">0</h3>
+                                <p>Becarios</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Asesor (Crear/Editar) - Versión Completa -->
+<!-- Modal de Asesor (Crear/Editar) - Versión Acordeón -->
+<div class="modal fade" id="asesorModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="asesorModalTitle">
+                    <i class="bi bi-person-gear me-2"></i>
+                    Información del Asesor
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="asesorForm">
+                    <!-- Acordeón Principal -->
+                    <div class="accordion accordion-flush" id="asesorAccordion">
+                        
+                        <!-- ====== SECCIÓN 1: FOTO Y DATOS BÁSICOS ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingPersonal">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePersonal" aria-expanded="true" aria-controls="collapsePersonal">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    <strong>Información Personal</strong>
+                                    <span class="badge bg-primary ms-auto me-3">Básico</span>
+                                </button>
+                            </h2>
+                            <div id="collapsePersonal" class="accordion-collapse collapse show" aria-labelledby="headingPersonal" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <!-- Foto -->
+                                        <div class="col-md-3 text-center mb-4">
+                                            <div class="foto-container">
+                                                <img id="fotoPreview" src="../image/default-avatar.png" alt="Foto del asesor">
+                                                <div class="foto-overlay">
+                                                    <i class="bi bi-camera"></i>
+                                                    <span>Cambiar foto</span>
+                                                </div>
+                                                <input type="file" id="fotoInput" accept="image/*" style="display: none;">
+                                            </div>
+                                            <small class="text-muted mt-2 d-block">Tamaño recomendado: 300x300px</small>
+                                        </div>
+                                        
+                                        <!-- Información básica -->
+                                        <div class="col-md-9">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Número de Asesor *</label>
+                                                    <input type="text" class="form-control" id="numeroAsesor" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Nombre Completo *</label>
+                                                    <input type="text" class="form-control" id="nombreAsesor" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">CURP</label>
+                                                    <input type="text" class="form-control" id="curp" maxlength="18" placeholder="ABCD123456HEFGHIJ01">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Fecha de Nacimiento</label>
+                                                    <input type="date" class="form-control" id="fechaNacimiento">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Sexo</label>
+                                                    <select class="form-control" id="sexo">
+                                                        <option value="">Seleccionar...</option>
+                                                        <option value="masculino">Masculino</option>
+                                                        <option value="femenino">Femenino</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Estado Civil</label>
+                                                    <select class="form-control" id="estadoCivil">
+                                                        <option value="">Seleccionar...</option>
+                                                        <option value="soltero">Soltero(a)</option>
+                                                        <option value="casado">Casado(a)</option>
+                                                        <option value="union_libre">Unión Libre</option>
+                                                        <option value="divorciado">Divorciado(a)</option>
+                                                        <option value="viudo">Viudo(a)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 2: INFORMACIÓN DE CONTACTO ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingContacto">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseContacto" aria-expanded="false" aria-controls="collapseContacto">
+                                    <i class="bi bi-telephone me-2"></i>
+                                    <strong>Información de Contacto</strong>
+                                    <span class="badge bg-info ms-auto me-3">Contacto</span>
+                                </button>
+                            </h2>
+                            <div id="collapseContacto" class="accordion-collapse collapse" aria-labelledby="headingContacto" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Email Personal</label>
+                                            <input type="email" class="form-control" id="email" placeholder="correo@ejemplo.com">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Teléfono Celular</label>
+                                            <input type="tel" class="form-control" id="telefono" placeholder="5512345678" maxlength="10">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Teléfono de Casa</label>
+                                            <input type="tel" class="form-control" id="telefonoCasa" placeholder="5512345678" maxlength="10">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Email Institucional</label>
+                                            <input type="email" class="form-control" id="emailInstitucional" placeholder="usuario@unam.mx">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 3: INFORMACIÓN ACADÉMICA ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingAcademico">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAcademico" aria-expanded="false" aria-controls="collapseAcademico">
+                                    <i class="bi bi-mortarboard me-2"></i>
+                                    <strong>Información Académica</strong>
+                                    <span class="badge bg-success ms-auto me-3">Académico</span>
+                                </button>
+                            </h2>
+                            <div id="collapseAcademico" class="accordion-collapse collapse" aria-labelledby="headingAcademico" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Número de Cuenta</label>
+                                            <input type="text" class="form-control" id="numeroCuentaAsesor" placeholder="123456789">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Plantel/Facultad</label>
+                                            <input type="text" class="form-control" id="plantelAsesor" placeholder="Facultad de Química">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Carrera</label>
+                                            <input type="text" class="form-control" id="carreraAsesor" placeholder="Ingeniería Química">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Promedio</label>
+                                            <input type="number" class="form-control" id="promedioAcademico" step="0.01" min="0" max="10" placeholder="9.5">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Semestre Cursando</label>
+                                            <select class="form-control" id="semestreCursando">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="1">1° Semestre</option>
+                                                <option value="2">2° Semestre</option>
+                                                <option value="3">3° Semestre</option>
+                                                <option value="4">4° Semestre</option>
+                                                <option value="5">5° Semestre</option>
+                                                <option value="6">6° Semestre</option>
+                                                <option value="7">7° Semestre</option>
+                                                <option value="8">8° Semestre</option>
+                                                <option value="9">9° Semestre</option>
+                                                <option value="10">10° Semestre</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Semestre Consecutivo</label>
+                                            <input type="number" class="form-control" id="semestreConsecutivo" min="1" max="20">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Materias Cursando</label>
+                                            <input type="number" class="form-control" id="materiasCursando" min="0" max="15">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Método de Inscripción</label>
+                                            <select class="form-control" id="metodoInscripcion">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="comprobante">Comprobante</option>
+                                                <option value="tira_materias">Tira de Materias</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Avance de Carrera</label>
+                                            <input type="text" class="form-control" id="avanceCarrera" placeholder="85%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 4: ADMINISTRACIÓN ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingAdmin">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdmin" aria-expanded="false" aria-controls="collapseAdmin">
+                                    <i class="bi bi-gear me-2"></i>
+                                    <strong>Administración y Asignaciones</strong>
+                                    <span class="badge bg-warning ms-auto me-3">Admin</span>
+                                </button>
+                            </h2>
+                            <div id="collapseAdmin" class="accordion-collapse collapse" aria-labelledby="headingAdmin" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Administrador Responsable</label>
+                                            <input type="text" class="form-control" id="administrador" placeholder="Nombre del administrador">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Procedencia/Referencia</label>
+                                            <input type="text" class="form-control" id="procedencia" placeholder="¿Cómo llegó al programa?">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Locker Asignado</label>
+                                            <input type="number" class="form-control" id="locker" min="1" max="999" placeholder="123">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Bloques Asignados</label>
+                                            <select class="form-control" id="bloques">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="1">Bloque 1</option>
+                                                <option value="2">Bloque 2</option>
+                                                <option value="ambos">Ambos Bloques</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 5: CONTROL DE HORAS ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingHoras">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHoras" aria-expanded="false" aria-controls="collapseHoras">
+                                    <i class="bi bi-clock me-2"></i>
+                                    <strong>Control de Horas</strong>
+                                    <span class="badge bg-secondary ms-auto me-3">Horas</span>
+                                </button>
+                            </h2>
+                            <div id="collapseHoras" class="accordion-collapse collapse" aria-labelledby="headingHoras" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Horas por Semana</label>
+                                            <input type="number" class="form-control" id="horasSemana" value="8" min="1" max="40">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 6: INFORMACIÓN FINANCIERA ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingFinanciero">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFinanciero" aria-expanded="false" aria-controls="collapseFinanciero">
+                                    <i class="bi bi-currency-dollar me-2"></i>
+                                    <strong>Información Financiera</strong>
+                                    <span class="badge bg-success ms-auto me-3">Becas</span>
+                                </button>
+                            </h2>
+                            <div id="collapseFinanciero" class="accordion-collapse collapse" aria-labelledby="headingFinanciero" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">¿Cuenta con Beca?</label>
+                                            <select class="form-control" id="tieneBeca" onchange="toggleTipoBeca()">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="si">Sí</option>
+                                                <option value="no">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6" id="tipoBecaContainer" style="display: none;">
+                                            <label class="form-label">Tipo de Beca</label>
+                                            <select class="form-control" id="tipoBeca">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="excelencia">Excelencia Académica</option>
+                                                <option value="mantencion">Manutención</option>
+                                                <option value="cultural">Cultural</option>
+                                                <option value="indigena">Indígena</option>
+                                                <option value="discapacidad">Discapacidad</option>
+                                                <option value="otra">Otra</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 7: DOCUMENTOS Y VERIFICACIONES ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingDocumentos">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocumentos" aria-expanded="false" aria-controls="collapseDocumentos">
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <strong>Documentos y Verificaciones</strong>
+                                    <span class="badge bg-danger ms-auto me-3">Docs</span>
+                                </button>
+                            </h2>
+                            <div id="collapseDocumentos" class="accordion-collapse collapse" aria-labelledby="headingDocumentos" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <!-- Checkboxes de verificación -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <div class="form-check-custom">
+                                                <input type="checkbox" id="articulo22" class="form-check-input">
+                                                <label class="form-check-label" for="articulo22">Artículo 22</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check-custom">
+                                                <input type="checkbox" id="gafete" class="form-check-input">
+                                                <label class="form-check-label" for="gafete">Gafete</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check-custom">
+                                                <input type="checkbox" id="horarioImpreso" class="form-check-input">
+                                                <label class="form-check-label" for="horarioImpreso">Horario Impreso</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check-custom">
+                                                <input type="checkbox" id="permanencia" class="form-check-input">
+                                                <label class="form-check-label" for="permanencia">Permanencia</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check-custom">
+                                                <input type="checkbox" id="servicioSocial" class="form-check-input">
+                                                <label class="form-check-label" for="servicioSocial">Servicio Social</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Documentos -->
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">INE/Identificación</label>
+                                            <div class="file-upload-area" onclick="cambiarDocumento('ineInput')">
+                                                <i class="bi bi-cloud-upload"></i>
+                                                <span>Subir documento de identidad</span>
+                                                <input type="file" id="ineInput" accept="image/*,application/pdf" style="display: none;">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Historia Académica</label>
+                                            <div class="file-upload-area" onclick="cambiarDocumento('historiaInput')">
+                                                <i class="bi bi-file-pdf"></i>
+                                                <span>Subir historia académica</span>
+                                                <input type="file" id="historiaInput" accept="application/pdf" style="display: none;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 8: OBSERVACIONES ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingObservaciones">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseObservaciones" aria-expanded="false" aria-controls="collapseObservaciones">
+                                    <i class="bi bi-journal-text me-2"></i>
+                                    <strong>Observaciones y Notas</strong>
+                                    <span class="badge bg-dark ms-auto me-3">Notas</span>
+                                </button>
+                            </h2>
+                            <div id="collapseObservaciones" class="accordion-collapse collapse" aria-labelledby="headingObservaciones" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label">Motivación</label>
+                                            <textarea class="form-control" id="motivacion" rows="3" placeholder="¿Por qué quiere ser asesor SICA?" readonly></textarea>
+                                            <small class="text-muted">Este campo proviene del formulario de registro</small>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Experiencia Previa</label>
+                                            <textarea class="form-control" id="experiencia" rows="3" placeholder="Experiencia relevante" readonly></textarea>
+                                            <small class="text-muted">Este campo proviene del formulario de registro</small>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Observaciones del Administrador</label>
+                                            <textarea class="form-control" id="observaciones" rows="4" placeholder="Notas adicionales del administrador..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN 9: METADATOS ====== -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingMetadatos">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMetadatos" aria-expanded="false" aria-controls="collapseMetadatos">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Información del Sistema</strong>
+                                    <span class="badge bg-light text-dark ms-auto me-3">Sistema</span>
+                                </button>
+                            </h2>
+                            <div id="collapseMetadatos" class="accordion-collapse collapse" aria-labelledby="headingMetadatos" data-bs-parent="#asesorAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Estado</label>
+                                            <select class="form-control" id="estadoAsesor">
+                                                <option value="pendiente">Pendiente</option>
+                                                <option value="aprobado">Aprobado</option>
+                                                <option value="activo">Activo</option>
+                                                <option value="inactivo">Inactivo</option>
+                                                <option value="suspendido">Suspendido</option>
+                                                <option value="egresado">Egresado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Tipo de Registro</label>
+                                            <select class="form-control" id="tipoRegistro" disabled>
+                                                <option value="publico">Registro Público</option>
+                                                <option value="admin">Registro Administrativo</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Fecha de Registro</label>
+                                            <input type="text" class="form-control" id="fechaRegistro" readonly>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Registrado por</label>
+                                            <input type="text" class="form-control" id="registradoPor" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- Fin del acordeón -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="guardarAsesorCompleto()">
+                    <i class="bi bi-save me-1"></i>Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para el acordeón personalizado */
+.accordion-button {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.accordion-button:not(.collapsed) {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.accordion-button::after {
+    filter: brightness(0) invert(1);
+}
+
+.accordion-button:not(.collapsed)::after {
+    filter: brightness(0) invert(1);
+}
+
+.accordion-item {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.accordion-body {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+}
+
+.badge {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+}
+
+/* Animaciones suaves para el acordeón */
+.accordion-collapse {
+    transition: all 0.3s ease;
+}
+
+.accordion-button {
+    transition: all 0.3s ease;
+}
+
+.accordion-button:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.accordion-button:not(.collapsed):hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%);
+}
+
+/* Indicadores de progreso visual */
+.accordion-button.completed {
+    border-left: 4px solid #4CAF50;
+}
+
+.accordion-button.incomplete {
+    border-left: 4px solid #ff9800;
+}
+
+.accordion-button.error {
+    border-left: 4px solid #f44336;
+}
+
+/* Mejoras responsivas */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .accordion-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        display: none;
+    }
+    
+    .accordion-body {
+        padding: 1rem;
+    }
+}
+
+/* Efectos de entrada para cada sección */
+.accordion-item {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideInAccordion 0.4s ease forwards;
+}
+
+.accordion-item:nth-child(1) { animation-delay: 0.1s; }
+.accordion-item:nth-child(2) { animation-delay: 0.2s; }
+.accordion-item:nth-child(3) { animation-delay: 0.3s; }
+.accordion-item:nth-child(4) { animation-delay: 0.4s; }
+.accordion-item:nth-child(5) { animation-delay: 0.5s; }
+.accordion-item:nth-child(6) { animation-delay: 0.6s; }
+.accordion-item:nth-child(7) { animation-delay: 0.7s; }
+.accordion-item:nth-child(8) { animation-delay: 0.8s; }
+.accordion-item:nth-child(9) { animation-delay: 0.9s; }
+
+@keyframes slideInAccordion {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+    </div>
+
+    <!-- Modal de Pre-registros -->
+    <div class="modal fade" id="preRegistrosModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Pre-registros Pendientes
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="preRegistrosList">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Gestión Asesores JS -->
+    <script src="../js/gestion-asesores.js"></script>
+</body>
+</html>

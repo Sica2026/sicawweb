@@ -131,7 +131,7 @@ class SICAComponents {
                             <!-- Panel Registro (solo visible en modo usuario) -->
                             <div class="nav-panel registro-panel user-mode" id="registroPanel">
                                 <div class="panel-content">
-                                    <div class="panel-options">
+                                    <div class="panel-options horizontal-layout">
                                         <button class="option-btn" data-sica="1">
                                             <div class="option-content">
                                                 <div class="option-icon">
@@ -171,7 +171,7 @@ class SICAComponents {
                             <!-- Panel Asesor (solo visible en modo usuario) -->
                             <div class="nav-panel asesor-panel user-mode" id="asesorPanel">
                                 <div class="panel-content">
-                                    <div class="panel-options">
+                                    <div class="panel-options horizontal-layout">
                                         <button class="option-btn" data-action="lista">
                                             <div class="option-content">
                                                 <div class="option-icon">
@@ -211,7 +211,7 @@ class SICAComponents {
                             <!-- Panel Administración (solo visible en modo admin) -->
                             <div class="nav-panel admin-panel admin-mode" id="administracionPanel" style="display: none;">
                                 <div class="panel-content">
-                                    <div class="panel-options">
+                                    <div class="panel-options horizontal-layout">
                                         <button class="option-btn" data-admin-action="formularios">
                                             <div class="option-content">
                                                 <div class="option-icon">

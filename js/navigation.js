@@ -198,7 +198,18 @@ class ModernNavigation {
             button.classList.add('pulse');
             
             // Mostrar panel con animación
-            panel.classList.add('active');
+            panel.classList.add('active');  
+            
+            // Forzar layout horizontal para ciertos paneles
+const panelOptions = panel.querySelector('.panel-options');
+if (panelOptions) {
+    panelOptions.style.display = 'flex';
+    panelOptions.style.flexDirection = 'row';
+    panelOptions.style.flexWrap = 'nowrap';
+    panelOptions.style.gap = '1rem';
+    panelOptions.style.overflowX = 'auto';
+    panelOptions.style.width = '100%';
+}
             
             // Animar las opciones con delay
             const options = panel.querySelectorAll('.option-btn');

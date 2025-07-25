@@ -14,11 +14,14 @@ const app = firebase.initializeApp(firebaseConfig);
 // Initialize Firestore
 const db = firebase.firestore();
 
+const storage = firebase.storage();
+
 // ✅ Initialize Authentication
 const auth = firebase.auth();
 
 // Hacer disponible globalmente
 window.firebaseDB = db;
+window.firebaseStorage = storage;
 window.firebaseAuth = auth;
 
 console.log('🔥 Firebase inicializado correctamente (App + Firestore + Auth)');

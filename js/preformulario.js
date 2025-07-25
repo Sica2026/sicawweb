@@ -1,238 +1,50 @@
-// Esperar a que el DOM esté completamente cargado
+// Variables globales para Firebase
+let registroFormDB;
+let registroFormAuth;
+
+// Inicialización
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar funcionalidades
-    initializeApp();
+    const checkFirebase = setInterval(() => {
+    // ✅ AGREGAR firebaseStorage a la verificación:
+    if (window.firebase && window.firebaseDB && window.firebaseAuth && window.firebaseStorage) {
+        clearInterval(checkFirebase);
+        initializeRegistroForm();
+    }
+}, 100);
+    
+    setTimeout(() => {
+        clearInterval(checkFirebase);
+        if (!registroFormDB) {
+            showNotification('Error de conexión con Firebase', 'error');
+        }
+    }, 10000);
 });
 
-/**
- * Función principal para inicializar todas las funcionalidades
- */
-function initializeApp() {
-    updateCurrentTime();
-    setupDarkModeToggle();
-    setupNavigationHandlers();
-    initializeFormManager();
-    
-    // Actualizar la hora cada segundo
-    setInterval(updateCurrentTime, 1000);
-    
-    console.log('SICA - Formulario iniciado correctamente');
-}
-
-/**
- * Actualizar la hora actual en el footer
- */
-function updateCurrentTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('es-MX', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-    
-    const timeElement = document.getElementById('currentTime');
-    if (timeElement) {
-        timeElement.textContent = timeString;
-    }
-}
-
-/**
- * Configurar el toggle de modo oscuro
- */
-function setupDarkModeToggle() {
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    
-    if (!darkModeToggle) {
-        console.error('No se encontró el elemento darkModeToggle');
-        return;
-    }
-    
-    const darkModeIcon = darkModeToggle.querySelector('i');
-    
-    // Verificar si hay una preferencia guardada
-    const savedTheme = localStorage.getItem('sica-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        updateDarkModeIcon(savedTheme === 'dark');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        updateDarkModeIcon(false);
-        localStorage.setItem('sica-theme', 'light');
-    }
-    
-    // Manejar click en el toggle
-    darkModeToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        toggleDarkMode();
-    });
-    
-    function toggleDarkMode() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+async function initializeRegistroForm() {
+    try {
+        registroFormDB = window.firebaseDB;
+        registroFormAuth = window.firebaseAuth;
         
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('sica-theme', newTheme);
-        updateDarkModeIcon(newTheme === 'dark');
+        console.log('📝 Formulario de registro inicializado (modo público)');
         
-        // Agregar efecto de transición suave
-        document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
-        setTimeout(() => {
-            document.body.style.transition = '';
-        }, 300);
-    }
-    
-    function updateDarkModeIcon(isDark) {
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        if (!darkModeToggle) return;
+        await setupRegistroForm();
         
-        const darkModeIcon = darkModeToggle.querySelector('i');
-        if (!darkModeIcon) return;
+    } catch (error) {
+        console.error('❌ Error inicializando formulario:', error);
+        showNotification('Error al cargar la página', 'error');
+    }
+}
+
+async function setupRegistroForm() {
+    try {
+        // Inicializar funcionalidades
+        initializeFormManager();
         
-        const linkElement = darkModeToggle;
-        const textNodes = Array.from(linkElement.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
+        console.log('✅ Formulario de registro público configurado correctamente');
         
-        if (isDark) {
-            darkModeIcon.className = 'bi bi-sun me-2';
-            if (textNodes.length > 0) {
-                textNodes[textNodes.length - 1].textContent = 'Modo Claro';
-            } else {
-                linkElement.appendChild(document.createTextNode('Modo Claro'));
-            }
-        } else {
-            darkModeIcon.className = 'bi bi-moon me-2';
-            if (textNodes.length > 0) {
-                textNodes[textNodes.length - 1].textContent = 'Modo Oscuro';
-            } else {
-                linkElement.appendChild(document.createTextNode('Modo Oscuro'));
-            }
-        }
+    } catch (error) {
+        console.error('❌ Error configurando formulario:', error);
     }
-}
-
-/**
- * Configurar los manejadores de navegación
- */
-function setupNavigationHandlers() {
-    const navLinks = document.querySelectorAll('.nav-link[data-section]');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            handleNavigation(this.getAttribute('data-section'));
-            
-            // Actualizar estado activo
-            navLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-}
-
-/**
- * Manejar la navegación entre secciones
- */
-function handleNavigation(section) {
-    switch(section) {
-        case 'formulario':
-            showNotification('Formulario', 'Sección de formulario activada', 'info');
-            document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
-            break;
-        case 'ocr':
-            showNotification('OCR Automático', 'Sección de extracción OCR activada', 'info');
-            document.querySelector('.ocr-section').scrollIntoView({ behavior: 'smooth' });
-            break;
-        case 'ayuda':
-            showNotification('Ayuda', 'Mostrando información de ayuda...', 'info');
-            showHelpModal();
-            break;
-        default:
-            console.log('Sección no reconocida:', section);
-    }
-}
-
-/**
- * Mostrar modal de ayuda
- */
-function showHelpModal() {
-    const helpContent = `
-        <div class="help-content">
-            <h4>💡 Cómo usar el formulario:</h4>
-            <ul>
-                <li><strong>📁 Carga de archivos:</strong> Arrastra tu Historia Académica en formato PDF, JPG o PNG</li>
-                <li><strong>🤖 Campos automáticos:</strong> Los campos marcados con 🤖 se llenan automáticamente</li>
-                <li><strong>📝 Formulario:</strong> Completa manualmente los campos restantes</li>
-                <li><strong>💾 Guardado:</strong> Haz clic en "Guardar Registro" para enviar</li>
-            </ul>
-            <h4>🔧 Formatos soportados:</h4>
-            <ul>
-                <li>PDF (se convierte automáticamente a imagen)</li>
-                <li>JPG/JPEG (procesamiento directo)</li>
-                <li>PNG (procesamiento directo)</li>
-            </ul>
-        </div>
-    `;
-    
-    showNotification('Ayuda del Sistema', helpContent, 'info', 8000);
-}
-
-/**
- * Mostrar notificación toast
- */
-function showNotification(title, message, type = 'info', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} notification-toast`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 350px;
-        max-width: 500px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        border-radius: 10px;
-        animation: slideIn 0.3s ease-out;
-    `;
-    
-    notification.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-                <strong>${title}</strong><br>
-                <div style="margin-top: 0.5rem;">${message}</div>
-            </div>
-            <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remover después del tiempo especificado
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.animation = 'slideOut 0.3s ease-in';
-            setTimeout(() => notification.remove(), 300);
-        }
-    }, duration);
-}
-
-// Agregar estilos de animación para las notificaciones
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
-
-/**
- * Inicializar el manejador de formularios
- */
-function initializeFormManager() {
-    window.formManager = new AcademicFormManager();
 }
 
 // =============================================================================
@@ -246,8 +58,6 @@ class AcademicFormManager {
         this.progressSection = document.getElementById('progressSection');
         this.progressFill = document.getElementById('progressFill');
         this.progressText = document.getElementById('progressText');
-        this.errorMessage = document.getElementById('errorMessage');
-        this.successMessage = document.getElementById('successMessage');
         this.form = document.getElementById('registroForm');
         
         this.ocrFields = [
@@ -266,32 +76,36 @@ class AcademicFormManager {
 
     initializeEventListeners() {
         // File upload events
-        this.fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleFile(e.target.files[0]);
-            }
-        });
+        if (this.fileInput) {
+            this.fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    this.handleFile(e.target.files[0]);
+                }
+            });
+        }
 
         // Drag and drop events
-        this.uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            this.uploadArea.classList.add('dragover');
-        });
+        if (this.uploadArea) {
+            this.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.uploadArea.classList.add('dragover');
+            });
 
-        this.uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            this.uploadArea.classList.remove('dragover');
-        });
+            this.uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                this.uploadArea.classList.remove('dragover');
+            });
 
-        this.uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            this.uploadArea.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.handleFile(files[0]);
-            }
-        });
+            this.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.handleFile(files[0]);
+                }
+            });
+        }
 
         // Form submission
         this.form.addEventListener('submit', (e) => {
@@ -300,9 +114,12 @@ class AcademicFormManager {
         });
 
         // CURP validation
-        document.getElementById('curp').addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase();
-        });
+        const curpField = document.getElementById('curp');
+        if (curpField) {
+            curpField.addEventListener('input', (e) => {
+                e.target.value = e.target.value.toUpperCase();
+            });
+        }
 
         // Phone number formatting
         ['telefonoCasa', 'telefonoCelular'].forEach(id => {
@@ -321,8 +138,6 @@ class AcademicFormManager {
         if (!this.validateFile(file)) {
             return;
         }
-
-        this.hideMessages();
 
         try {
             await this.processOCR(file);
@@ -344,21 +159,50 @@ class AcademicFormManager {
                 errorMessage = 'No se pudo cargar Tesseract.js. Verifique su conexión a internet.';
             }
             
-            this.showError(errorMessage);
+            showNotification(errorMessage, 'error');
         }
     }
+
+async uploadPDFToStorage(file, asesorId) {
+    try {
+        showNotification('Subiendo documento...', 'info');
+        
+        // ✅ CAMBIAR ESTA LÍNEA:
+        const storage = window.firebaseStorage; // En lugar de firebase.storage()
+        
+        const fileName = `${asesorId}_${Date.now()}_${file.name}`;
+        const ref = storage.ref(`documentos_asesores/${fileName}`);
+        
+        const snapshot = await ref.put(file);
+        const downloadURL = await snapshot.ref.getDownloadURL();
+        
+        console.log('Archivo subido exitosamente:', fileName);
+        
+        return {
+            fileName: fileName,
+            originalName: file.name,
+            downloadURL: downloadURL,
+            uploadDate: firebase.firestore.FieldValue.serverTimestamp(),
+            fileSize: file.size,
+            fileType: file.type
+        };
+    } catch (error) {
+        console.error('Error subiendo archivo:', error);
+        throw new Error('No se pudo subir el documento: ' + error.message);
+    }
+}
 
     validateFile(file) {
         const maxSize = 10 * 1024 * 1024; // 10MB
         const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 
         if (file.size > maxSize) {
-            this.showError('El archivo es demasiado grande. Máximo 10MB.');
+            showNotification('El archivo es demasiado grande. Máximo 10MB.', 'error');
             return false;
         }
 
         if (!allowedTypes.includes(file.type)) {
-            this.showError('Tipo de archivo no soportado. Use PDF, JPG o PNG.');
+            showNotification('Tipo de archivo no soportado. Use PDF, JPG o PNG.', 'error');
             return false;
         }
 
@@ -539,7 +383,7 @@ class AcademicFormManager {
             }
         }
 
-        // 2. Extraer nombre completo - formato: NOMBRE: APELLIDO PATERNO APELLIDO MATERNO NOMBRE(S) AÑO DE INGRESO: XXXX
+        // 2. Extraer nombre completo
         const namePatterns = [
             /NOMBRE:\s*([A-ZÁÉÍÓÚÑ]+)\s+([A-ZÁÉÍÓÚÑ]+)\s+([A-ZÁÉÍÓÚÑ]+)(?:\s+AÑO\s+DE\s+INGRESO|$)/i,
             /NOMBRE:\s*([A-ZÁÉÍÓÚÑ\s,]+?)(?:\s+AÑO\s+DE\s+INGRESO|$)/i
@@ -549,12 +393,10 @@ class AcademicFormManager {
             const match = cleanText.match(pattern);
             if (match) {
                 if (match[3]) {
-                    // Formato con 3 grupos separados
                     data.apellidoPaterno = match[1].trim();
                     data.apellidoMaterno = match[2].trim();
                     data.nombre = match[3].trim();
                 } else {
-                    // Formato con nombres separados por comas o espacios
                     const fullName = match[1].trim();
                     const nameParts = fullName.split(/[,\s]+/).filter(part => part.length > 0);
                     if (nameParts.length >= 3) {
@@ -568,7 +410,7 @@ class AcademicFormManager {
             }
         }
 
-        // 3. Extraer plantel - solo la descripción, sin código ni texto adicional
+        // 3. Extraer plantel
         const plantelPatterns = [
             /PLANTEL:\s*\d+\s*(FACULTAD DE [A-ZÁÉÍÓÚÑ]+)/i,
             /(FACULTAD DE INGENIER[ÍI]A)(?:\s+[A-Z]|$)/i,
@@ -579,7 +421,6 @@ class AcademicFormManager {
             const match = cleanText.match(pattern);
             if (match) {
                 let plantel = match[1].trim();
-                // Limpiar texto adicional que pueda aparecer
                 plantel = plantel.replace(/\s+(CARRERA|AVANCE|PROMEDIO|ASIGNATURAS).*$/i, '');
                 data.plantel = plantel;
                 console.log('Plantel encontrado:', data.plantel);
@@ -587,7 +428,7 @@ class AcademicFormManager {
             }
         }
 
-        // 4. Extraer carrera - formato: CARRERA: 107 PLAN DE ESTUDIOS 2040-ING CIVIL
+        // 4. Extraer carrera
         const carreraPatterns = [
             /CARRERA:\s*\d+\s*PLAN DE ESTUDIOS\s*[\d\-]+\s*([A-ZÁÉÍÓÚÑ\s\.]+?)(?:\s+AVANCE|\s+ASIGNATURAS|\s+PROMEDIO|$)/i,
             /CARRERA:\s*\d+[^-]*-\s*([A-ZÁÉÍÓÚÑ\s\.]+?)(?:\s+AVANCE|\s+ASIGNATURAS|\s+PROMEDIO|$)/i,
@@ -598,15 +439,11 @@ class AcademicFormManager {
             const match = cleanText.match(pattern);
             if (match) {
                 let carrera = match[1].trim();
-                
-                // Limpiar texto adicional específico
                 carrera = carrera.replace(/\s+(AVANCE|ASIGNATURAS|PROMEDIO|OBLICATORIOS|DE|CRÉDITOS).*$/i, '');
                 
-                // Formatear la carrera correctamente
                 if (carrera.match(/ING\.?\s*CIVIL/i)) {
                     carrera = 'ING. CIVIL';
                 } else {
-                    // Para otras carreras, mantener formato original pero limpiar
                     carrera = carrera.replace(/ING\s+/i, 'ING. ');
                 }
                 
@@ -619,7 +456,7 @@ class AcademicFormManager {
         // 5. Extraer promedio
         const promedioPatterns = [
             /PROMEDIO[:\s]*(\d+\.?\d*)/i,
-            /(\d+\.\d{1,2})/g // Buscar números decimales con 1-2 decimales
+            /(\d+\.\d{1,2})/g
         ];
 
         for (let pattern of promedioPatterns) {
@@ -628,7 +465,6 @@ class AcademicFormManager {
                 if (pattern.source.includes('PROMEDIO')) {
                     data.promedio = matches[1];
                 } else {
-                    // Para números decimales, buscar el que parezca un promedio (0-10)
                     for (let match of matches) {
                         const num = parseFloat(match.replace(/[^\d.]/g, ''));
                         if (num >= 0 && num <= 10 && match.includes('.')) {
@@ -644,63 +480,30 @@ class AcademicFormManager {
             }
         }
 
-        // 6. Extraer avance - EXTRAER SOLO EL PORCENTAJE DE LA LÍNEA TOTALES
-        console.log('=== EXTRACCIÓN AVANCE (SOLO PORCENTAJE) ===');
-        
-        // Dividir el texto en líneas para análisis línea por línea
+        // 6. Extraer avance
         const textLines = text.split(/[\r\n]+/).filter(line => line.trim().length > 0);
-        console.log('Total de líneas en el documento:', textLines.length);
         
-        // Buscar la línea que contiene TOTALES
         for (let line of textLines) {
             const lineUpper = line.toUpperCase();
             if (lineUpper.includes('TOTALES')) {
                 console.log('LÍNEA DE TOTALES ENCONTRADA:', line.trim());
                 
-                // Extraer solo el porcentaje de la línea
-                // Buscar patrón: cualquier número seguido de %
                 const porcentajeMatch = line.match(/(\d+\.?\d*)\s*%/);
                 if (porcentajeMatch) {
                     data.avance = porcentajeMatch[1] + '%';
                     console.log('PORCENTAJE EXTRAÍDO:', data.avance);
                 } else {
-                    // Si no encuentra el patrón, mostrar la línea completa para debug
                     data.avance = line.trim();
-                    console.log('No se pudo extraer porcentaje, mostrando línea completa');
                 }
                 break;
             }
         }
         
-        // Si no encuentra TOTALES, buscar cualquier porcentaje
         if (!data.avance) {
-            console.log('No se encontró TOTALES, buscando cualquier porcentaje...');
             const todosLosPorcentajes = text.match(/\d+\.?\d*%/g);
             if (todosLosPorcentajes && todosLosPorcentajes.length > 0) {
-                // Tomar el último porcentaje encontrado
                 data.avance = todosLosPorcentajes[todosLosPorcentajes.length - 1];
-                console.log('Porcentaje fallback seleccionado:', data.avance);
             }
-        }
-        
-        console.log('RESULTADO FINAL avance:', data.avance);
-        console.log('=== FIN EXTRACCIÓN AVANCE ===');
-
-        // Búsquedas específicas de fallback para datos conocidos
-        if (!data.apellidoPaterno && cleanText.includes('RODRIGUEZ')) {
-            data.apellidoPaterno = 'RODRIGUEZ';
-        }
-        if (!data.apellidoMaterno && cleanText.includes('HERNANDEZ')) {
-            data.apellidoMaterno = 'HERNANDEZ';
-        }
-        if (!data.nombre && cleanText.includes('RONALD')) {
-            data.nombre = 'RONALD';
-        }
-        if (!data.plantel && cleanText.includes('FACULTAD DE INGENIERIA')) {
-            data.plantel = 'FACULTAD DE INGENIERIA';
-        }
-        if (!data.carrera && cleanText.includes('ING CIVIL')) {
-            data.carrera = 'ING. CIVIL';
         }
 
         console.log('Datos extraídos finales:', data);
@@ -715,12 +518,10 @@ class AcademicFormManager {
         this.ocrFields.forEach(field => {
             const element = document.getElementById(field);
             if (element) {
-                element.value = ''; // Limpiar campo
-                element.classList.remove('ocr-filled'); // Remover clases anteriores
+                element.value = '';
+                element.classList.remove('ocr-filled');
             }
         });
-        
-        console.log('Campos limpiados, procediendo a llenar...');
         
         // Fill form fields with extracted data
         Object.keys(data).forEach(field => {
@@ -730,24 +531,16 @@ class AcademicFormManager {
                 element.value = data[field];
                 element.classList.add('ocr-filled');
                 
-                // Trigger change event to ensure any validation or formatting is applied
                 element.dispatchEvent(new Event('change', { bubbles: true }));
                 element.dispatchEvent(new Event('input', { bubbles: true }));
                 
-                // Remove the highlight after animation
                 setTimeout(() => {
                     element.classList.remove('ocr-filled');
                 }, 3000);
-            } else if (element) {
-                console.log(`Campo ${field} existe pero no se encontró valor en OCR (valor: "${data[field]}")`);
-            } else {
-                console.log(`Campo ${field} no existe en el formulario`);
             }
         });
 
-        // Show summary of filled fields
         const filledFields = Object.keys(data).filter(key => data[key] && data[key].toString().trim() !== '');
-        console.log('Campos llenados exitosamente:', filledFields);
         
         if (filledFields.length > 0) {
             const fieldNames = {
@@ -762,40 +555,57 @@ class AcademicFormManager {
             };
             
             const filledFieldsText = filledFields.map(field => fieldNames[field]).join(', ');
-            showNotification('OCR Exitoso', `Campos llenados: ${filledFieldsText}`, 'success');
+            showNotification(`OCR Exitoso - Campos llenados: ${filledFieldsText}`, 'success');
         } else {
-            showNotification('OCR Incompleto', 'No se pudieron extraer datos del documento. Verifique que sea una Historia Académica válida.', 'warning');
+            showNotification('OCR Incompleto - No se pudieron extraer datos del documento.', 'warning');
         }
-        
-        console.log('=== FIN LLENADO FORMULARIO ===');
     }
 
-    handleFormSubmit() {
-        if (!this.validateForm()) {
-            return;
-        }
+async handleFormSubmit() {
+    if (!this.validateForm()) {
+        return;
+    }
 
+    // Mostrar loading en el botón
+    const submitBtn = this.form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-2"></i>Guardando...';
+    submitBtn.disabled = true;
+
+    try {
         const formData = new FormData(this.form);
         const data = Object.fromEntries(formData.entries());
         
-        // Add checkbox values (only beca-related checkboxes now)
-        const checkboxes = this.form.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            data[checkbox.name] = checkbox.checked;
-        });
+        // ✅ CAMBIAR: Datos para modo público
+        data.fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
+        data.registradoPor = 'registro_publico'; // ✅ Sin requerir usuario
+        data.activo = true;
+        data.estado = 'pendiente';
+        data.tipoRegistro = 'publico'; // ✅ Identificar como registro público
 
-        console.log('Datos del formulario:', data);
+        // ✅ AGREGAR después de crear `data`:
+        // Si hay archivo cargado, subirlo
+        if (this.fileInput && this.fileInput.files.length > 0) {
+            const file = this.fileInput.files[0];
+            data.documento = await this.uploadPDFToStorage(file, data.id);
+        }
+
+        console.log('Datos del asesor a guardar (público):', data);
         
-        // Here you would normally send the data to your server
-        showNotification('Formulario Enviado', '¡Formulario enviado exitosamente! Los datos han sido guardados.', 'success');
+        // Guardar en Firestore
+        await registroFormDB.collection('asesores').add(data);
         
-        // Optional: Reset form after successful submission
-        setTimeout(() => {
-            if (confirm('¿Desea limpiar el formulario para un nuevo registro?')) {
-                this.resetForm();
-            }
-        }, 2000);
+        showSuccessModal();
+        
+    } catch (error) {
+        console.error('Error guardando registro:', error);
+        showNotification('Error al enviar el registro. Inténtelo nuevamente.', 'error');
+    } finally {
+        // Restaurar botón
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
+}
 
     validateForm() {
         const requiredFields = this.form.querySelectorAll('[required]');
@@ -803,23 +613,14 @@ class AcademicFormManager {
         let firstInvalidField = null;
 
         requiredFields.forEach(field => {
-            if (!field.value.trim() && field.type !== 'checkbox') {
-                field.classList.add('error');
-                isValid = false;
-                if (!firstInvalidField) {
-                    firstInvalidField = field;
-                }
-            } else if (field.type === 'checkbox' && !field.checked) {
-                field.parentElement.classList.add('error');
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
                 isValid = false;
                 if (!firstInvalidField) {
                     firstInvalidField = field;
                 }
             } else {
-                field.classList.remove('error');
-                if (field.type === 'checkbox') {
-                    field.parentElement.classList.remove('error');
-                }
+                field.classList.remove('is-invalid');
             }
         });
 
@@ -827,7 +628,7 @@ class AcademicFormManager {
         const curp = document.getElementById('curp');
         const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z][0-9]$/;
         if (curp.value && !curpPattern.test(curp.value)) {
-            curp.classList.add('error');
+            curp.classList.add('is-invalid');
             isValid = false;
             if (!firstInvalidField) {
                 firstInvalidField = curp;
@@ -838,7 +639,7 @@ class AcademicFormManager {
         const email = document.getElementById('correoElectronico');
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (email.value && !emailPattern.test(email.value)) {
-            email.classList.add('error');
+            email.classList.add('is-invalid');
             isValid = false;
             if (!firstInvalidField) {
                 firstInvalidField = email;
@@ -849,7 +650,7 @@ class AcademicFormManager {
         ['telefonoCasa', 'telefonoCelular'].forEach(id => {
             const phone = document.getElementById(id);
             if (phone && phone.value && (phone.value.length !== 10 || !/^\d+$/.test(phone.value))) {
-                phone.classList.add('error');
+                phone.classList.add('is-invalid');
                 isValid = false;
                 if (!firstInvalidField) {
                     firstInvalidField = phone;
@@ -858,7 +659,7 @@ class AcademicFormManager {
         });
 
         if (!isValid) {
-            showNotification('Validación', 'Por favor, complete todos los campos requeridos correctamente.', 'warning');
+            showNotification('Por favor, complete todos los campos requeridos correctamente.', 'warning');
             if (firstInvalidField) {
                 firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 firstInvalidField.focus();
@@ -868,66 +669,53 @@ class AcademicFormManager {
         return isValid;
     }
 
+    generateUniqueId() {
+        return 'asesor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
     showProgress(message) {
-        this.progressText.textContent = message;
-        this.progressSection.style.display = 'block';
-        this.progressFill.style.width = '0%';
+        if (this.progressText && this.progressSection && this.progressFill) {
+            this.progressText.textContent = message;
+            this.progressSection.style.display = 'block';
+            this.progressFill.style.width = '0%';
+        }
     }
 
     updateProgress(percent, message) {
-        this.progressFill.style.width = percent + '%';
-        this.progressText.textContent = message;
+        if (this.progressFill && this.progressText) {
+            this.progressFill.style.width = percent + '%';
+            this.progressText.textContent = message;
+        }
     }
 
     hideProgress() {
-        this.progressSection.style.display = 'none';
+        if (this.progressSection) {
+            this.progressSection.style.display = 'none';
+        }
     }
 
-    showError(message) {
-        this.errorMessage.textContent = message;
-        this.errorMessage.style.display = 'block';
-        this.errorMessage.scrollIntoView({ behavior: 'smooth' });
-        
-        setTimeout(() => {
-            this.hideMessages();
-        }, 5000);
-    }
-
-    showSuccess(message) {
-        this.successMessage.textContent = message;
-        this.successMessage.style.display = 'block';
-        this.successMessage.scrollIntoView({ behavior: 'smooth' });
-        
-        setTimeout(() => {
-            this.hideMessages();
-        }, 5000);
-    }
-
-    hideMessages() {
-        this.errorMessage.style.display = 'none';
-        this.successMessage.style.display = 'none';
-    }
-
-    resetForm() {
-        this.form.reset();
-        
-        // Remove any error classes
-        const errorFields = this.form.querySelectorAll('.error');
-        errorFields.forEach(field => {
-            field.classList.remove('error');
-        });
-        
-        // Hide messages
-        this.hideMessages();
-        
-        // Reset file input
+resetForm() {
+    this.form.reset();
+    
+    // Remove validation classes
+    const invalidFields = this.form.querySelectorAll('.is-invalid');
+    invalidFields.forEach(field => {
+        field.classList.remove('is-invalid');
+    });
+    
+    // Reset file input
+    if (this.fileInput) {
         this.fileInput.value = '';
-        
-        showNotification('Formulario', 'Formulario limpiado exitosamente.', 'info');
-    }
+    }  
+    showNotification('Formulario limpiado exitosamente.', 'info');
+}
 }
 
-// Global functions for HTML onclick events
+// Funciones globales para HTML onclick events
+function initializeFormManager() {
+    window.academicFormManager = new AcademicFormManager();
+}
+
 function toggleBecaType() {
     const tieneBeca = document.getElementById('tieneBeca').value;
     const tipoBecaGroup = document.getElementById('tipoBecaGroup');
@@ -944,69 +732,266 @@ function toggleBecaType() {
 }
 
 function resetForm() {
-    if (window.formManager) {
+    if (window.academicFormManager) {
         if (confirm('¿Está seguro de que desea limpiar todo el formulario?')) {
-            window.formManager.resetForm();
+            window.academicFormManager.resetForm();
         }
     }
 }
 
-/**
- * Utilidades adicionales
- */
-const Utils = {
-    formatDate: function(date) {
-        return new Intl.DateTimeFormat('es-MX', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }).format(date);
-    },
-    
-    validateEmail: function(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
-    },
-    
-    debounce: function(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    },
-    
-    smoothScrollTo: function(element) {
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-    },
-    
-    generateId: function() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+function toggleOCRSection() {
+    const ocrSection = document.getElementById('ocrSection');
+    if (ocrSection.style.display === 'none') {
+        ocrSection.style.display = 'block';
+        showNotification('Sección OCR activada', 'info');
+    } else {
+        ocrSection.style.display = 'none';
     }
-};
+}
 
-/**
- * Manejo de errores global
- */
-window.addEventListener('error', function(e) {
-    console.error('Error en la aplicación:', e.error);
-});
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container') || document.body;
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        min-width: 350px;
+        max-width: 400px;
+        background: ${getNotificationColor(type)};
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.2);
+        transform: translateX(100%) scale(0.8);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="font-size: 1.5rem;">
+                <i class="bi ${getNotificationIcon(type)}"></i>
+            </div>
+            <div style="flex: 1;">
+                ${message}
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: none; border: none; color: white; font-size: 1.2rem; 
+                cursor: pointer; opacity: 0.7; padding: 0; line-height: 1;
+            ">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Animar entrada
+    requestAnimationFrame(() => {
+        notification.style.transform = 'translateX(0) scale(1)';
+        notification.style.opacity = '1';
+    });
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.transform = 'translateX(100%) scale(0.8)';
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 400);
+        }
+    }, 5000);
+}
 
-window.addEventListener('unhandledrejection', function(e) {
-    console.error('Promise rechazada no manejada:', e.reason);
-    e.preventDefault();
-});
+function showSuccessModal() {
 
-// Exportar funciones para uso global si es necesario
-window.SICAApp = {
-    Utils,
-    showNotification,
-    AcademicFormManager
-};
+    // Agregar al inicio de showSuccessModal()
+// Efecto de confeti simple
+function createConfetti() {
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.style.cssText = `
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: ${['#10B981', '#059669', '#34D399', '#6EE7B7'][Math.floor(Math.random() * 4)]};
+            top: -10px;
+            left: ${Math.random() * 100}%;
+            z-index: 10001;
+            animation: confettiFall 3s linear forwards;
+        `;
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => confetti.remove(), 3000);
+    }
+}
+
+// CSS para la animación
+const confettiStyle = document.createElement('style');
+confettiStyle.textContent = `
+    @keyframes confettiFall {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(confettiStyle);
+
+createConfetti(); // Llamar antes de crear el modal
+
+
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    `;
+    
+    // Crear modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        text-align: center;
+        max-width: 500px;
+        width: 90%;
+        transform: scale(0.8);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+    
+    modal.innerHTML = `
+        <div style="font-size: 4rem; margin-bottom: 1.5rem;">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem;">
+            ¡Registro Enviado Exitosamente!
+        </h2>
+        <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;">
+            Su solicitud será revisada por el equipo SICA.<br>
+            Le contactaremos por correo electrónico.
+        </p>
+        <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
+            <p style="margin: 0; font-size: 1rem;">
+                <i class="bi bi-clock me-2"></i>
+                Redirigiendo al inicio en <span id="countdown">3</span> segundos...
+            </p>
+        </div>
+        <button onclick="redirectToHome()" style="
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        " onmouseover="this.style.background='white'; this.style.color='#10B981';" 
+           onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.color='white';">
+            Ir al Inicio Ahora
+        </button>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Animar entrada
+    requestAnimationFrame(() => {
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+    });
+    
+    // Countdown y redirección automática
+    let seconds = 3;
+    const countdownElement = modal.querySelector('#countdown');
+    
+    const countdownInterval = setInterval(() => {
+        seconds--;
+        if (countdownElement) {
+            countdownElement.textContent = seconds;
+        }
+        
+        if (seconds <= 0) {
+            clearInterval(countdownInterval);
+            redirectToHome();
+        }
+    }, 1000);
+    
+    // Función para redireccionar
+    window.redirectToHome = function() {
+        clearInterval(countdownInterval);
+        
+        // Animar salida
+        modal.style.transform = 'scale(0.8)';
+        modal.style.opacity = '0';
+        
+        setTimeout(() => {
+            // Determinar la ruta correcta
+            const currentPath = window.location.pathname;
+            const isInViewFolder = currentPath.includes('/view/');
+            
+            if (isInViewFolder) {
+                window.location.href = '../index.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        }, 400);
+    };
+}
+
+function getNotificationColor(type) {
+    const colors = {
+        'success': 'linear-gradient(135deg, #10B981, #059669)',
+        'info': 'linear-gradient(135deg, #3B82F6, #1D4ED8)', 
+        'warning': 'linear-gradient(135deg, #F59E0B, #D97706)',
+        'error': 'linear-gradient(135deg, #EF4444, #DC2626)'
+    };
+    return colors[type] || colors['info'];
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'bi-check-circle-fill';
+        case 'error': return 'bi-exclamation-triangle-fill';
+        case 'warning': return 'bi-exclamation-triangle-fill';
+        case 'info': return 'bi-info-circle-fill';
+        default: return 'bi-info-circle-fill';
+    }
+}
+
+// Agregar CSS para animación de spinner
+const style = document.createElement('style');
+style.textContent = `
+    .spinning {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .is-invalid {
+        border-color: #dc3545 !important;
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+`;
+document.head.appendChild(style);

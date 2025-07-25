@@ -4,13 +4,16 @@ let formulariosAuth;
 // Configuraciones de formularios
 const formConfigs = {
     'registro-asesor': {
-        title: 'Registro de Nuevo Asesor',
-        type: 'whatsapp',
-        icon: 'bi-person-plus',
-        fields: [
-            { name: 'numero', label: 'Número de WhatsApp', type: 'number', placeholder: 'Número de WhatsApp', required: true },
-        ]
+    title: 'Convocatoria Registro de Asesor',
+    type: 'whatsapp',
+    icon: 'bi-person-plus',
+    fields: [
+        { name: 'numeros', label: 'Números de WhatsApp', type: 'textarea', placeholder: 'Un número por línea (ej: 5551234567)', required: true },
+        { name: 'fecha_limite', label: 'Fecha Límite de Registro', type: 'date', required: true },
+        { name: 'mensaje_adicional', label: 'Mensaje Adicional (opcional)', type: 'textarea', rows: 3, placeholder: 'Información extra sobre la convocatoria...' }
+    ]
     },
+
     'actualizacion-datos': {
         title: 'Actualización de Datos',
         type: 'email',
@@ -418,16 +421,73 @@ async function processEmailForm(formKey, formData) {
 }
 
 async function processWhatsAppForm(formKey, formData) {
-    // Simular procesamiento de WhatsApp
-    console.log('📱 Procesando formulario de WhatsApp:', formKey, formData);
+    const numeros = formData.numeros.split('\n').filter(n => n.trim());
     
-    // Aquí integrarías con WhatsApp Business API
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // ✅ MENSAJE ESPECÍFICO PARA REGISTRO DE ASESORES
+    if (formKey === 'registro-asesor') {
+        const mensaje = `🎓 *CONVOCATORIA ASESOR SICA*
+
+¡Hola! Te invitamos a formar parte del equipo de asesores del Sistema Integral de Cómputo para Alumnos (SICA) de la Facultad de Química, UNAM.
+
+📋 *COMPLETA TU REGISTRO:*
+${formData.mensaje_adicional || 'Accede al formulario y llena todos tus datos académicos y personales.'}
+
+🔗 *ENLACE DE REGISTRO:*
+https://sica-a5c24.web.app/view/preformulario.html
+
+📝 *REQUISITOS:*
+- Ser estudiante activo de la UNAM
+- Promedio mínimo de 8.5
+- Disponibilidad de tiempo
+- Historia académica actualizada
+
+⏰ *FECHA LÍMITE:*
+${formData.fecha_limite || 'Por definir'}
+
+📧 *DUDAS:* Responde a este mensaje
+
+¡Esperamos tu participación!
+
+*Equipo SICA - Facultad de Química, UNAM* 🧪⚗️`;
+
+        // Enviar a cada número
+        numeros.forEach((numero, index) => {
+            const numeroLimpio = numero.replace(/\D/g, '');
+            const url = `https://wa.me/52${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
+            
+            setTimeout(() => {
+                window.open(url, '_blank');
+            }, index * 1000);
+        });
+        
+        return {
+            type: 'whatsapp',
+            recipients: numeros.length,
+            message: 'Convocatoria de registro enviada',
+            status: 'enviado'
+        };
+    }
+    
+    // ✅ PARA OTROS TIPOS DE FORMULARIOS (mantener lógica original)
+    let mensaje = formData.mensaje || formData.titulo || 'Mensaje desde SICA';
+    
+    if (formData.mensaje_adicional) {
+        mensaje += '\n\n' + formData.mensaje_adicional;
+    }
+    
+    numeros.forEach((numero, index) => {
+        const numeroLimpio = numero.replace(/\D/g, '');
+        const url = `https://wa.me/52${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
+        
+        setTimeout(() => {
+            window.open(url, '_blank');
+        }, index * 1000);
+    });
     
     return {
         type: 'whatsapp',
-        recipients: formData.numeros?.split('\n').filter(n => n.trim()).length || 1,
-        message: formData.mensaje || formData.titulo,
+        recipients: numeros.length,
+        message: mensaje,
         status: 'enviado'
     };
 }

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Más Opciones - Panel Administrativo</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/admin-mas.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Hero Section -->
+            <div class="hero-section mb-5">
+                <div class="hero-content">
+                    <div class="hero-icon">
+                        <i class="bi bi-grid-3x3-gap-fill"></i>
+                    </div>
+                    <h1 class="hero-title">Panel de Administración Avanzado</h1>
+                    <p class="hero-subtitle">Accede a herramientas especializadas y funciones administrativas del sistema SICA</p>
+                </div>
+                <div class="hero-decoration">
+                    <div class="decoration-circle"></div>
+                    <div class="decoration-circle"></div>
+                    <div class="decoration-circle"></div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="quick-stats mb-5">
+                <div class="row g-4">
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-primary">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalUsuarios">--</h3>
+                                <p>Usuarios Activos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-success">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="horariosActivos">--</h3>
+                                <p>Horarios Configurados</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-warning">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="reportesGenerados">--</h3>
+                                <p>Reportes del Mes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-info">
+                                <i class="bi bi-heart-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="servicioSocial">--</h3>
+                                <p>Servicio Social</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Options Grid -->
+            <div class="options-grid">
+                <div class="row g-4">
+                    <!-- Reportes -->
+                    <div class="col-xl-6 col-lg-6 col-md-6">
+                        <div class="option-card reportes-card" data-action="reportes">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="bi bi-bar-chart-fill"></i>
+                                </div>
+                                <h3>Reportes y Estadísticas</h3>
+                                <p>Genera reportes detallados del sistema</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="feature-list">
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Reportes de asistencia</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Estadísticas de uso</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Análisis de rendimiento</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Exportación de datos</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn-action">
+                                        <span>Acceder</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Organigrama -->
+                    <div class="col-xl-6 col-lg-6 col-md-6">
+                        <div class="option-card organigrama-card" data-action="organigrama">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="bi bi-diagram-3-fill"></i>
+                                </div>
+                                <h3>Organigrama</h3>
+                                <p>Gestiona la estructura organizacional</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="feature-list">
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Estructura jerárquica</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Roles y permisos</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Asignación de responsabilidades</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Vista interactiva</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn-action">
+                                        <span>Acceder</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gestión de Horarios -->
+                    <div class="col-xl-6 col-lg-6 col-md-6">
+                        <div class="option-card horarios-card" data-action="horarios">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="bi bi-calendar-week-fill"></i>
+                                </div>
+                                <h3>Gestión de Horarios</h3>
+                                <p>Configura horarios de asesores</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="feature-list">
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Horarios por asesor</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Múltiples tipos de horario</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Gestión por salas</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Control de conflictos</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn-action">
+                                        <span>Acceder</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-badge">
+                                <span>Nuevo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Servicio Social -->
+                    <div class="col-xl-6 col-lg-6 col-md-6">
+                        <div class="option-card servicio-card" data-action="servicio">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="bi bi-heart-fill"></i>
+                                </div>
+                                <h3>Servicio Social</h3>
+                                <p>Administra programas de servicio social</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="feature-list">
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Registro de prestadores</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Seguimiento de actividades</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Evaluación de desempeño</span>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Certificación de horas</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn-action">
+                                        <span>Acceder</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions mt-5">
+                <div class="actions-header">
+                    <h4>Acciones Rápidas</h4>
+                    <p>Funciones de uso frecuente</p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="quick-action-card" data-quick-action="backup">
+                            <div class="action-icon">
+                                <i class="bi bi-cloud-arrow-down"></i>
+                            </div>
+                            <span>Respaldo de Datos</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="quick-action-card" data-quick-action="maintenance">
+                            <div class="action-icon">
+                                <i class="bi bi-tools"></i>
+                            </div>
+                            <span>Mantenimiento</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="quick-action-card" data-quick-action="logs">
+                            <div class="action-icon">
+                                <i class="bi bi-journal-text"></i>
+                            </div>
+                            <span>Logs del Sistema</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="quick-action-card" data-quick-action="settings">
+                            <div class="action-icon">
+                                <i class="bi bi-gear-fill"></i>
+                            </div>
+                            <span>Configuración</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="loading-spinner"></div>
+                    <h5 class="mt-3">Cargando...</h5>
+                    <p id="loadingMessage">Iniciando aplicación</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/admin-mas.js"></script>
+</body>
+</html>
