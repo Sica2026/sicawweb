@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Pase de Lista - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/pase-lista.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb" class="breadcrumb-nav">
+            <div class="container">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="#">Asesor</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Pase de Lista</li>
+                </ol>
+            </div>
+        </nav>
+
+        <!-- Success/Welcome Screen -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <div class="welcome-content">
+                <div class="welcome-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <h2 class="welcome-title">¡Bienvenido a SICA!</h2>
+                <p class="welcome-name" id="welcomeName"></p>
+                <div class="welcome-time" id="welcomeTime"></div>
+            </div>
+        </div>
+
+        <!-- Exit Screen -->
+        <div id="exitScreen" class="exit-screen">
+            <div class="exit-content">
+                <div class="exit-icon">
+                    <i class="bi bi-hand-thumbs-up-fill"></i>
+                </div>
+                <h2 class="exit-title">¡Gracias por tu servicio!</h2>
+                <p class="exit-name" id="exitName"></p>
+                <div class="exit-time" id="exitTime"></div>
+            </div>
+        </div>
+
+        <!-- Main Interface -->
+        <div class="container-fluid py-4">
+            <!-- Control Panel -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-lg-10">
+                    <div class="control-panel">
+                        <div class="panel-header">
+                            <h1 class="panel-title">
+                                <i class="bi bi-person-check-fill me-3"></i>
+                                Pase de Lista SICA
+                            </h1>
+                            <button class="btn-complete-records" id="completeRecordsBtn">
+                                <i class="bi bi-camera-fill me-2"></i>
+                                Completar Registros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Interface Grid -->
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="interface-grid">
+                        <!-- Facial Recognition Section -->
+                        <div class="interface-card facial-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="bi bi-camera-video-fill"></i>
+                                </div>
+                                <h3 class="card-title">Reconocimiento Facial</h3>
+                                <div class="card-status" id="facialStatus">
+                                    <span class="status-indicator"></span>
+                                    <span class="status-text">Desactivado</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="camera-container">
+                                    <video id="cameraVideo" class="camera-video" autoplay muted></video>
+                                    <div class="camera-overlay">
+                                        <div class="scan-frame"></div>
+                                        <div class="scan-line"></div>
+                                    </div>
+                                    <div class="camera-placeholder" id="cameraPlaceholder">
+                                        <i class="bi bi-camera-video-off"></i>
+                                        <p>Cámara desactivada</p>
+                                    </div>
+                                </div>
+                                <div class="camera-controls">
+                                    <button class="btn-primary" id="toggleCameraBtn">
+                                        <i class="bi bi-camera-video"></i>
+                                        <span>Activar Cámara</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Entry Section -->
+                        <div class="interface-card manual-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="bi bi-keyboard-fill"></i>
+                                </div>
+                                <h3 class="card-title">Registro Manual</h3>
+                                <div class="card-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <span>Ingresa tu número de cuenta</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <form id="manualEntryForm" class="manual-form">
+                                    <div class="input-group">
+                                        <div class="input-container">
+                                            <input 
+                                                type="text" 
+                                                id="numeroCuentaInput" 
+                                                class="form-control-modern" 
+                                                placeholder="Número de cuenta"
+                                                maxlength="9"
+                                                pattern="[0-9]{9}"
+                                                autocomplete="off"
+                                                required
+                                            >
+                                            <label class="floating-label">Número de Cuenta</label>
+                                            <div class="input-feedback" id="inputFeedback"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="button" class="btn-action btn-entry" id="entryBtn">
+                                            <i class="bi bi-box-arrow-in-right"></i>
+                                            <span>Registrar Entrada</span>
+                                        </button>
+                                        <button type="button" class="btn-action btn-exit" id="exitBtn">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                            <span>Registrar Salida</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="row justify-content-center mt-4">
+                <div class="col-lg-10">
+                    <div class="activity-log">
+                        <div class="log-header">
+                            <h4 class="log-title">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Actividad Reciente
+                            </h4>
+                            <div class="log-stats">
+                                <span class="stat-item">
+                                    <i class="bi bi-person-plus"></i>
+                                    <span id="entryCount">0</span> Entradas
+                                </span>
+                                <span class="stat-item">
+                                    <i class="bi bi-person-dash"></i>
+                                    <span id="exitCount">0</span> Salidas
+                                </span>
+                            </div>
+                        </div>
+                        <div class="log-content" id="activityLog">
+                            <div class="log-empty">
+                                <i class="bi bi-inbox"></i>
+                                <p>No hay actividad registrada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Complete Records Modal -->
+    <div class="modal fade" id="completeRecordsModal" tabindex="-1" aria-labelledby="completeRecordsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-modern">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="completeRecordsModalLabel">
+                        <i class="bi bi-camera-fill me-2"></i>
+                        Completar Registros Faciales
+                    </h5>
+                    <button type="button" class="btn-close-modern" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="capture-interface">
+                        <div class="capture-step" id="step1">
+                            <h6 class="step-title">Paso 1: Ingresar Número de Cuenta</h6>
+                            <div class="input-container">
+                                <input 
+                                    type="text" 
+                                    id="modalNumeroCuenta" 
+                                    class="form-control-modern" 
+                                    placeholder="Número de cuenta del asesor"
+                                    maxlength="9"
+                                    pattern="[0-9]{9}"
+                                >
+                                <label class="floating-label">Número de Cuenta</label>
+                            </div>
+                            <button class="btn btn-primary mt-3" id="searchAsesorBtn">
+                                <i class="bi bi-search"></i>
+                                Buscar Asesor
+                            </button>
+                        </div>
+
+                        <div class="capture-step" id="step2" style="display: none;">
+                            <h6 class="step-title">Paso 2: Información del Asesor</h6>
+                            <div class="asesor-info" id="asesorInfo">
+                                <!-- Info will be populated here -->
+                            </div>
+                        </div>
+
+                        <div class="capture-step" id="step3" style="display: none;">
+                            <h6 class="step-title">Paso 3: Capturar Rostro</h6>
+                            <div class="capture-container">
+                                <video id="modalCameraVideo" class="capture-video" autoplay muted></video>
+                                <canvas id="captureCanvas" style="display: none;"></canvas>
+                                <div class="capture-overlay">
+                                    <div class="capture-frame"></div>
+                                </div>
+                            </div>
+                            <div class="capture-controls">
+                                <button class="btn btn-success" id="captureBtn">
+                                    <i class="bi bi-camera"></i>
+                                    Capturar Rostro
+                                </button>
+                                <button class="btn btn-secondary" id="retakeBtn" style="display: none;">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    Tomar Otra
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="capture-step" id="step4" style="display: none;">
+                            <h6 class="step-title">Paso 4: Confirmar y Guardar</h6>
+                            <div class="preview-container">
+                                <img id="capturePreview" class="capture-preview" alt="Captura del rostro">
+                            </div>
+                            <div class="confirmation-controls">
+                                <button class="btn btn-success" id="saveRecordBtn">
+                                    <i class="bi bi-check-circle"></i>
+                                    Guardar Registro
+                                </button>
+                                <button class="btn btn-outline-secondary" id="startOverBtn">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                    Comenzar de Nuevo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Face Recognition Library -->
+    <script src="../js/face-recognition.js"></script>
+    <!-- Page Specific JS -->
+    <script src="../js/pase-lista.js"></script>
+    <script src="../js/facial-capture.js"></script>
+</body>
+</html>
