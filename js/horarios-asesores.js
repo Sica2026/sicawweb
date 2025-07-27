@@ -240,7 +240,8 @@ class HorariosAsesorManager {
                 </div>
                 <div class="asesor-info">
                     <h6>${asesor.nombre}</h6>
-                    <p>${asesor.email || 'Sin email'}</p>
+                    <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
+                    <small class="text-muted">${asesor.email || 'Sin email'}</small>
                 </div>
             </div>
         `).join('');
@@ -254,7 +255,8 @@ class HorariosAsesorManager {
     filterAsesores(searchTerm) {
         const filtered = this.asesores.filter(asesor => 
             asesor.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (asesor.email && asesor.email.toLowerCase().includes(searchTerm.toLowerCase()))
+            (asesor.email && asesor.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (asesor.numeroCuenta && asesor.numeroCuenta.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         this.renderAsesores(filtered);
     }
@@ -542,6 +544,7 @@ class HorariosAsesorManager {
             tipoBloque: this.config.tipoBloque,
             asesorId: this.config.asesor.id,
             asesorNombre: this.config.asesor.nombre,
+            numeroCuenta: this.config.asesor.numeroCuenta || null, // NUEVO CAMPO
             sala: this.config.sala,
             posicion: this.config.posicion,
             dias: diasSeleccionados,
@@ -703,6 +706,10 @@ class HorariosAsesorManager {
                 <span class="summary-value">${this.config.asesor.nombre}</span>
             </div>
             <div class="summary-item">
+                <span class="summary-label">Número de Cuenta:</span>
+                <span class="summary-value">${this.config.asesor.numeroCuenta || 'No especificado'}</span>
+            </div>
+            <div class="summary-item">
                 <span class="summary-label">Tipo/Bloque:</span>
                 <span class="summary-value">${this.config.tipoBloque}</span>
             </div>
@@ -749,6 +756,7 @@ class HorariosAsesorManager {
                     tipoBloque: horario.tipoBloque,
                     asesorId: horario.asesorId,
                     asesorNombre: horario.asesorNombre,
+                    numeroCuenta: horario.numeroCuenta, // NUEVO CAMPO
                     sala: horario.sala,
                     posicion: horario.posicion,
                     dias: horario.dias,
@@ -868,7 +876,8 @@ class HorariosAsesorManager {
                 </div>
                 <div class="missing-advisor-info">
                     <h6>${asesor.nombre}</h6>
-                    <p>${asesor.email || 'Sin email'}</p>
+                    <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
+                    <small class="text-muted">${asesor.email || 'Sin email'}</small>
                 </div>
             </div>
         `).join('');

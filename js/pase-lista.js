@@ -135,8 +135,8 @@ class PaseLista {
                 metodo: 'manual'
             };
 
-            // Save to Firestore
-            await this.db.collection('registros').add(registro);
+            // Save to Firestore in registroasistencia collection
+            await this.db.collection('registroasistencia').add(registro);
 
             // Show success
             this.showSuccessScreen(nombreAsesor, tipo);
@@ -270,8 +270,8 @@ class PaseLista {
                 confidence: recognitionResult.confidence
             };
 
-            // Save to Firestore
-            await this.db.collection('registros').add(registro);
+            // Save to Firestore in registroasistencia collection
+            await this.db.collection('registroasistencia').add(registro);
 
             // Show success
             this.showSuccessScreen(nombreAsesor, tipo);
@@ -303,7 +303,7 @@ class PaseLista {
     async determineEntryOrExit(numeroCuenta) {
         try {
             const today = new Date().toDateString();
-            const registros = await this.db.collection('registros')
+            const registros = await this.db.collection('registroasistencia')
                 .where('numeroCuenta', '==', numeroCuenta)
                 .where('fecha', '==', today)
                 .orderBy('timestamp', 'desc')
@@ -401,7 +401,7 @@ class PaseLista {
     async loadTodaysActivity() {
         try {
             const today = new Date().toDateString();
-            const snapshot = await this.db.collection('registros')
+            const snapshot = await this.db.collection('registroasistencia')
                 .where('fecha', '==', today)
                 .orderBy('timestamp', 'desc')
                 .limit(10)

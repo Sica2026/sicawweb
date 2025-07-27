@@ -6,6 +6,8 @@ class ConsultaHorariosManager {
         this.currentTipoBloque = null;
         this.asesores = new Map(); // Cache de asesores
         this.horarios = []; // Cache de horarios actuales
+        this.registrosAsistencia = new Map(); // Cache de registros de asistencia
+        this.autoRefreshInterval = null; // Para el auto-refresh
         
         this.init();
     }
@@ -69,6 +71,7 @@ class ConsultaHorariosManager {
         // Eventos principales
         document.getElementById('buscarBtn').addEventListener('click', () => this.buscarAsesores());
         document.getElementById('asesorPorIntervaloBtn').addEventListener('click', () => this.openModal());
+        document.getElementById('refreshBtn').addEventListener('click', () => this.refreshAsistencia());
         
         // Eventos del modal
         document.getElementById('modalBuscarBtn').addEventListener('click', () => this.buscarEnModal());
@@ -203,7 +206,8 @@ class ConsultaHorariosManager {
                     id: doc.id,
                     nombre: data.nombre,
                     numeroAsesor: data.numeroAsesor,
-                    foto: data.foto || null,
+                    numeroCuenta: data.numeroCuenta, // Agregar este campo
+                    foto: data.fotoUrl || data.foto || null, // Usar fotoUrl como campo principal
                     email: data.email
                 });
             });
@@ -249,6 +253,9 @@ class ConsultaHorariosManager {
                 .where('dias', 'array-contains', dia)
                 .get();
             
+            // Cargar registros de asistencia del día actual
+            await this.loadRegistrosAsistencia();
+            
             // Filtrar por horario específico
             const asesoresDisponibles = {
                 'SICA-1': [],
@@ -263,9 +270,15 @@ class ConsultaHorariosManager {
                 if (this.horariosCoinciden(horarioData.horaInicio, horarioData.horaFinal, horaInicio, horaFinal)) {
                     const asesor = this.asesores.get(horarioData.asesorId);
                     if (asesor && asesoresDisponibles[horarioData.sala]) {
+                        // Verificar asistencia usando numeroCuenta como prioridad
+                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta || asesor.numeroAsesor);
+                        
                         asesoresDisponibles[horarioData.sala].push({
                             ...asesor,
-                            posicion: horarioData.posicion
+                            posicion: horarioData.posicion,
+                            presente: estaPresente,
+                            horarioInicio: horarioData.horaInicio,
+                            horarioFinal: horarioData.horaFinal
                         });
                     }
                 }
@@ -281,25 +294,90 @@ class ConsultaHorariosManager {
         }
     }
 
-    horariosCoinciden(inicioHorario, finalHorario, inicioBusqueda, finalBusqueda) {
-        // Convertir a minutos para facilitar comparación
-        const toMinutes = (time) => {
-            const [h, m] = time.split(':').map(Number);
-            return h * 60 + m;
-        };
+    // Nuevo método para cargar registros de asistencia del día actual
+    async loadRegistrosAsistencia() {
+        try {
+            // Obtener fecha actual en formato esperado
+            const today = new Date();
+            const todayString = today.toDateString(); // Formato: "Fri Jul 25 2025"
+            
+            console.log('📅 Buscando registros de asistencia para:', todayString);
+            
+            // Buscar registros del día actual
+            const snapshot = await this.db.collection('registroasistencia')
+                .where('fecha', '==', todayString)
+                .get();
+            
+            console.log(`🔍 Encontrados ${snapshot.size} registros de asistencia para hoy`);
+            
+            // Limpiar cache anterior
+            this.registrosAsistencia.clear();
+            
+            // Procesar registros
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const numeroCuenta = data.numeroCuenta;
+                
+                console.log('📄 Procesando registro:', {
+                    id: doc.id,
+                    numeroCuenta: numeroCuenta,
+                    nombreAsesor: data.nombreAsesor,
+                    tipo: data.tipo,
+                    hora: data.hora,
+                    fecha: data.fecha
+                });
+                
+                if (numeroCuenta) {
+                    // Si ya existe un registro para este asesor, mantener solo el más reciente
+                    if (!this.registrosAsistencia.has(numeroCuenta) || 
+                        data.timestamp > this.registrosAsistencia.get(numeroCuenta).timestamp) {
+                        this.registrosAsistencia.set(numeroCuenta, {
+                            nombreAsesor: data.nombreAsesor,
+                            numeroCuenta: data.numeroCuenta,
+                            tipo: data.tipo, // "entrada" o "salida"
+                            hora: data.hora,
+                            timestamp: data.timestamp,
+                            fecha: data.fecha
+                        });
+                        console.log(`💾 Guardado registro para ${numeroCuenta}: ${data.tipo} a las ${data.hora}`);
+                    }
+                }
+            });
+            
+            console.log(`✅ ${this.registrosAsistencia.size} registros de asistencia procesados`);
+            console.log('📋 Registros en cache:', Array.from(this.registrosAsistencia.entries()));
+            
+        } catch (error) {
+            console.error('❌ Error cargando registros de asistencia:', error);
+        }
+    }
+
+    // Verificar si un asesor está presente basado en su último registro
+    verificarAsistencia(numeroCuenta) {
+        if (!numeroCuenta) {
+            console.log('⚠️ No se proporcionó numeroCuenta para verificar asistencia');
+            return false;
+        }
         
-        const inicioH = toMinutes(inicioHorario);
-        const finalH = toMinutes(finalHorario);
-        const inicioB = toMinutes(inicioBusqueda);
-        const finalB = toMinutes(finalBusqueda);
+        const registro = this.registrosAsistencia.get(numeroCuenta);
+        if (!registro) {
+            console.log(`⚠️ No se encontró registro de asistencia para numeroCuenta: ${numeroCuenta}`);
+            return false;
+        }
         
-        // Verificar si hay superposición
-        return inicioH <= inicioB && finalH >= finalB;
+        console.log(`✅ Registro encontrado para ${numeroCuenta}:`, registro);
+        
+        // Consideramos presente si su último registro es "entrada"
+        // y fue hecho el día actual
+        const estaPresente = registro.tipo === 'entrada';
+        console.log(`📊 Asesor ${numeroCuenta} está ${estaPresente ? 'PRESENTE' : 'AUSENTE'} (último registro: ${registro.tipo})`);
+        
+        return estaPresente;
     }
 
     displayResults(asesoresDisponibles) {
-        // Actualizar estadísticas
-        this.updateStats(asesoresDisponibles);
+        // Actualizar estadísticas con información de asistencia
+        this.updateStatsWithAttendance(asesoresDisponibles);
         
         // Mostrar secciones
         document.getElementById('statsPanel').style.display = 'block';
@@ -339,6 +417,22 @@ class ConsultaHorariosManager {
         document.getElementById('sica4CountBadge').textContent = `${sica4Count} asesores`;
     }
 
+    horariosCoinciden(inicioHorario, finalHorario, inicioBusqueda, finalBusqueda) {
+        // Convertir a minutos para facilitar comparación
+        const toMinutes = (time) => {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        };
+        
+        const inicioH = toMinutes(inicioHorario);
+        const finalH = toMinutes(finalHorario);
+        const inicioB = toMinutes(inicioBusqueda);
+        const finalB = toMinutes(finalBusqueda);
+        
+        // Verificar si hay superposición
+        return inicioH <= inicioB && finalH >= finalB;
+    }
+
     renderSala(salaId, salaNombre, asesores) {
         const container = document.getElementById(`${salaId}Asesores`);
         
@@ -352,21 +446,40 @@ class ConsultaHorariosManager {
             return;
         }
         
-        container.innerHTML = asesores.map(asesor => `
-            <div class="asesor-card fade-in">
-                <div class="asesor-avatar">
-                    ${asesor.foto ? 
-                        `<img src="${asesor.foto}" alt="${asesor.nombre}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                         <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius:50%; color:white; font-weight:700;">${this.getInitials(asesor.nombre)}</div>` :
-                        this.getInitials(asesor.nombre)
-                    }
+        container.innerHTML = asesores.map(asesor => {
+            // Determinar estado de asistencia
+            const estadoClass = asesor.presente ? 'asesor-presente' : 'asesor-ausente';
+            const estadoIcon = asesor.presente ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            const estadoText = asesor.presente ? 'Presente' : 'Ausente';
+            
+            return `
+                <div class="asesor-card ${estadoClass} fade-in">
+                    <div class="asesor-status">
+                        <i class="bi ${estadoIcon}"></i>
+                        <span>${estadoText}</span>
+                    </div>
+                    <div class="asesor-avatar">
+                        ${asesor.foto ? 
+                            `<img src="${asesor.foto}" alt="${asesor.nombre}" 
+                                  onerror="this.style.display='none'; this.parentNode.querySelector('.avatar-fallback').style.display='flex';"
+                                  onload="this.parentNode.querySelector('.avatar-fallback').style.display='none';">
+                             <div class="avatar-fallback" style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius:50%; color:white; font-weight:700; position:absolute; top:0; left:0;">${this.getInitials(asesor.nombre)}</div>` :
+                            `<div class="avatar-fallback" style="width:100%; height:100%; align-items:center; justify-content:center; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius:50%; color:white; font-weight:700; display:flex;">${this.getInitials(asesor.nombre)}</div>`
+                        }
+                    </div>
+                    <div class="asesor-info">
+                        <div class="asesor-name">${asesor.nombre}</div>
+                        <div class="asesor-number">#${asesor.numeroAsesor}</div>
+                        <div class="asesor-schedule">
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                ${this.formatTimeDisplay(asesor.horarioInicio)} - ${this.formatTimeDisplay(asesor.horarioFinal)}
+                            </small>
+                        </div>
+                    </div>
                 </div>
-                <div class="asesor-info">
-                    <div class="asesor-name">${asesor.nombre}</div>
-                    <div class="asesor-number">#${asesor.numeroAsesor}</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     getInitials(name) {
@@ -437,6 +550,9 @@ class ConsultaHorariosManager {
                 )) {
                     const asesor = this.asesores.get(horarioData.asesorId);
                     if (asesor && asesoresDisponibles[horarioData.sala]) {
+                        // Verificar asistencia usando numeroCuenta como prioridad
+                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta || asesor.numeroAsesor);
+                        
                         // Evitar duplicados si un asesor tiene múltiples horarios que coinciden
                         const yaExiste = asesoresDisponibles[horarioData.sala].some(a => a.id === asesor.id);
                         if (!yaExiste) {
@@ -444,7 +560,8 @@ class ConsultaHorariosManager {
                                 ...asesor,
                                 posicion: horarioData.posicion,
                                 horarioInicio: horarioData.horaInicio,
-                                horarioFinal: horarioData.horaFinal
+                                horarioFinal: horarioData.horaFinal,
+                                presente: estaPresente
                             });
                         }
                     }
@@ -518,7 +635,10 @@ class ConsultaHorariosManager {
         }
         
         container.innerHTML = asesores.map(asesor => {
-            // Mostrar información adicional del horario si está disponible
+            // Mostrar información adicional del horario y estado de asistencia
+            const estadoClass = asesor.presente ? 'modal-asesor-presente' : 'modal-asesor-ausente';
+            const estadoIcon = asesor.presente ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            
             const horarioInfo = (desde && hasta) ? 
                 `<div class="modal-asesor-schedule">
                     <small class="text-muted">
@@ -528,12 +648,17 @@ class ConsultaHorariosManager {
                 </div>` : '';
             
             return `
-                <div class="modal-asesor-card slide-in">
+                <div class="modal-asesor-card ${estadoClass} slide-in">
+                    <div class="modal-asesor-status">
+                        <i class="bi ${estadoIcon}"></i>
+                    </div>
                     <div class="modal-asesor-avatar">
                         ${asesor.foto ? 
-                            `<img src="${asesor.foto}" alt="${asesor.nombre}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                             <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius:50%; color:white; font-weight:600;">${this.getInitials(asesor.nombre)}</div>` :
-                            this.getInitials(asesor.nombre)
+                            `<img src="${asesor.foto}" alt="${asesor.nombre}" 
+                                  onerror="this.style.display='none'; this.parentNode.querySelector('.avatar-fallback').style.display='flex';"
+                                  onload="this.parentNode.querySelector('.avatar-fallback').style.display='none';">
+                             <div class="avatar-fallback" style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius:50%; color:white; font-weight:600; position:absolute; top:0; left:0;">${this.getInitials(asesor.nombre)}</div>` :
+                            `<div class="avatar-fallback" style="width:100%; height:100%; align-items:center; justify-content:center; background: linear-gradient(135deg, #2563eb, #3b82f6); border-radius:50%; color:white; font-weight:600; display:flex;">${this.getInitials(asesor.nombre)}</div>`
                         }
                     </div>
                     <div class="modal-asesor-name">${asesor.nombre}</div>
@@ -708,16 +833,109 @@ class ConsultaHorariosManager {
 
     // Método para refrescar datos cada cierto tiempo
     setupAutoRefresh() {
-        // Refrescar cada 5 minutos
-        setInterval(() => {
+        // Limpiar interval anterior si existe
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+        
+        // Configurar auto-refresh cada 20 minutos (1200000 ms)
+        this.autoRefreshInterval = setInterval(async () => {
             const dia = document.getElementById('diaSelect').value;
             const horario = document.getElementById('horarioSelect').value;
             
             if (dia && horario) {
-                console.log('🔄 Auto-refrescando datos...');
-                this.buscarAsesores();
+                console.log('🔄 Auto-refrescando datos de asistencia...');
+                
+                // Mostrar indicador
+                this.showAutoRefreshIndicator();
+                
+                try {
+                    // Solo recargar registros de asistencia y actualizar vista
+                    await this.loadRegistrosAsistencia();
+                    
+                    // Re-ejecutar búsqueda actual para actualizar estados
+                    await this.buscarAsesores();
+                    
+                    console.log('✅ Auto-refresh completado');
+                    
+                } catch (error) {
+                    console.error('❌ Error en auto-refresh:', error);
+                }
+                
+                // Ocultar indicador
+                this.hideAutoRefreshIndicator();
             }
-        }, 5 * 60 * 1000); // 5 minutos
+        }, 20 * 60 * 1000); // 20 minutos
+        
+        console.log('🔄 Auto-refresh configurado cada 20 minutos');
+    }
+
+    // Método para refrescamento manual
+    async refreshAsistencia() {
+        const dia = document.getElementById('diaSelect').value;
+        const horario = document.getElementById('horarioSelect').value;
+        
+        if (!dia || !horario) {
+            this.showNotification('Selecciona día y horario para actualizar', 'warning');
+            return;
+        }
+        
+        try {
+            this.showLoading('Actualizando asistencia...');
+            
+            await this.loadRegistrosAsistencia();
+            await this.buscarAsesores();
+            
+            this.hideLoading();
+            this.showNotification('Asistencia actualizada', 'success');
+            
+        } catch (error) {
+            console.error('❌ Error refrescando asistencia:', error);
+            this.hideLoading();
+            this.showNotification('Error al actualizar', 'error');
+        }
+    }
+
+    // Indicadores visuales para auto-refresh
+    showAutoRefreshIndicator() {
+        const indicator = document.getElementById('autoRefreshIndicator');
+        if (indicator) {
+            indicator.classList.add('show');
+        }
+    }
+
+    hideAutoRefreshIndicator() {
+        const indicator = document.getElementById('autoRefreshIndicator');
+        if (indicator) {
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000); // Mostrar por 2 segundos
+        }
+    }
+
+    // Método para mostrar estadísticas de asistencia
+    updateStatsWithAttendance(asesoresDisponibles) {
+        const totalAsesores = this.asesores.size;
+        
+        // Calcular disponibles y presentes por sala
+        Object.keys(asesoresDisponibles).forEach(sala => {
+            const asesoresSala = asesoresDisponibles[sala];
+            const presentes = asesoresSala.filter(a => a.presente).length;
+            const total = asesoresSala.length;
+            
+            // Actualizar contadores con información de asistencia
+            const salaKey = sala.toLowerCase().replace('-', '');
+            const countElement = document.getElementById(`${salaKey}Count`);
+            const badgeElement = document.getElementById(`${salaKey}CountBadge`);
+            
+            if (countElement) {
+                countElement.innerHTML = `${presentes}/${total} <small class="text-muted">presentes</small>`;
+            }
+            
+            if (badgeElement) {
+                badgeElement.textContent = `${total} asesores (${presentes} presentes)`;
+            }
+        });
     }
 
     // Método para estadísticas básicas (sin exponer datos sensibles)
@@ -754,7 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.consultaManager) {
                     window.consultaManager.setupAutoRefresh();
                 }
-            }, 5000);
+            }, 3000);
             
             // Pre-seleccionar horario actual si es apropiado
             setTimeout(() => {

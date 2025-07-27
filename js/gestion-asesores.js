@@ -90,24 +90,28 @@ function setupEventListeners() {
         });
     }
     
-    // ✅ CAMBIAR: Event listeners unificados para todos los archivos
-    const fotoInput = document.getElementById('fotoInput');
-    if (fotoInput) {
-        fotoInput.addEventListener('change', (e) => handleFileChange(e, 'fotoInput'));
-    }
+    // ✅ CONFIGURAR TODOS LOS INPUTS DE ARCHIVOS
+    const fileInputs = [
+        'fotoInput',
+        'comprobanteDomicilioInput', 
+        'ineInput',
+        'historiaInput',
+        'curpInput',
+        'credencialUnamInput',
+        'comprobanteInscripcionInput'
+    ];
     
-    const ineInput = document.getElementById('ineInput');
-    if (ineInput) {
-        ineInput.addEventListener('change', (e) => handleFileChange(e, 'ineInput'));
-    }
-    
-    const historiaInput = document.getElementById('historiaInput');
-    if (historiaInput) {
-        historiaInput.addEventListener('change', (e) => handleFileChange(e, 'historiaInput'));
-    }
+    fileInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('change', (e) => handleFileChange(e, inputId));
+            console.log(`✅ Event listener configurado para ${inputId}`);
+        }
+    });
     
     console.log('🎧 Event listeners configurados');
 }
+
 
 // =====================================================================
 // CARGA DE DATOS
@@ -448,15 +452,34 @@ function fillAsesorForm(asesor) {
     }
     
     // ====== DOCUMENTOS EXISTENTES ======
-    if (asesor.documento && asesor.documento.downloadURL) {
-        showExistingDocument(asesor.documento, 'historiaInput');
-    }
+    const documentFields = {
+        'comprobanteDomicilioInput': asesor.comprobanteDomicilioUrl,
+        'ineInput': asesor.ineUrl,
+        'historiaInput': asesor.historialAcademicoUrl,
+        'curpInput': asesor.curpUrl,
+        'credencialUnamInput': asesor.credencialUnamUrl,
+        'comprobanteInscripcionInput': asesor.comprobanteInscripcionUrl
+    };
     
-    if (asesor.ineUrl) {
-        showExistingDocument({ downloadURL: asesor.ineUrl, originalName: 'INE' }, 'ineInput');
-    }
+    Object.entries(documentFields).forEach(([inputId, url]) => {
+        if (url) {
+            showExistingDocument({ downloadURL: url, originalName: getDocumentName(inputId) }, inputId);
+        }
+    });
     
     console.log('✅ Formulario llenado completamente');
+}
+
+function getDocumentName(inputId) {
+    const names = {
+        'comprobanteDomicilioInput': 'Comprobante de Domicilio',
+        'ineInput': 'INE',
+        'historiaInput': 'Historia Académica',
+        'curpInput': 'CURP',
+        'credencialUnamInput': 'Credencial UNAM',
+        'comprobanteInscripcionInput': 'Comprobante de Inscripción'
+    };
+    return names[inputId] || 'Documento';
 }
 
 function showExistingDocument(documento, inputId) {
@@ -464,33 +487,44 @@ function showExistingDocument(documento, inputId) {
     if (!input || !documento.downloadURL) return;
     
     const container = input.parentElement;
-    if (container) {
-        container.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(76, 175, 80, 0.1); border-radius: 10px; border: 1px solid rgba(76, 175, 80, 0.3);">
-                <i class="bi bi-file-check" style="font-size: 2rem; color: #4CAF50;"></i>
-                <div style="flex: 1;">
-                    <strong style="color: var(--text-primary);">Documento cargado:</strong><br>
-                    <span style="color: var(--text-secondary);">${documento.originalName || 'Documento'}</span><br>
-                    <small style="color: var(--text-light);">Subido: ${formatDate(documento.uploadDate)}</small>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button type="button" class="btn btn-sm btn-success" onclick="abrirDocumento('${documento.downloadURL}')">
-                        <i class="bi bi-eye"></i> Ver
-                    </button>
-                    <button type="button" class="btn btn-sm btn-warning" onclick="cambiarDocumento('${inputId}')">
-                        <i class="bi bi-upload"></i> Cambiar
-                    </button>
-                </div>
+    if (!container) return;
+    
+    const docTypeMap = {
+        'comprobanteDomicilioInput': { name: 'Comprobante de Domicilio', icon: 'bi-house', class: 'comprobante-domicilio' },
+        'ineInput': { name: 'INE/Identificación', icon: 'bi-person-badge', class: 'ine' },
+        'historiaInput': { name: 'Historia Académica', icon: 'bi-file-pdf', class: 'historia' },
+        'curpInput': { name: 'CURP', icon: 'bi-file-text', class: 'curp' },
+        'credencialUnamInput': { name: 'Credencial UNAM', icon: 'bi-credit-card', class: 'credencial-unam' },
+        'comprobanteInscripcionInput': { name: 'Comprobante de Inscripción', icon: 'bi-file-earmark-check', class: 'comprobante-inscripcion' }
+    };
+    
+    const docInfo = docTypeMap[inputId] || { name: 'Documento', icon: 'bi-file', class: 'documento' };
+    
+    // ✅ SIN FECHA - Solo información relevante
+    container.innerHTML = `
+        <div class="document-loaded ${docInfo.class}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(76, 175, 80, 0.1); border-radius: 10px; border: 1px solid rgba(76, 175, 80, 0.3);">
+            <i class="bi ${docInfo.icon}" style="font-size: 2rem; color: #4CAF50;"></i>
+            <div style="flex: 1;">
+                <strong style="color: var(--text-primary);">📄 ${docInfo.name} cargado</strong><br>
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">✅ Documento disponible</span>
             </div>
-            <input type="file" id="${inputId}" accept="image/*,application/pdf" style="display: none;">
-        `;
-        
-        // ✅ RECONFIGURAR EVENT LISTENER DESPUÉS DE RECREAR EL INPUT
-        const newInput = document.getElementById(inputId);
-        if (newInput) {
-            newInput.addEventListener('change', (e) => handleFileChange(e, inputId));
-            console.log(`✅ Event listener reconfigurado para ${inputId}`);
-        }
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm btn-success" onclick="abrirDocumento('${documento.downloadURL}')">
+                    <i class="bi bi-eye"></i> Ver
+                </button>
+                <button type="button" class="btn btn-sm btn-warning" onclick="cambiarDocumentoExistente('${inputId}')">
+                    <i class="bi bi-upload"></i> Cambiar
+                </button>
+            </div>
+        </div>
+        <input type="file" id="${inputId}" accept="image/*,application/pdf" style="display: none;">
+    `;
+    
+    // ✅ RECONFIGURAR EVENT LISTENER DESPUÉS DE RECREAR EL INPUT
+    const newInput = document.getElementById(inputId);
+    if (newInput) {
+        newInput.addEventListener('change', (e) => handleFileChange(e, inputId));
+        console.log(`✅ Event listener reconfigurado para ${inputId}`);
     }
 }
 
@@ -520,6 +554,31 @@ function handleFileChange(event, inputId) {
     
     console.log(`📁 Procesando archivo para ${inputId}:`, file.name, file.size);
     
+    // ✅ VALIDAR TAMAÑO DE ARCHIVO (máximo 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+        showNotification('El archivo es demasiado grande. Máximo 10MB permitido.', 'error');
+        event.target.value = '';
+        return;
+    }
+    
+    // ✅ VALIDAR TIPO DE ARCHIVO
+    const allowedTypes = {
+        'fotoInput': ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+        'comprobanteDomicilioInput': ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'],
+        'ineInput': ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'],
+        'historiaInput': ['application/pdf'],
+        'curpInput': ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'],
+        'credencialUnamInput': ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'],
+        'comprobanteInscripcionInput': ['application/pdf']
+    };
+    
+    if (allowedTypes[inputId] && !allowedTypes[inputId].includes(file.type)) {
+        showNotification('Tipo de archivo no permitido para este campo.', 'error');
+        event.target.value = '';
+        return;
+    }
+    
     // ✅ GUARDAR EL ARCHIVO EN UNA VARIABLE GLOBAL TEMPORAL
     if (!window.tempFiles) {
         window.tempFiles = {};
@@ -529,39 +588,58 @@ function handleFileChange(event, inputId) {
     
     // ✅ MANEJO ESPECÍFICO POR TIPO DE INPUT
     if (inputId === 'fotoInput') {
-        // Para fotos: mostrar preview
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const fotoPreview = document.getElementById('fotoPreview');
-            if (fotoPreview) {
-                fotoPreview.src = e.target.result;
-                console.log('✅ Preview de foto actualizado');
-            }
-        };
-        reader.readAsDataURL(file);
-        
-        showNotification(`Foto seleccionada: ${file.name}`, 'success', 3000);
+        handleFotoPreview(file);
         return;
     }
     
-    // ✅ PARA DOCUMENTOS (INE, Historia)
-    const container = event.target.parentElement;
+    // ✅ PARA DOCUMENTOS
+    handleDocumentPreview(file, inputId, event.target);
+}
+
+function handleFotoPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fotoPreview = document.getElementById('fotoPreview');
+        if (fotoPreview) {
+            fotoPreview.src = e.target.result;
+            console.log('✅ Preview de foto actualizado');
+        }
+    };
+    reader.readAsDataURL(file);
+    
+    showNotification(`Foto seleccionada: ${file.name}`, 'success', 3000);
+}
+
+function handleDocumentPreview(file, inputId, inputElement) {
+    const container = inputElement.parentElement;
     if (!container) {
         console.error('❌ No se encontró contenedor para', inputId);
         return;
     }
     
-    const icon = file.type.includes('pdf') ? 'bi-file-pdf' : 'bi-file-earmark';
+    const docTypeMap = {
+        'comprobanteDomicilioInput': { name: 'Comprobante de Domicilio', icon: 'bi-house', class: 'comprobante-domicilio' },
+        'ineInput': { name: 'INE/Identificación', icon: 'bi-person-badge', class: 'ine' },
+        'historiaInput': { name: 'Historia Académica', icon: 'bi-file-pdf', class: 'historia' },
+        'curpInput': { name: 'CURP', icon: 'bi-file-text', class: 'curp' },
+        'credencialUnamInput': { name: 'Credencial UNAM', icon: 'bi-credit-card', class: 'credencial-unam' },
+        'comprobanteInscripcionInput': { name: 'Comprobante de Inscripción', icon: 'bi-file-earmark-check', class: 'comprobante-inscripcion' }
+    };
+    
+    const docInfo = docTypeMap[inputId];
+    const fileTypeClass = file.type.includes('pdf') ? 'file-type-pdf' : 'file-type-img';
+    const fileTypeText = file.type.includes('pdf') ? 'PDF' : 'IMG';
     
     container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 10px; border: 1px solid rgba(34, 197, 94, 0.3);">
-            <i class="bi ${icon}" style="font-size: 2rem; color: #22C55E;"></i>
+        <div class="document-loaded ${docInfo.class}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: 10px; border: 1px solid rgba(34, 197, 94, 0.3); position: relative;">
+            <i class="bi ${docInfo.icon}" style="font-size: 2rem; color: #22C55E;"></i>
             <div style="flex: 1;">
-                <strong style="color: var(--text-primary);">✅ Archivo listo para subir:</strong><br>
+                <strong style="color: var(--text-primary);">✅ ${docInfo.name} listo:</strong><br>
                 <span style="color: var(--text-secondary);">${file.name}</span><br>
                 <small style="color: var(--text-light);">Tamaño: ${(file.size / 1024 / 1024).toFixed(2)} MB</small><br>
                 <small style="color: #22C55E; font-weight: bold;">⏳ Se subirá al guardar</small>
             </div>
+            <div class="file-type-indicator ${fileTypeClass}">${fileTypeText}</div>
             <div style="display: flex; gap: 0.5rem;">
                 <button type="button" class="btn btn-sm btn-warning" onclick="resetFileInput('${inputId}')">
                     <i class="bi bi-arrow-clockwise"></i> Cambiar
@@ -570,6 +648,15 @@ function handleFileChange(event, inputId) {
         </div>
         <input type="file" id="${inputId}" accept="image/*,application/pdf" style="display: none;">
     `;
+    
+    // ✅ ANIMACIÓN DE ÉXITO
+    const documentContainer = container.querySelector('.document-loaded');
+    if (documentContainer) {
+        documentContainer.classList.add('document-upload-success');
+        setTimeout(() => {
+            documentContainer.classList.remove('document-upload-success');
+        }, 600);
+    }
     
     // ✅ RECONFIGURAR EVENT LISTENER
     setTimeout(() => {
@@ -580,7 +667,7 @@ function handleFileChange(event, inputId) {
         }
     }, 100);
     
-    showNotification(`Documento seleccionado: ${file.name}`, 'success', 3000);
+    showNotification(`${docInfo.name} seleccionado: ${file.name}`, 'success', 3000);
     console.log(`✅ Archivo ${file.name} listo para ${inputId}`);
 }
 
@@ -607,7 +694,15 @@ async function guardarAsesorCompleto() {
         
         const asesorData = collectFormData();
         
-        // ✅ USAR ARCHIVOS TEMPORALES EN LUGAR DE INPUTS
+        // ✅ VERIFICAR QUE TENEMOS NÚMERO DE CUENTA PARA LA CARPETA
+        const numeroCuenta = asesorData.numeroCuenta || asesorData.numeroAsesor;
+        if (!numeroCuenta) {
+            throw new Error('Se requiere número de cuenta o número de asesor para organizar documentos');
+        }
+        
+        console.log(`📂 Usando carpeta: asesor_${numeroCuenta}`);
+        
+        // ✅ SUBIR ARCHIVOS USANDO ARCHIVOS TEMPORALES
         console.log('📤 Verificando archivos para subir...');
         console.log('🗂️ Archivos temporales disponibles:', window.tempFiles);
         
@@ -615,51 +710,49 @@ async function guardarAsesorCompleto() {
         if (window.tempFiles && window.tempFiles['fotoInput']) {
             console.log('📸 Subiendo foto desde tempFiles:', window.tempFiles['fotoInput'].name);
             try {
-                const fotoUrl = await uploadFoto(window.tempFiles['fotoInput'], asesorData.numeroAsesor);
+                const fotoUrl = await uploadFoto(window.tempFiles['fotoInput'], numeroCuenta);
                 asesorData.fotoUrl = fotoUrl;
                 console.log('✅ Foto subida:', fotoUrl);
-                // Limpiar archivo temporal
                 delete window.tempFiles['fotoInput'];
             } catch (error) {
                 console.error('❌ Error subiendo foto:', error);
                 showNotification('Error subiendo foto: ' + error.message, 'warning');
             }
-        } else {
-            console.log('📸 No hay nueva foto para subir');
         }
         
-        // INE
-        if (window.tempFiles && window.tempFiles['ineInput']) {
-            console.log('📄 Subiendo INE desde tempFiles:', window.tempFiles['ineInput'].name);
-            try {
-                const ineUrl = await uploadINE(window.tempFiles['ineInput'], asesorData.numeroAsesor);
-                asesorData.ineUrl = ineUrl;
-                console.log('✅ INE subido:', ineUrl);
-                // Limpiar archivo temporal
-                delete window.tempFiles['ineInput'];
-            } catch (error) {
-                console.error('❌ Error subiendo INE:', error);
-                showNotification('Error subiendo INE: ' + error.message, 'warning');
-            }
-        } else {
-            console.log('📄 No hay nuevo INE para subir');
-        }
+        // DOCUMENTOS
+        const documentInputs = [
+            'comprobanteDomicilioInput',
+            'ineInput', 
+            'historiaInput',
+            'curpInput',
+            'credencialUnamInput',
+            'comprobanteInscripcionInput'
+        ];
         
-        // HISTORIA
-        if (window.tempFiles && window.tempFiles['historiaInput']) {
-            console.log('📚 Subiendo historia desde tempFiles:', window.tempFiles['historiaInput'].name);
-            try {
-                const historiaUrl = await uploadHistoria(window.tempFiles['historiaInput'], asesorData.numeroAsesor);
-                asesorData.historiaUrl = historiaUrl;
-                console.log('✅ Historia subida:', historiaUrl);
-                // Limpiar archivo temporal
-                delete window.tempFiles['historiaInput'];
-            } catch (error) {
-                console.error('❌ Error subiendo historia:', error);
-                showNotification('Error subiendo historia: ' + error.message, 'warning');
+        const documentUrlFields = {
+            'comprobanteDomicilioInput': 'comprobanteDomicilioUrl',
+            'ineInput': 'ineUrl',
+            'historiaInput': 'historialAcademicoUrl',
+            'curpInput': 'curpUrl',
+            'credencialUnamInput': 'credencialUnamUrl',
+            'comprobanteInscripcionInput': 'comprobanteInscripcionUrl'
+        };
+        
+        for (const inputId of documentInputs) {
+            if (window.tempFiles && window.tempFiles[inputId]) {
+                console.log(`📄 Subiendo ${inputId} desde tempFiles:`, window.tempFiles[inputId].name);
+                try {
+                    const documentUrl = await uploadDocument(window.tempFiles[inputId], numeroCuenta, inputId);
+                    const urlField = documentUrlFields[inputId];
+                    asesorData[urlField] = documentUrl;
+                    console.log(`✅ ${inputId} subido:`, documentUrl);
+                    delete window.tempFiles[inputId];
+                } catch (error) {
+                    console.error(`❌ Error subiendo ${inputId}:`, error);
+                    showNotification(`Error subiendo ${getDocumentName(inputId)}: ${error.message}`, 'warning');
+                }
             }
-        } else {
-            console.log('📚 No hay nueva historia para subir');
         }
         
         console.log('💾 Guardando en Firestore...');
@@ -788,11 +881,40 @@ function resetFileInput(inputId) {
         console.log(`🗑️ Archivo temporal eliminado para ${inputId}`);
     }
     
+    // ✅ RESTAURAR CONTENEDOR ORIGINAL
     const input = document.getElementById(inputId);
-    if (input) {
-        input.click();
-    }
+    if (!input) return;
+    
+    const container = input.parentElement;
+    if (!container) return;
+    
+    const docTypeMap = {
+        'comprobanteDomicilioInput': { name: 'Subir comprobante de domicilio', icon: 'bi-house' },
+        'ineInput': { name: 'Subir documento de identidad', icon: 'bi-person-badge' },
+        'historiaInput': { name: 'Subir historia académica', icon: 'bi-file-pdf' },
+        'curpInput': { name: 'Subir CURP', icon: 'bi-file-text' },
+        'credencialUnamInput': { name: 'Subir credencial UNAM', icon: 'bi-credit-card' },
+        'comprobanteInscripcionInput': { name: 'Subir comprobante de inscripción', icon: 'bi-file-earmark-check' }
+    };
+    
+    const docInfo = docTypeMap[inputId] || { name: 'Subir documento', icon: 'bi-file' };
+    
+    container.innerHTML = `
+        <i class="${docInfo.icon}"></i>
+        <span>${docInfo.name}</span>
+        <input type="file" id="${inputId}" accept="image/*,application/pdf" style="display: none;">
+    `;
+    
+    // ✅ RECONFIGURAR EVENT LISTENER
+    setTimeout(() => {
+        const newInput = document.getElementById(inputId);
+        if (newInput) {
+            newInput.addEventListener('change', (e) => handleFileChange(e, inputId));
+            console.log(`✅ Event listener reconfigurado para ${inputId}`);
+        }
+    }, 100);
 }
+
 // ✅ FUNCIÓN DE VALIDACIÓN FALTANTE
 function validateAllSections() {
     const errors = [];
@@ -836,48 +958,85 @@ function validateAllSections() {
 // SUBIDA DE ARCHIVOS
 // =====================================================================
 
-async function uploadFoto(file, numeroAsesor) {
+async function uploadFoto(file, numeroCuenta) {
     try {
-        const fileName = `asesor_${numeroAsesor}_foto_${Date.now()}.jpg`;
-        const ref = gestionStorage.ref(`fotos_asesores/${fileName}`);
+        console.log(`📸 Subiendo foto para asesor ${numeroCuenta}`);
+        
+        // Eliminar foto anterior si existe
+        await deleteExistingFile(`documentos_asesores/asesor_${numeroCuenta}/foto_asesor`);
+        
+        const fileName = 'foto_asesor';
+        const filePath = `documentos_asesores/asesor_${numeroCuenta}/${fileName}`;
+        const ref = gestionStorage.ref(filePath);
         
         const snapshot = await ref.put(file);
         const downloadURL = await snapshot.ref.getDownloadURL();
         
+        console.log(`✅ Foto subida exitosamente: ${downloadURL}`);
         return downloadURL;
     } catch (error) {
-        console.error('Error subiendo foto:', error);
-        throw error;
+        console.error('❌ Error subiendo foto:', error);
+        throw new Error(`Error subiendo foto: ${error.message}`);
     }
 }
 
-async function uploadINE(file, numeroAsesor) {
+async function deleteExistingFile(basePath) {
     try {
-        const fileName = `asesor_${numeroAsesor}_ine_${Date.now()}.pdf`;
-        const ref = gestionStorage.ref(`documentos_asesores/${fileName}`);
+        // Buscar archivos con diferentes extensiones
+        const extensions = ['', '.jpg', '.jpeg', '.png', '.pdf', '.webp'];
         
-        const snapshot = await ref.put(file);
-        const downloadURL = await snapshot.ref.getDownloadURL();
-        
-        return downloadURL;
+        for (const ext of extensions) {
+            try {
+                const ref = gestionStorage.ref(basePath + ext);
+                await ref.delete();
+                console.log(`🗑️ Archivo anterior eliminado: ${basePath + ext}`);
+                break; // Si se eliminó exitosamente, salir del loop
+            } catch (deleteError) {
+                // Si el archivo no existe, continuar con la siguiente extensión
+                if (deleteError.code !== 'storage/object-not-found') {
+                    console.warn(`⚠️ Error eliminando ${basePath + ext}:`, deleteError.message);
+                }
+            }
+        }
     } catch (error) {
-        console.error('Error subiendo INE:', error);
-        throw error;
+        console.warn(`⚠️ Error en deleteExistingFile para ${basePath}:`, error.message);
+        // No lanzar error aquí, solo advertir
     }
 }
 
-async function uploadHistoria(file, numeroAsesor) {
+async function uploadDocument(file, numeroCuenta, documentType) {
     try {
-        const fileName = `asesor_${numeroAsesor}_historia_${Date.now()}.pdf`;
-        const ref = gestionStorage.ref(`documentos_asesores/historias/${fileName}`);
+        console.log(`📄 Subiendo ${documentType} para asesor ${numeroCuenta}`);
+        
+        // Mapeo de tipos de documentos a nombres de archivos
+        const fileNameMap = {
+            'comprobanteDomicilioInput': 'comprobante_domicilio',
+            'ineInput': 'ine',
+            'historiaInput': 'historial_academico',
+            'curpInput': 'curp',
+            'credencialUnamInput': 'credencial_unam',
+            'comprobanteInscripcionInput': 'comprobante_inscripcion'
+        };
+        
+        const fileName = fileNameMap[documentType];
+        if (!fileName) {
+            throw new Error(`Tipo de documento no reconocido: ${documentType}`);
+        }
+        
+        // Eliminar documento anterior si existe
+        await deleteExistingFile(`documentos_asesores/asesor_${numeroCuenta}/${fileName}`);
+        
+        const filePath = `documentos_asesores/asesor_${numeroCuenta}/${fileName}`;
+        const ref = gestionStorage.ref(filePath);
         
         const snapshot = await ref.put(file);
         const downloadURL = await snapshot.ref.getDownloadURL();
         
+        console.log(`✅ ${documentType} subido exitosamente: ${downloadURL}`);
         return downloadURL;
     } catch (error) {
-        console.error('Error subiendo historia académica:', error);
-        throw error;
+        console.error(`❌ Error subiendo ${documentType}:`, error);
+        throw new Error(`Error subiendo ${documentType}: ${error.message}`);
     }
 }
 
@@ -1473,3 +1632,9 @@ window.guardarAsesorCompleto = guardarAsesorCompleto;
 window.abrirDocumento = abrirDocumento;
 window.cambiarDocumento = cambiarDocumento;
 window.resetFileInput = resetFileInput; // ✅ NUEVA
+window.uploadFoto = uploadFoto;
+window.uploadDocument = uploadDocument;
+window.deleteExistingFile = deleteExistingFile;
+window.handleFotoPreview = handleFotoPreview;
+window.handleDocumentPreview = handleDocumentPreview;
+window.getDocumentName = getDocumentName;

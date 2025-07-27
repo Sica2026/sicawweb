@@ -22,17 +22,6 @@
 
     <!-- Main Content Area -->
     <main class="main-content" id="main-content">
-        <!-- Breadcrumbs -->
-        <nav aria-label="breadcrumb" class="breadcrumb-nav">
-            <div class="container">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
-                    <li class="breadcrumb-item"><a href="#">Asesor</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Pase de Lista</li>
-                </ol>
-            </div>
-        </nav>
-
         <!-- Success/Welcome Screen -->
         <div id="welcomeScreen" class="welcome-screen">
             <div class="welcome-content">
@@ -134,7 +123,7 @@
                                                 type="text" 
                                                 id="numeroCuentaInput" 
                                                 class="form-control-modern" 
-                                                placeholder="Número de cuenta"
+                                                placeholder=" "
                                                 maxlength="9"
                                                 pattern="[0-9]{9}"
                                                 autocomplete="off"
@@ -282,6 +271,8 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Face-API.js Library for Real Face Recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js"></script>
     <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -293,8 +284,8 @@
     <script src="../js/components.js"></script>
     <!-- Base Navigation JS -->
     <script src="../js/navigation.js"></script>
-    <!-- Face Recognition Library -->
-    <script src="../js/face-recognition.js"></script>
+    <!-- Face Recognition Library (Real Implementation) -->
+    <script src="../js/face-recognition-real.js"></script>
     <!-- Page Specific JS -->
     <script src="../js/pase-lista.js"></script>
     <script src="../js/facial-capture.js"></script>

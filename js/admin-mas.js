@@ -263,9 +263,9 @@ class AdminMasManager {
         
         setTimeout(() => {
             // window.location.href = 'admin-servicio-social.html';
-            console.log('❤️ Navegando a servicio social...');
-            this.showNotification('Módulo en desarrollo', 'warning');
-        }, 1500);
+            window.location.href = 'servicio-social.html';
+            console.log('📅 Navegando a gestión servicio social...');
+        }, 1000);
     }
 
     // ========================================

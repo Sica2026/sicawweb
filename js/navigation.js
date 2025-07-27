@@ -35,19 +35,19 @@ class ModernNavigation {
     }
     
     initializeElements() {
-    this.registroBtn = document.getElementById('registroBtn');
-    this.asesorBtn = document.getElementById('asesorBtn');
-    this.administracionBtn = document.getElementById('administracionBtn'); // ✅ AGREGAR
-    this.registroPanel = document.getElementById('registroPanel');
-    this.asesorPanel = document.getElementById('asesorPanel');
-    this.administracionPanel = document.getElementById('administracionPanel'); // ✅ AGREGAR
-    this.mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    this.mainNavButtons = document.querySelector('.main-nav-buttons');
-    this.darkModeToggle = document.getElementById('darkModeToggle');
-    this.homeBtn = document.getElementById('homeBtn');
-    this.logoutBtn = document.getElementById('logoutBtn'); // ✅ AGREGAR
-    
-    return this.registroBtn && this.asesorBtn && this.registroPanel && this.asesorPanel;
+        this.registroBtn = document.getElementById('registroBtn');
+        this.asesorBtn = document.getElementById('asesorBtn');
+        this.administracionBtn = document.getElementById('administracionBtn');
+        this.registroPanel = document.getElementById('registroPanel');
+        this.asesorPanel = document.getElementById('asesorPanel');
+        this.administracionPanel = document.getElementById('administracionPanel');
+        this.mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        this.mainNavButtons = document.querySelector('.main-nav-buttons');
+        this.darkModeToggle = document.getElementById('darkModeToggle');
+        this.homeBtn = document.getElementById('homeBtn');
+        this.logoutBtn = document.getElementById('logoutBtn');
+        
+        return this.registroBtn && this.asesorBtn && this.registroPanel && this.asesorPanel;
     }
     
     init() {
@@ -74,14 +74,14 @@ class ModernNavigation {
         });
 
         this.administracionBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.togglePanel('administracion');
+            e.preventDefault();
+            this.togglePanel('administracion');
         });
 
         this.logoutBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.handleLogout();
-         });
+            e.preventDefault();
+            this.handleLogout();
+        });
         
         // Cerrar paneles al hacer clic fuera
         document.addEventListener('click', (e) => {
@@ -151,44 +151,43 @@ class ModernNavigation {
     }
     
     async togglePanel(panelType) {
-    if (this.isAnimating) return;
-    
-    this.isAnimating = true;
-    
-    // ✅ CAMBIAR ESTAS LÍNEAS:
-    const panels = {
-        'registro': { panel: this.registroPanel, btn: this.registroBtn },
-        'asesor': { panel: this.asesorPanel, btn: this.asesorBtn },
-        'administracion': { panel: this.administracionPanel, btn: this.administracionBtn }
-    };
-    
-    const targetPanel = panels[panelType]?.panel;
-    const targetBtn = panels[panelType]?.btn;
-    
-    if (!targetPanel || !targetBtn) {
-        this.isAnimating = false;
-        return;
-    }
-    
-    // Si el panel objetivo ya está activo, cerrarlo
-    if (this.activePanel === panelType) {
-        await this.closePanel(targetPanel, targetBtn);
-        this.activePanel = null;
-    } else {
-        // Cerrar todos los otros paneles
-        if (this.activePanel) {
-            const currentPanel = panels[this.activePanel];
-            if (currentPanel) {
-                await this.closePanel(currentPanel.panel, currentPanel.btn);
-            }
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        
+        const panels = {
+            'registro': { panel: this.registroPanel, btn: this.registroBtn },
+            'asesor': { panel: this.asesorPanel, btn: this.asesorBtn },
+            'administracion': { panel: this.administracionPanel, btn: this.administracionBtn }
+        };
+        
+        const targetPanel = panels[panelType]?.panel;
+        const targetBtn = panels[panelType]?.btn;
+        
+        if (!targetPanel || !targetBtn) {
+            this.isAnimating = false;
+            return;
         }
         
-        // Abrir el panel objetivo
-        await this.openPanel(targetPanel, targetBtn);
-        this.activePanel = panelType;
-    }
-    
-    this.isAnimating = false;
+        // Si el panel objetivo ya está activo, cerrarlo
+        if (this.activePanel === panelType) {
+            await this.closePanel(targetPanel, targetBtn);
+            this.activePanel = null;
+        } else {
+            // Cerrar todos los otros paneles
+            if (this.activePanel) {
+                const currentPanel = panels[this.activePanel];
+                if (currentPanel) {
+                    await this.closePanel(currentPanel.panel, currentPanel.btn);
+                }
+            }
+            
+            // Abrir el panel objetivo
+            await this.openPanel(targetPanel, targetBtn);
+            this.activePanel = panelType;
+        }
+        
+        this.isAnimating = false;
     }
     
     async openPanel(panel, button) {
@@ -201,15 +200,15 @@ class ModernNavigation {
             panel.classList.add('active');  
             
             // Forzar layout horizontal para ciertos paneles
-const panelOptions = panel.querySelector('.panel-options');
-if (panelOptions) {
-    panelOptions.style.display = 'flex';
-    panelOptions.style.flexDirection = 'row';
-    panelOptions.style.flexWrap = 'nowrap';
-    panelOptions.style.gap = '1rem';
-    panelOptions.style.overflowX = 'auto';
-    panelOptions.style.width = '100%';
-}
+            const panelOptions = panel.querySelector('.panel-options');
+            if (panelOptions) {
+                panelOptions.style.display = 'flex';
+                panelOptions.style.flexDirection = 'row';
+                panelOptions.style.flexWrap = 'nowrap';
+                panelOptions.style.gap = '1rem';
+                panelOptions.style.overflowX = 'auto';
+                panelOptions.style.width = '100%';
+            }
             
             // Animar las opciones con delay
             const options = panel.querySelectorAll('.option-btn');
@@ -251,49 +250,56 @@ if (panelOptions) {
     
     closeAllPanels() {
         if (this.activePanel) {
-            const panel = this.activePanel === 'registro' ? this.registroPanel : this.asesorPanel;
-            const button = this.activePanel === 'registro' ? this.registroBtn : this.asesorBtn;
+            const panels = {
+                'registro': { panel: this.registroPanel, btn: this.registroBtn },
+                'asesor': { panel: this.asesorPanel, btn: this.asesorBtn },
+                'administracion': { panel: this.administracionPanel, btn: this.administracionBtn }
+            };
             
-            this.closePanel(panel, button);
+            const currentPanel = panels[this.activePanel];
+            if (currentPanel) {
+                this.closePanel(currentPanel.panel, currentPanel.btn);
+            }
+            
             this.activePanel = null;
         }
     }
     
     setupOptionButtons() {
-    // Usar delegación de eventos para manejar botones dinámicos
-    document.addEventListener('click', (e) => {
-        // Opciones de SICA
-        if (e.target.closest('.option-btn[data-sica]')) {
-            e.preventDefault();
-            const btn = e.target.closest('.option-btn[data-sica]');
-            const sicaNumber = btn.getAttribute('data-sica');
-            this.handleSicaSelection(sicaNumber, btn);
-        }
-        
-        // Opciones de Asesor
-        if (e.target.closest('.option-btn[data-action]')) {
-            e.preventDefault();
-            const btn = e.target.closest('.option-btn[data-action]');
-            const action = btn.getAttribute('data-action');
-            this.handleAsesorAction(action, btn);
-        }
+        // Usar delegación de eventos para manejar botones dinámicos
+        document.addEventListener('click', (e) => {
+            // Opciones de SICA
+            if (e.target.closest('.option-btn[data-sica]')) {
+                e.preventDefault();
+                const btn = e.target.closest('.option-btn[data-sica]');
+                const sicaNumber = btn.getAttribute('data-sica');
+                this.handleSicaSelection(sicaNumber, btn);
+            }
+            
+            // Opciones de Asesor
+            if (e.target.closest('.option-btn[data-action]')) {
+                e.preventDefault();
+                const btn = e.target.closest('.option-btn[data-action]');
+                const action = btn.getAttribute('data-action');
+                this.handleAsesorAction(action, btn);
+            }
 
-        // ✅ AGREGAR: Opciones de Administrador
-        if (e.target.closest('.option-btn[data-admin-action]')) {
-            e.preventDefault();
-            const btn = e.target.closest('.option-btn[data-admin-action]');
-            const action = btn.getAttribute('data-admin-action');
-            this.handleAdminAction(action, btn);
-        }
-    });
+            // Opciones de Administrador
+            if (e.target.closest('.option-btn[data-admin-action]')) {
+                e.preventDefault();
+                const btn = e.target.closest('.option-btn[data-admin-action]');
+                const action = btn.getAttribute('data-admin-action');
+                this.handleAdminAction(action, btn);
+            }
+        });
     }
     
-    // ✅ FUNCIÓN ÚNICA Y CORRECTA - Navega al menú de selección
+    // Función que navega al menú de selección
     handleSicaSelection(sicaNumber, button) {
-        // Efecto visual en el botón seleccionado (más rápido)
+        // Efecto visual en el botón seleccionado
         this.addSelectionEffect(button);
         
-        // Mostrar notificación moderna (opcional, más breve)
+        // Mostrar notificación moderna
         this.showModernNotification(
             `SICA ${sicaNumber}`,
             `Accediendo al menú de selección...`,
@@ -301,10 +307,9 @@ if (panelOptions) {
             'bi-pc-display'
         );
         
-        // ✅ NAVEGACIÓN OPTIMIZADA - Sin simulateLoading innecesario
         console.log(`🖥️ Accediendo a SICA ${sicaNumber}`);
         
-        // ✅ DETECCIÓN INTELIGENTE DE UBICACIÓN
+        // Detección inteligente de ubicación
         const currentPath = window.location.pathname;
         const isInViewFolder = currentPath.includes('/view/') || currentPath.includes('view/');
         
@@ -321,26 +326,37 @@ if (panelOptions) {
         console.log(`📍 Ubicación actual: ${currentPath}`);
         console.log(`🎯 Navegando a: ${targetPage}`);
         
-        // ✅ NAVEGACIÓN INMEDIATA - Sin delays innecesarios
+        // Navegación inmediata
         window.location.href = targetPage;
         
-        // ✅ CERRAR PANEL INMEDIATAMENTE - Sin esperar 1.5 segundos
+        // Cerrar panel inmediatamente
         this.closeAllPanels();
     }
 
     handleLogout() {
-    // Efecto visual
-    this.showModernNotification(
-        'Cerrando Sesión',
-        'Saliendo del panel de administración...',
-        'warning',
-        'bi-box-arrow-right'
-    );
-    
-    // Cerrar sesión de Firebase
-    if (window.firebaseAuth) {
-        window.firebaseAuth.signOut().then(() => {
-            // Redirigir según la ubicación actual
+        // Efecto visual
+        this.showModernNotification(
+            'Cerrando Sesión',
+            'Saliendo del panel de administración...',
+            'warning',
+            'bi-box-arrow-right'
+        );
+        
+        // Cerrar sesión de Firebase
+        if (window.firebaseAuth) {
+            window.firebaseAuth.signOut().then(() => {
+                // Redirigir según la ubicación actual
+                const currentPath = window.location.pathname;
+                const isInSubdirectory = currentPath.includes('/view/');
+                
+                if (isInSubdirectory) {
+                    window.location.href = '../index.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            });
+        } else {
+            // Fallback si no hay Firebase
             const currentPath = window.location.pathname;
             const isInSubdirectory = currentPath.includes('/view/');
             
@@ -349,20 +365,10 @@ if (panelOptions) {
             } else {
                 window.location.href = 'index.html';
             }
-        });
-    } else {
-        // Fallback si no hay Firebase
-        const currentPath = window.location.pathname;
-        const isInSubdirectory = currentPath.includes('/view/');
-        
-        if (isInSubdirectory) {
-            window.location.href = '../index.html';
-        } else {
-            window.location.href = 'index.html';
         }
     }
-    }
     
+    // ✅ FUNCIÓN CORREGIDA - Aquí estaba el problema principal
     handleAsesorAction(action, button) {
         // Efecto visual en el botón seleccionado
         this.addSelectionEffect(button);
@@ -372,25 +378,25 @@ if (panelOptions) {
                 title: 'Pase de Lista',
                 message: 'Accediendo al sistema de asistencia...',
                 icon: 'bi-list-check',
-                route: '/asesor/lista'
+                page: 'pase-lista.html'  // ✅ Cambié de route a page
             },
             'impresiones': {
                 title: 'Registro de Impresiones',
                 message: 'Abriendo módulo de impresiones...',
                 icon: 'bi-printer',
-                route: '/asesor/impresiones'
+                page: 'registro-impresiones.html'  // ✅ Cambié de route a page
             },
             'reportes': {
                 title: 'Reportes',
                 message: 'Generando reportes del sistema...',
                 icon: 'bi-file-earmark-text',
-                route: '/asesor/reportes'
+                page: 'reportes-asesor.html'  // ✅ Cambié de route a page
             },
-            'configuracion': {
-                title: 'Configuración',
-                message: 'Accediendo a configuración avanzada...',
-                icon: 'bi-gear',
-                route: '/asesor/configuracion'
+            'horario': {
+                title: 'Consulta de Horario',
+                message: 'Accediendo a consulta de horarios...',
+                icon: 'bi-clock',
+                page: 'consulta-horarios.html'  // ✅ Cambié de route a page
             }
         };
         
@@ -404,24 +410,36 @@ if (panelOptions) {
                 actionData.icon
             );
             
-            // Simular carga
-            this.simulateLoading(button, () => {
-                console.log(`⚙️ Ejecutando acción: ${action}`);
+            console.log(`⚙️ Ejecutando acción: ${action}`);
+            
+            // ✅ NAVEGACIÓN CORREGIDA - Detección de ubicación y navegación directa
+            setTimeout(() => {
+                const currentPath = window.location.pathname;
+                const isInViewFolder = currentPath.includes('/view/') || currentPath.includes('view/');
                 
-                // Navegación
-                if (window.sicaRouter) {
-                    window.sicaRouter.navigate(actionData.route);
+                let targetPage;
+                
+                if (isInViewFolder) {
+                    // Si ya estamos en la carpeta view/, usar ruta relativa
+                    targetPage = actionData.page;
                 } else {
-                    // Fallback: redirigir a página específica
-                    window.location.href = `asesor-${action}.html`;
+                    // Si estamos en la raíz, usar ruta completa
+                    targetPage = `view/${actionData.page}`;
                 }
-            });
+                
+                console.log(`📍 Navegando desde: ${currentPath}`);
+                console.log(`🎯 Navegando a: ${targetPage}`);
+                
+                // Navegar directamente
+                window.location.href = targetPage;
+                
+            }, 1000); // ✅ Reducí el tiempo de espera
         }
         
         // Cerrar panel después de la selección
         setTimeout(() => {
             this.closeAllPanels();
-        }, 1500);
+        }, 800); // ✅ Ajusté el tiempo para que sea consistente
     }
     
     addSelectionEffect(button) {
@@ -473,41 +491,6 @@ if (panelOptions) {
             `;
             document.head.appendChild(style);
         }
-    }
-    
-    simulateLoading(button, callback) {
-        const originalContent = button.innerHTML;
-        
-        // Mostrar spinner de carga
-        button.innerHTML = `
-            <div class="option-content">
-                <div class="option-icon">
-                    <i class="bi bi-arrow-clockwise loading-spinner"></i>
-                </div>
-                <span>Cargando...</span>
-            </div>
-        `;
-        
-        // Agregar animación de spinner si no existe
-        if (!document.querySelector('#spinner-styles')) {
-            const style = document.createElement('style');
-            style.id = 'spinner-styles';
-            style.textContent = `
-                .loading-spinner {
-                    animation: spin 1s linear infinite;
-                }
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        setTimeout(() => {
-            button.innerHTML = originalContent;
-            callback();
-        }, 1500);
     }
     
     showModernNotification(title, message, type = 'info', icon = 'bi-info-circle') {
@@ -763,68 +746,68 @@ if (panelOptions) {
         });
     }
     
-handleAdminAction(action, button) {
-    this.addSelectionEffect(button);
-    
-    const adminActions = {
-        'formularios': {
-            title: 'Formularios y Avisos',
-            message: 'Accediendo al centro de comunicaciones...',
-            icon: 'bi-file-earmark-text',
-            route: 'formularios-avisos.html'
-        },
-        'asesores': {
-            title: 'Gestión de Asesores',
-            message: 'Cargando panel de asesores...',
-            icon: 'bi-people',
-            route: 'gestion-asesores.html'
-        },
-        'mas': {
-            title: 'Más Opciones',
-            message: 'Cargando opciones adicionales...',
-            icon: 'bi-three-dots',
-            route: 'admin-mas.html'
-        },
-        'logout': {
-            title: 'Cerrar Sesión',
-            message: 'Cerrando sesión de administrador...',
-            icon: 'bi-box-arrow-right',
-            route: null
-        }
-    };
-    
-    const actionData = adminActions[action];
-    
-    if (actionData) {
-        this.showModernNotification(
-            actionData.title,
-            actionData.message,
-            action === 'logout' ? 'warning' : 'info',
-            actionData.icon
-        );
+    handleAdminAction(action, button) {
+        this.addSelectionEffect(button);
         
-        if (action === 'logout') {
-            // Cerrar sesión
-            if (window.firebaseAuth) {
-                window.firebaseAuth.signOut().then(() => {
-                    window.location.href = '../index.html';
-                });
-            } else {
-                window.location.href = '../index.html';
+        const adminActions = {
+            'formularios': {
+                title: 'Formularios y Avisos',
+                message: 'Accediendo al centro de comunicaciones...',
+                icon: 'bi-file-earmark-text',
+                route: 'formularios-avisos.html'
+            },
+            'asesores': {
+                title: 'Gestión de Asesores',
+                message: 'Cargando panel de asesores...',
+                icon: 'bi-people',
+                route: 'gestion-asesores.html'
+            },
+            'mas': {
+                title: 'Más Opciones',
+                message: 'Cargando opciones adicionales...',
+                icon: 'bi-three-dots',
+                route: 'admin-mas.html'
+            },
+            'logout': {
+                title: 'Cerrar Sesión',
+                message: 'Cerrando sesión de administrador...',
+                icon: 'bi-box-arrow-right',
+                route: null
             }
-        } else {
-            // Redirigir a la página
-            setTimeout(() => {
-                window.location.href = actionData.route;
-            }, 1000);
+        };
+        
+        const actionData = adminActions[action];
+        
+        if (actionData) {
+            this.showModernNotification(
+                actionData.title,
+                actionData.message,
+                action === 'logout' ? 'warning' : 'info',
+                actionData.icon
+            );
+            
+            if (action === 'logout') {
+                // Cerrar sesión
+                if (window.firebaseAuth) {
+                    window.firebaseAuth.signOut().then(() => {
+                        window.location.href = '../index.html';
+                    });
+                } else {
+                    window.location.href = '../index.html';
+                }
+            } else {
+                // Redirigir a la página
+                setTimeout(() => {
+                    window.location.href = actionData.route;
+                }, 1000);
+            }
         }
+        
+        // Cerrar panel
+        setTimeout(() => {
+            this.closeAllPanels();
+        }, 1000);
     }
-    
-    // Cerrar panel
-    setTimeout(() => {
-        this.closeAllPanels();
-    }, 1000);
-}
 
     // Método para habilitar/deshabilitar sonidos
     toggleSounds() {

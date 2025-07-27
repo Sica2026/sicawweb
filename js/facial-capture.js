@@ -268,11 +268,6 @@ class FacialCapture {
             const saveBtn = document.getElementById('saveRecordBtn');
             this.setButtonLoading(saveBtn, true);
 
-            // Upload image to Firebase Storage
-            const imageRef = this.storage.ref(`face-data/${this.currentAsesor.numeroCuenta}/${Date.now()}.jpg`);
-            await imageRef.put(this.capturedImage);
-            const imageUrl = await imageRef.getDownloadURL();
-
             // Process face data (if face recognition library is available)
             let faceData = null;
             if (window.FacialRecognition) {
@@ -284,21 +279,22 @@ class FacialCapture {
                 }
             }
 
-            // Update asesor document using the stored document ID
+            if (!faceData) {
+                throw new Error('No se pudieron extraer los datos faciales de la imagen');
+            }
+
+            // Update asesor document (WITHOUT uploading image)
             const updateData = {
-                faceImageUrl: imageUrl,
+                faceData: faceData,
                 faceDataUpdated: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedBy: 'facial-capture-system'
+                // faceImageUrl: imageUrl, // ❌ Comentado - no guarda imagen
             };
-
-            if (faceData) {
-                updateData.faceData = faceData;
-            }
 
             await this.db.collection('asesores').doc(this.currentAsesor.id).update(updateData);
 
             // Show success
-            this.showModalSuccess('Registro facial guardado exitosamente');
+            this.showModalSuccess('Registro facial guardado exitosamente (solo vectores)');
 
             // Close modal after success
             setTimeout(() => {

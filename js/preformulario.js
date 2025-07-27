@@ -5,12 +5,12 @@ let registroFormAuth;
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     const checkFirebase = setInterval(() => {
-    // ✅ AGREGAR firebaseStorage a la verificación:
-    if (window.firebase && window.firebaseDB && window.firebaseAuth && window.firebaseStorage) {
-        clearInterval(checkFirebase);
-        initializeRegistroForm();
-    }
-}, 100);
+        // ✅ AGREGAR firebaseStorage a la verificación:
+        if (window.firebase && window.firebaseDB && window.firebaseAuth && window.firebaseStorage) {
+            clearInterval(checkFirebase);
+            initializeRegistroForm();
+        }
+    }, 100);
     
     setTimeout(() => {
         clearInterval(checkFirebase);
@@ -163,34 +163,139 @@ class AcademicFormManager {
         }
     }
 
-async uploadPDFToStorage(file, asesorId) {
-    try {
-        showNotification('Subiendo documento...', 'info');
-        
-        // ✅ CAMBIAR ESTA LÍNEA:
-        const storage = window.firebaseStorage; // En lugar de firebase.storage()
-        
-        const fileName = `${asesorId}_${Date.now()}_${file.name}`;
-        const ref = storage.ref(`documentos_asesores/${fileName}`);
-        
-        const snapshot = await ref.put(file);
-        const downloadURL = await snapshot.ref.getDownloadURL();
-        
-        console.log('Archivo subido exitosamente:', fileName);
-        
-        return {
-            fileName: fileName,
-            originalName: file.name,
-            downloadURL: downloadURL,
-            uploadDate: firebase.firestore.FieldValue.serverTimestamp(),
-            fileSize: file.size,
-            fileType: file.type
-        };
-    } catch (error) {
-        console.error('Error subiendo archivo:', error);
-        throw new Error('No se pudo subir el documento: ' + error.message);
+    // ✅ SISTEMA INTELIGENTE: Verificar carpeta existente y manejar archivos duplicados
+    async uploadPDFToStorage(file, numeroCuenta) {
+        try {
+            const storage = window.firebaseStorage;
+            const asesorId = `asesor_${numeroCuenta}`;
+            
+            showNotification('Verificando carpeta del asesor...', 'info');
+            
+            // ✅ PASO 1: Verificar si existe la carpeta del asesor
+            const carpetaExiste = await this.verificarCarpetaAsesor(asesorId);
+            
+            if (carpetaExiste) {
+                console.log(`📁 Carpeta ${asesorId} ya existe`);
+                showNotification('Carpeta del asesor encontrada, verificando archivos...', 'info');
+                
+                // ✅ PASO 2: Verificar si existe historial_academico (sin extensión)
+                const archivoExiste = await this.verificarArchivoExiste(asesorId, 'historial_academico');
+                
+                if (archivoExiste) {
+                    console.log(`🔄 Archivo historial_academico existe, será reemplazado`);
+                    showNotification('Archivo existente encontrado, reemplazando...', 'warning');
+                    
+                    // ✅ BORRAR el archivo anterior
+                    await this.eliminarArchivoAnterior(asesorId, 'historial_academico');
+                }
+            } else {
+                console.log(`📁 Creando nueva carpeta para ${asesorId}`);
+                showNotification('Creando nueva carpeta para el asesor...', 'info');
+            }
+            
+            // ✅ PASO 3: Subir el nuevo archivo
+            showNotification('Subiendo historial académico...', 'info');
+            
+            // ✅ NOMBRE SIMPLE: solo "historial_academico" sin extensión
+            const fileName = 'historial_academico';
+            const filePath = `documentos_asesores/${asesorId}/${fileName}`;
+            const ref = storage.ref(filePath);
+            
+            const metadata = {
+                customMetadata: {
+                    'asesorId': asesorId,
+                    'numeroCuenta': numeroCuenta,
+                    'tipoDocumento': 'historial_academico',
+                    'originalName': file.name,
+                    'uploadDate': new Date().toISOString(),
+                    'paginaOrigen': 'registro_publico'
+                },
+                contentType: file.type
+            };
+            
+            const snapshot = await ref.put(file, metadata);
+            const downloadURL = await snapshot.ref.getDownloadURL();
+            
+            console.log(`✅ historial_academico subido exitosamente a ${filePath}`);
+            
+            // ✅ RETORNAR SOLO LA URL - Sin mapas complejos
+            return downloadURL;
+            
+        } catch (error) {
+            console.error('❌ Error en uploadPDFToStorage:', error);
+            throw new Error(`No se pudo subir el historial académico: ${error.message}`);
+        }
     }
-}
+
+    // ✅ Función para verificar si existe la carpeta del asesor
+    async verificarCarpetaAsesor(asesorId) {
+        try {
+            const storage = window.firebaseStorage;
+            const mainFolderRef = storage.ref('documentos_asesores');
+            
+            const result = await mainFolderRef.listAll();
+            
+            // Buscar si existe una carpeta con el nombre del asesor
+            const carpetaEncontrada = result.prefixes.find(prefix => 
+                prefix.name === asesorId
+            );
+            
+            return carpetaEncontrada !== undefined;
+            
+        } catch (error) {
+            console.error('❌ Error verificando carpeta:', error);
+            return false;
+        }
+    }
+
+    // ✅ Función para verificar si existe un archivo específico
+    async verificarArchivoExiste(asesorId, nombreArchivo) {
+        try {
+            const storage = window.firebaseStorage;
+            const fileRef = storage.ref(`documentos_asesores/${asesorId}/${nombreArchivo}`);
+            
+            // Intentar obtener la URL de descarga - si existe, no dará error
+            await fileRef.getDownloadURL();
+            return true;
+            
+        } catch (error) {
+            // Si da error, es porque el archivo no existe
+            return false;
+        }
+    }
+
+    // ✅ Función para eliminar archivo anterior
+    async eliminarArchivoAnterior(asesorId, nombreArchivo) {
+        try {
+            const storage = window.firebaseStorage;
+            const fileRef = storage.ref(`documentos_asesores/${asesorId}/${nombreArchivo}`);
+            
+            await fileRef.delete();
+            console.log(`🗑️ Archivo anterior ${nombreArchivo} eliminado exitosamente`);
+            
+        } catch (error) {
+            console.warn('⚠️ No se pudo eliminar archivo anterior (puede que no exista):', error);
+            // No lanzar error aquí, solo advertencia
+        }
+    }
+
+    // ✅ Función para verificar si el asesor ya existe en Firestore
+    async verificarAsesorEnFirestore(numeroCuenta) {
+        try {
+            const asesorId = `asesor_${numeroCuenta}`;
+            const doc = await registroFormDB.collection('asesores').doc(asesorId).get();
+            
+            return {
+                existe: doc.exists,
+                datos: doc.exists ? doc.data() : null,
+                asesorId: asesorId
+            };
+            
+        } catch (error) {
+            console.error('❌ Error verificando asesor en Firestore:', error);
+            return { existe: false, datos: null, asesorId: `asesor_${numeroCuenta}` };
+        }
+    }
 
     validateFile(file) {
         const maxSize = 10 * 1024 * 1024; // 10MB
@@ -561,51 +666,99 @@ async uploadPDFToStorage(file, asesorId) {
         }
     }
 
-async handleFormSubmit() {
-    if (!this.validateForm()) {
-        return;
-    }
-
-    // Mostrar loading en el botón
-    const submitBtn = this.form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-2"></i>Guardando...';
-    submitBtn.disabled = true;
-
-    try {
-        const formData = new FormData(this.form);
-        const data = Object.fromEntries(formData.entries());
-        
-        // ✅ CAMBIAR: Datos para modo público
-        data.fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
-        data.registradoPor = 'registro_publico'; // ✅ Sin requerir usuario
-        data.activo = true;
-        data.estado = 'pendiente';
-        data.tipoRegistro = 'publico'; // ✅ Identificar como registro público
-
-        // ✅ AGREGAR después de crear `data`:
-        // Si hay archivo cargado, subirlo
-        if (this.fileInput && this.fileInput.files.length > 0) {
-            const file = this.fileInput.files[0];
-            data.documento = await this.uploadPDFToStorage(file, data.id);
+    // ✅ Función principal del formulario CON LÓGICA INTELIGENTE
+    async handleFormSubmit() {
+        if (!this.validateForm()) {
+            return;
         }
 
-        console.log('Datos del asesor a guardar (público):', data);
-        
-        // Guardar en Firestore
-        await registroFormDB.collection('asesores').add(data);
-        
-        showSuccessModal();
-        
-    } catch (error) {
-        console.error('Error guardando registro:', error);
-        showNotification('Error al enviar el registro. Inténtelo nuevamente.', 'error');
-    } finally {
-        // Restaurar botón
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
+        const submitBtn = this.form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-2"></i>Procesando...';
+        submitBtn.disabled = true;
+
+        try {
+            const formData = new FormData(this.form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const numeroCuenta = data.numeroCuenta;
+            const asesorId = `asesor_${numeroCuenta}`;
+            
+            // ✅ PASO 1: Verificar si el asesor ya existe en Firestore
+            showNotification('Verificando información del asesor...', 'info');
+            const asesorInfo = await this.verificarAsesorEnFirestore(numeroCuenta);
+            
+            if (asesorInfo.existe) {
+                console.log(`👤 Asesor ${asesorId} ya existe en Firestore`);
+                showNotification(`Asesor encontrado: ${asesorInfo.datos?.nombre || 'Actualizando información'}...`, 'info');
+            } else {
+                console.log(`👤 Nuevo asesor: ${asesorId}`);
+                showNotification('Registrando nuevo asesor...', 'info');
+            }
+            
+            // ✅ PASO 2: Preparar datos del asesor (SIN campo id)
+            data.numeroCuenta = numeroCuenta;
+            
+            // Solo actualizar ciertos campos si ya existe
+            if (asesorInfo.existe) {
+                data.fechaActualizacion = firebase.firestore.FieldValue.serverTimestamp();
+                data.actualizadoPor = 'registro_publico';
+                // Mantener datos originales importantes
+                data.fechaRegistro = asesorInfo.datos.fechaRegistro;
+            } else {
+                data.fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
+                data.activo = true;
+                data.estado = 'pendiente';
+            }
+
+            // ✅ PASO 3: Manejar archivo si existe
+            if (this.fileInput && this.fileInput.files.length > 0) {
+                const file = this.fileInput.files[0];
+                
+                // ✅ SUBIR ARCHIVO Y GUARDAR SOLO LA URL
+                data.historialAcademicoUrl = await this.uploadPDFToStorage(file, numeroCuenta);
+                
+                showNotification('Historial académico procesado exitosamente', 'success');
+            } else if (asesorInfo.existe && asesorInfo.datos.historialAcademicoUrl) {
+                // Mantener URL anterior si no se sube uno nuevo
+                data.historialAcademicoUrl = asesorInfo.datos.historialAcademicoUrl;
+                showNotification('Manteniendo historial académico anterior', 'info');
+            }
+
+            // ✅ PASO 4: Guardar/Actualizar en Firestore
+            console.log(`💾 ${asesorInfo.existe ? 'Actualizando' : 'Guardando'} asesor:`, data);
+            
+            if (asesorInfo.existe) {
+                // Actualizar registro existente (merge para no perder datos)
+                await registroFormDB.collection('asesores').doc(asesorId).set(data, { merge: true });
+                showNotification('Información del asesor actualizada exitosamente', 'success');
+            } else {
+                // Crear nuevo registro
+                await registroFormDB.collection('asesores').doc(asesorId).set(data);
+                showNotification('Nuevo asesor registrado exitosamente', 'success');
+            }
+            
+            // ✅ Mostrar modal de éxito personalizado
+            showSuccessModal(asesorInfo.existe);
+            
+        } catch (error) {
+            console.error('❌ Error en handleFormSubmit:', error);
+            
+            let errorMessage = 'Error al procesar el registro.';
+            if (error.message.includes('permission')) {
+                errorMessage = 'Error de permisos. Verifique su conexión.';
+            } else if (error.message.includes('network')) {
+                errorMessage = 'Error de conexión. Inténtelo nuevamente.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            showNotification(errorMessage, 'error');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
     }
-}
 
     validateForm() {
         const requiredFields = this.form.querySelectorAll('[required]');
@@ -626,23 +779,27 @@ async handleFormSubmit() {
 
         // Validate CURP format
         const curp = document.getElementById('curp');
-        const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z][0-9]$/;
-        if (curp.value && !curpPattern.test(curp.value)) {
-            curp.classList.add('is-invalid');
-            isValid = false;
-            if (!firstInvalidField) {
-                firstInvalidField = curp;
+        if (curp && curp.value) {
+            const curpPattern = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9A-Z][0-9]$/;
+            if (!curpPattern.test(curp.value)) {
+                curp.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = curp;
+                }
             }
         }
 
         // Validate email
         const email = document.getElementById('correoElectronico');
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (email.value && !emailPattern.test(email.value)) {
-            email.classList.add('is-invalid');
-            isValid = false;
-            if (!firstInvalidField) {
-                firstInvalidField = email;
+        if (email && email.value) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email.value)) {
+                email.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalidField) {
+                    firstInvalidField = email;
+                }
             }
         }
 
@@ -694,40 +851,129 @@ async handleFormSubmit() {
         }
     }
 
-resetForm() {
-    this.form.reset();
-    
-    // Remove validation classes
-    const invalidFields = this.form.querySelectorAll('.is-invalid');
-    invalidFields.forEach(field => {
-        field.classList.remove('is-invalid');
-    });
-    
-    // Reset file input
-    if (this.fileInput) {
-        this.fileInput.value = '';
-    }  
-    showNotification('Formulario limpiado exitosamente.', 'info');
-}
+    resetForm() {
+        this.form.reset();
+        
+        // Remove validation classes
+        const invalidFields = this.form.querySelectorAll('.is-invalid');
+        invalidFields.forEach(field => {
+            field.classList.remove('is-invalid');
+        });
+        
+        // Reset file input
+        if (this.fileInput) {
+            this.fileInput.value = '';
+        }  
+        showNotification('Formulario limpiado exitosamente.', 'info');
+    }
 }
 
-// Funciones globales para HTML onclick events
+// =============================================================================
+// FUNCIONES AUXILIARES PARA GESTIÓN DE DOCUMENTOS
+// =============================================================================
+
+// ✅ Función para obtener TODOS los documentos de un asesor
+async function getAllDocumentosAsesor(asesorId) {
+    try {
+        const storage = window.firebaseStorage;
+        const asesorFolderRef = storage.ref(`documentos_asesores/${asesorId}`);
+        
+        const result = await asesorFolderRef.listAll();
+        const documentos = [];
+        
+        for (let itemRef of result.items) {
+            try {
+                const downloadURL = await itemRef.getDownloadURL();
+                const metadata = await itemRef.getMetadata();
+                
+                documentos.push({
+                    name: itemRef.name,
+                    path: itemRef.fullPath,
+                    url: downloadURL,
+                    size: metadata.size,
+                    timeCreated: metadata.timeCreated,
+                    tipoDocumento: metadata.customMetadata?.tipoDocumento || 'documento',
+                    originalName: metadata.customMetadata?.originalName || itemRef.name
+                });
+            } catch (error) {
+                console.warn(`No se pudo obtener info de ${itemRef.name}:`, error);
+            }
+        }
+        
+        return documentos;
+    } catch (error) {
+        console.error('❌ Error obteniendo documentos del asesor:', error);
+        return [];
+    }
+}
+
+// ✅ Función para verificar qué documentos faltan
+async function getDocumentosFaltantes(asesorId) {
+    const documentosRequeridos = [
+        'historial_academico',
+        'identificacion', 
+        'comprobante_domicilio',
+        'acta_nacimiento',
+        'carta_motivos',
+        'foto'
+    ];
+    
+    const documentosExistentes = await getAllDocumentosAsesor(asesorId);
+    const tiposExistentes = documentosExistentes.map(doc => doc.tipoDocumento);
+    
+    const faltantes = documentosRequeridos.filter(tipo => !tiposExistentes.includes(tipo));
+    
+    return {
+        total: documentosRequeridos.length,
+        existentes: documentosExistentes.length,
+        faltantes: faltantes,
+        completitud: Math.round((documentosExistentes.length / documentosRequeridos.length) * 100)
+    };
+}
+
+// ✅ Función para debug - ver estructura de carpetas
+async function debugEstructuraCarpetas() {
+    try {
+        const storage = window.firebaseStorage;
+        const mainRef = storage.ref('documentos_asesores');
+        const result = await mainRef.listAll();
+        
+        console.log('📁 Estructura de carpetas:');
+        for (let folder of result.prefixes) {
+            console.log(`├── ${folder.name}/`);
+            
+            const files = await folder.listAll();
+            for (let file of files.items) {
+                console.log(`│   ├── ${file.name}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error obteniendo estructura:', error);
+    }
+}
+
+// =============================================================================
+// FUNCIONES GLOBALES PARA HTML ONCLICK EVENTS
+// =============================================================================
+
 function initializeFormManager() {
     window.academicFormManager = new AcademicFormManager();
 }
 
 function toggleBecaType() {
-    const tieneBeca = document.getElementById('tieneBeca').value;
+    const tieneBeca = document.getElementById('tieneBeca');
     const tipoBecaGroup = document.getElementById('tipoBecaGroup');
     const tipoBeca = document.getElementById('tipoBeca');
     
-    if (tieneBeca === 'si') {
-        tipoBecaGroup.style.display = 'block';
-        tipoBeca.required = true;
-    } else {
-        tipoBecaGroup.style.display = 'none';
-        tipoBeca.required = false;
-        tipoBeca.value = '';
+    if (tieneBeca && tipoBecaGroup && tipoBeca) {
+        if (tieneBeca.value === 'si') {
+            tipoBecaGroup.style.display = 'block';
+            tipoBeca.required = true;
+        } else {
+            tipoBecaGroup.style.display = 'none';
+            tipoBeca.required = false;
+            tipoBeca.value = '';
+        }
     }
 }
 
@@ -741,13 +987,19 @@ function resetForm() {
 
 function toggleOCRSection() {
     const ocrSection = document.getElementById('ocrSection');
-    if (ocrSection.style.display === 'none') {
-        ocrSection.style.display = 'block';
-        showNotification('Sección OCR activada', 'info');
-    } else {
-        ocrSection.style.display = 'none';
+    if (ocrSection) {
+        if (ocrSection.style.display === 'none') {
+            ocrSection.style.display = 'block';
+            showNotification('Sección OCR activada', 'info');
+        } else {
+            ocrSection.style.display = 'none';
+        }
     }
 }
+
+// =============================================================================
+// FUNCIONES DE NOTIFICACIONES Y MODALS
+// =============================================================================
 
 function showNotification(message, type = 'info') {
     const container = document.getElementById('notification-container') || document.body;
@@ -808,43 +1060,44 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
-function showSuccessModal() {
-
-    // Agregar al inicio de showSuccessModal()
-// Efecto de confeti simple
-function createConfetti() {
-    for (let i = 0; i < 50; i++) {
-        const confetti = document.createElement('div');
-        confetti.style.cssText = `
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: ${['#10B981', '#059669', '#34D399', '#6EE7B7'][Math.floor(Math.random() * 4)]};
-            top: -10px;
-            left: ${Math.random() * 100}%;
-            z-index: 10001;
-            animation: confettiFall 3s linear forwards;
-        `;
-        document.body.appendChild(confetti);
-        
-        setTimeout(() => confetti.remove(), 3000);
-    }
-}
-
-// CSS para la animación
-const confettiStyle = document.createElement('style');
-confettiStyle.textContent = `
-    @keyframes confettiFall {
-        to {
-            transform: translateY(100vh) rotate(360deg);
-            opacity: 0;
+// ✅ Modal de éxito personalizado según si es nuevo o actualización
+function showSuccessModal(esActualizacion = false) {
+    // Efecto de confeti simple
+    function createConfetti() {
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.cssText = `
+                position: fixed;
+                width: 10px;
+                height: 10px;
+                background: ${['#10B981', '#059669', '#34D399', '#6EE7B7'][Math.floor(Math.random() * 4)]};
+                top: -10px;
+                left: ${Math.random() * 100}%;
+                z-index: 10001;
+                animation: confettiFall 3s linear forwards;
+            `;
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => confetti.remove(), 3000);
         }
     }
-`;
-document.head.appendChild(confettiStyle);
 
-createConfetti(); // Llamar antes de crear el modal
+    // CSS para la animación
+    if (!document.getElementById('confetti-styles')) {
+        const confettiStyle = document.createElement('style');
+        confettiStyle.id = 'confetti-styles';
+        confettiStyle.textContent = `
+            @keyframes confettiFall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(confettiStyle);
+    }
 
+    createConfetti(); // Llamar antes de crear el modal
 
     // Crear overlay
     const overlay = document.createElement('div');
@@ -878,16 +1131,24 @@ createConfetti(); // Llamar antes de crear el modal
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     `;
     
+    const titulo = esActualizacion ? 
+        '¡Información Actualizada!' : 
+        '¡Registro Completado!';
+        
+    const mensaje = esActualizacion ?
+        'Los datos del asesor han sido actualizados correctamente.' :
+        'El nuevo asesor ha sido registrado exitosamente.';
+    
     modal.innerHTML = `
         <div style="font-size: 4rem; margin-bottom: 1.5rem;">
-            <i class="bi bi-check-circle-fill"></i>
+            <i class="bi ${esActualizacion ? 'bi-arrow-clockwise' : 'bi-check-circle-fill'}"></i>
         </div>
         <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem;">
-            ¡Registro Enviado Exitosamente!
+            ${titulo}
         </h2>
         <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;">
-            Su solicitud será revisada por el equipo SICA.<br>
-            Le contactaremos por correo electrónico.
+            ${mensaje}<br>
+            El equipo SICA revisará la información.
         </p>
         <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
             <p style="margin: 0; font-size: 1rem;">
@@ -919,7 +1180,7 @@ createConfetti(); // Llamar antes de crear el modal
         modal.style.opacity = '1';
     });
     
-    // Countdown y redirección automática
+    // Countdown automático
     let seconds = 3;
     const countdownElement = modal.querySelector('#countdown');
     
@@ -938,13 +1199,10 @@ createConfetti(); // Llamar antes de crear el modal
     // Función para redireccionar
     window.redirectToHome = function() {
         clearInterval(countdownInterval);
-        
-        // Animar salida
         modal.style.transform = 'scale(0.8)';
         modal.style.opacity = '0';
         
         setTimeout(() => {
-            // Determinar la ruta correcta
             const currentPath = window.location.pathname;
             const isInViewFolder = currentPath.includes('/view/');
             
@@ -977,21 +1235,80 @@ function getNotificationIcon(type) {
     }
 }
 
-// Agregar CSS para animación de spinner
-const style = document.createElement('style');
-style.textContent = `
-    .spinning {
-        animation: spin 1s linear infinite;
-    }
+// =============================================================================
+// FUNCIONES ÚTILES PARA DEBUGGING Y ADMINISTRACIÓN
+// =============================================================================
+
+// ✅ Exponer funciones para debugging en consola
+window.debugCarpetas = debugEstructuraCarpetas;
+window.getDocumentosAsesor = getAllDocumentosAsesor;
+window.getProgresoAsesor = getDocumentosFaltantes;
+
+// ✅ Para páginas futuras: función reutilizable para cualquier tipo de documento
+window.subirDocumentoAsesor = async function(file, numeroCuenta, tipoDocumento) {
+    const asesorId = `asesor_${numeroCuenta}`;
+    const storage = window.firebaseStorage;
     
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
+    // ✅ NOMBRE SIMPLE: solo el tipo de documento, sin extensión
+    const fileName = tipoDocumento;
+    const filePath = `documentos_asesores/${asesorId}/${fileName}`;
+    const ref = storage.ref(filePath);
     
-    .is-invalid {
-        border-color: #dc3545 !important;
-        background-color: rgba(220, 53, 69, 0.1) !important;
-    }
-`;
-document.head.appendChild(style);
+    const metadata = {
+        customMetadata: {
+            'asesorId': asesorId,
+            'numeroCuenta': numeroCuenta,
+            'tipoDocumento': tipoDocumento,
+            'originalName': file.name,
+            'uploadDate': new Date().toISOString()
+        },
+        contentType: file.type
+    };
+    
+    const snapshot = await ref.put(file, metadata);
+    const downloadURL = await snapshot.ref.getDownloadURL();
+    
+    // ✅ RETORNAR SOLO LA URL
+    return downloadURL;
+};
+
+// =============================================================================
+// CSS DINÁMICO PARA ANIMACIONES Y ESTILOS
+// =============================================================================
+
+// Agregar CSS para animación de spinner y validaciones
+if (!document.getElementById('dynamic-styles')) {
+    const style = document.createElement('style');
+    style.id = 'dynamic-styles';
+    style.textContent = `
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .is-invalid {
+            border-color: #dc3545 !important;
+            background-color: rgba(220, 53, 69, 0.1) !important;
+        }
+        
+        .ocr-filled {
+            background-color: rgba(16, 185, 129, 0.1) !important;
+            border-color: #10B981 !important;
+            transition: all 0.3s ease;
+        }
+        
+        .notification {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .dragover {
+            border-color: #10B981 !important;
+            background-color: rgba(16, 185, 129, 0.05) !important;
+        }
+    `;
+    document.head.appendChild(style);
+}

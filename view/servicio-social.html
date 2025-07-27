@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Servicio Social - SICA Administrativo</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/servicio-social.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-background">
+                <div class="hero-particles"></div>
+            </div>
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-icon">
+                        <i class="bi bi-heart-pulse"></i>
+                    </div>
+                    <h1 class="hero-title">Gestión de Servicio Social</h1>
+                    <p class="hero-subtitle">Panel administrativo para control y seguimiento de prestadores de servicio social</p>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalAsesores">0</span>
+                            <span class="stat-label">Total Asesores</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="enProceso">0</span>
+                            <span class="stat-label">En Proceso</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="completados">0</span>
+                            <span class="stat-label">Completados</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search and Filters -->
+        <section class="search-section">
+            <div class="container">
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre, número de cuenta o escuela...">
+                        <button type="button" class="search-clear" id="clearSearch">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <div class="search-filters">
+                        <select id="escuelaFilter" class="filter-select">
+                            <option value="">Todas las escuelas</option>
+                            <option value="FQ">Facultad de Química</option>
+                            <option value="PREPA">Preparatoria</option>
+                        </select>
+                        <select id="carreraFilter" class="filter-select">
+                            <option value="">Todas las carreras</option>
+                        </select>
+                        <button type="button" class="filter-reset" id="resetFilters">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <section class="content-section">
+            <div class="container">
+                <!-- Loading State -->
+                <div id="loadingState" class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando información de servicio social...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h3>No se encontraron resultados</h3>
+                    <p>Intenta ajustar los filtros de búsqueda</p>
+                </div>
+
+                <!-- Accordion Categories -->
+                <div id="accordionContainer" class="accordion-container" style="display: none;">
+                    <!-- Pendientes por Asignar -->
+                    <div class="category-accordion pending-category">
+                        <div class="accordion-header" data-category="pendientes">
+                            <div class="category-info">
+                                <div class="category-icon bg-secondary">
+                                    <i class="bi bi-question-circle-fill"></i>
+                                </div>
+                                <div class="category-text">
+                                    <h4>Pendientes por Asignar</h4>
+                                    <span class="category-count" id="count-pendientes">0 asesores</span>
+                                </div>
+                            </div>
+                            <div class="accordion-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-content" id="content-pendientes">
+                            <div class="pending-info">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <strong>Asesores sin clasificar:</strong> Estos asesores tienen habilitado el servicio social pero aún no se les ha asignado un estado. Haz clic en cualquier asesor para asignarle su estado inicial.
+                                </div>
+                            </div>
+                            <div class="cards-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Ya registró SS -->
+                    <div class="category-accordion">
+                        <div class="accordion-header" data-category="ya-registro">
+                            <div class="category-info">
+                                <div class="category-icon bg-success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div class="category-text">
+                                    <h4>Ya registró SS</h4>
+                                    <span class="category-count" id="count-ya-registro">0 asesores</span>
+                                </div>
+                            </div>
+                            <div class="accordion-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-content" id="content-ya-registro">
+                            <div class="cards-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- En proceso de SS -->
+                    <div class="category-accordion">
+                        <div class="accordion-header" data-category="en-proceso">
+                            <div class="category-info">
+                                <div class="category-icon bg-primary">
+                                    <i class="bi bi-hourglass-split"></i>
+                                </div>
+                                <div class="category-text">
+                                    <h4>En proceso de SS</h4>
+                                    <span class="category-count" id="count-en-proceso">0 asesores</span>
+                                </div>
+                            </div>
+                            <div class="accordion-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-content" id="content-en-proceso">
+                            <div class="cards-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Aún no alcanza créditos -->
+                    <div class="category-accordion">
+                        <div class="accordion-header" data-category="sin-creditos">
+                            <div class="category-info">
+                                <div class="category-icon bg-warning">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                                <div class="category-text">
+                                    <h4>Aún no alcanza créditos</h4>
+                                    <span class="category-count" id="count-sin-creditos">0 asesores</span>
+                                </div>
+                            </div>
+                            <div class="accordion-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-content" id="content-sin-creditos">
+                            <div class="cards-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Ya terminó SS -->
+                    <div class="category-accordion">
+                        <div class="accordion-header" data-category="terminado">
+                            <div class="category-info">
+                                <div class="category-icon bg-info">
+                                    <i class="bi bi-award-fill"></i>
+                                </div>
+                                <div class="category-text">
+                                    <h4>Ya terminó SS</h4>
+                                    <span class="category-count" id="count-terminado">0 asesores</span>
+                                </div>
+                            </div>
+                            <div class="accordion-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-content" id="content-terminado">
+                            <div class="cards-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Canceló SS -->
+                    <div class="category-accordion">
+                        <div class="accordion-header" data-category="cancelado">
+                            <div class="category-info">
+                                <div class="category-icon bg-danger">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </div>
+                                <div class="category-text">
+                                    <h4>Canceló SS</h4>
+                                    <span class="category-count" id="count-cancelado">0 asesores</span>
+                                </div>
+                            </div>
+                            <div class="accordion-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="accordion-content" id="content-cancelado">
+                            <div class="cards-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal de Asignación Rápida -->
+    <div class="modal fade" id="asignacionModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient">
+                    <div class="modal-title-container">
+                        <img id="asignacionFoto" class="modal-avatar-sm" src="" alt="Foto del asesor">
+                        <div class="modal-title-text">
+                            <h5 class="modal-title">Asignar Estado de Servicio Social</h5>
+                            <p class="modal-subtitle" id="asignacionSubtitle"></p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="assignment-info">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Clasificación inicial:</strong> Selecciona el estado actual del asesor para organizarlo en la categoría correspondiente.
+                        </div>
+                    </div>
+                    
+                    <form id="asignacionForm">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Selecciona el estado actual del asesor:</label>
+                            <div class="estado-options">
+                                <div class="estado-option" data-estado="ya-registro">
+                                    <div class="estado-card">
+                                        <div class="estado-icon bg-success">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                        </div>
+                                        <div class="estado-content">
+                                            <h6>Ya registró SS</h6>
+                                            <p>El asesor ya completó el registro oficial de su servicio social</p>
+                                        </div>
+                                        <div class="estado-radio">
+                                            <input type="radio" name="estadoAsignacion" value="ya-registro" id="radio-ya-registro">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="estado-option" data-estado="en-proceso">
+                                    <div class="estado-card">
+                                        <div class="estado-icon bg-primary">
+                                            <i class="bi bi-hourglass-split"></i>
+                                        </div>
+                                        <div class="estado-content">
+                                            <h6>En proceso de SS</h6>
+                                            <p>El asesor está realizando actualmente su servicio social</p>
+                                        </div>
+                                        <div class="estado-radio">
+                                            <input type="radio" name="estadoAsignacion" value="en-proceso" id="radio-en-proceso">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="estado-option" data-estado="sin-creditos">
+                                    <div class="estado-card">
+                                        <div class="estado-icon bg-warning">
+                                            <i class="bi bi-clock-history"></i>
+                                        </div>
+                                        <div class="estado-content">
+                                            <h6>Aún no alcanza créditos</h6>
+                                            <p>El asesor no tiene los créditos suficientes para iniciar</p>
+                                        </div>
+                                        <div class="estado-radio">
+                                            <input type="radio" name="estadoAsignacion" value="sin-creditos" id="radio-sin-creditos">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="estado-option" data-estado="terminado">
+                                    <div class="estado-card">
+                                        <div class="estado-icon bg-info">
+                                            <i class="bi bi-award-fill"></i>
+                                        </div>
+                                        <div class="estado-content">
+                                            <h6>Ya terminó SS</h6>
+                                            <p>El asesor completó exitosamente su servicio social</p>
+                                        </div>
+                                        <div class="estado-radio">
+                                            <input type="radio" name="estadoAsignacion" value="terminado" id="radio-terminado">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="estado-option" data-estado="cancelado">
+                                    <div class="estado-card">
+                                        <div class="estado-icon bg-danger">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                        </div>
+                                        <div class="estado-content">
+                                            <h6>Canceló SS</h6>
+                                            <p>El asesor canceló o suspendió su servicio social</p>
+                                        </div>
+                                        <div class="estado-radio">
+                                            <input type="radio" name="estadoAsignacion" value="cancelado" id="radio-cancelado">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirmarAsignacion" disabled>
+                        <i class="bi bi-check-circle"></i>
+                        Asignar Estado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="detalleModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title-container">
+                        <img id="modalFoto" class="modal-avatar" src="" alt="Foto del asesor">
+                        <div class="modal-title-text">
+                            <h5 class="modal-title" id="modalTitle">Información del Asesor</h5>
+                            <p class="modal-subtitle" id="modalSubtitle"></p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="servicioSocialForm" class="needs-validation" novalidate>
+                        <!-- Información Personal (Solo lectura) -->
+                        <div class="info-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-person-circle"></i>
+                                Información Personal
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nombre Completo</label>
+                                    <input type="text" id="nombreCompleto" class="form-control" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Número de Cuenta</label>
+                                    <input type="text" id="numeroCuenta" class="form-control" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Escuela</label>
+                                    <input type="text" id="escuela" class="form-control" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Carrera</label>
+                                    <input type="text" id="carrera" class="form-control" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Avance</label>
+                                    <input type="text" id="avance" class="form-control" readonly>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Historial Académico</label>
+                                    <div class="file-display">
+                                        <a id="historialLink" href="#" target="_blank" class="file-link">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            Ver historial académico
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado y Fechas -->
+                        <div class="info-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-calendar-check"></i>
+                                Estado del Servicio Social
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Estado de Término *</label>
+                                    <select id="estadoTermino" class="form-select" required>
+                                        <option value="">Seleccionar estado</option>
+                                        <option value="ya-registro">Ya registró SS</option>
+                                        <option value="en-proceso">En proceso de SS</option>
+                                        <option value="sin-creditos">Aún no alcanza créditos</option>
+                                        <option value="terminado">Ya terminó SS</option>
+                                        <option value="cancelado">Canceló SS</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Fecha de Inicio de SS</label>
+                                    <input type="date" id="fechaInicio" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Fecha de Término de SS</label>
+                                    <input type="date" id="fechaTermino" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Clave del Programa</label>
+                                    <input type="text" id="clavePrograma" class="form-control" placeholder="Ej: DGOSE-2024-001">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha de Entrega de Carta de Término</label>
+                                    <input type="date" id="fechaEntregaCarta" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Folios -->
+                        <div class="info-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-file-text"></i>
+                                Folios y Referencias
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Folio Carta de Aceptación</label>
+                                    <input type="text" id="folioAceptacion" class="form-control" placeholder="Ej: CA-2024-001">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Folio Carta de Término</label>
+                                    <input type="text" id="folioTermino" class="form-control" placeholder="Ej: CT-2024-001">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Documentos -->
+                        <div class="info-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-cloud-upload"></i>
+                                Documentos del Servicio Social
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Carta de Presentación</label>
+                                    <div class="file-upload-area">
+                                        <input type="file" id="cartaPresentacion" class="file-input" accept=".pdf">
+                                        <div class="file-upload-display">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span>Seleccionar archivo PDF</span>
+                                        </div>
+                                        <div class="file-current" style="display: none;">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span class="file-name"></span>
+                                            <button type="button" class="btn-file-remove">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Carta de Aceptación Firmada</label>
+                                    <div class="file-upload-area">
+                                        <input type="file" id="cartaAceptacion" class="file-input" accept=".pdf">
+                                        <div class="file-upload-display">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span>Seleccionar archivo PDF</span>
+                                        </div>
+                                        <div class="file-current" style="display: none;">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span class="file-name"></span>
+                                            <button type="button" class="btn-file-remove">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Carta de Término</label>
+                                    <div class="file-upload-area">
+                                        <input type="file" id="cartaTermino" class="file-input" accept=".pdf">
+                                        <div class="file-upload-display">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span>Seleccionar archivo PDF</span>
+                                        </div>
+                                        <div class="file-current" style="display: none;">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span class="file-name"></span>
+                                            <button type="button" class="btn-file-remove">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Reporte de SS</label>
+                                    <div class="file-upload-area">
+                                        <input type="file" id="reporteSS" class="file-input" accept=".pdf">
+                                        <div class="file-upload-display">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span>Seleccionar archivo PDF</span>
+                                        </div>
+                                        <div class="file-current" style="display: none;">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                            <span class="file-name"></span>
+                                            <button type="button" class="btn-file-remove">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Horas -->
+                        <div class="info-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-clock"></i>
+                                Control de Horas
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Horas de Asesor</label>
+                                    <input type="number" id="horasAsesor" class="form-control" min="0" step="0.5">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Horas de Servicio Social</label>
+                                    <input type="number" id="horasServicioSocial" class="form-control" min="0" step="0.5">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Total de Horas</label>
+                                    <input type="number" id="totalHoras" class="form-control" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generar Documentos -->
+                        <div class="info-section">
+                            <h6 class="section-title">
+                                <i class="bi bi-file-earmark-text"></i>
+                                Generar Documentos
+                            </h6>
+                            <div class="document-generator">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                        Carta de Término
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" data-doc="carta-termino-fq">Carta de Término FQ</a></li>
+                                        <li><a class="dropdown-item" href="#" data-doc="carta-termino-prepa">Carta de Término Prepa</a></li>
+                                    </ul>
+                                </div>
+
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                        Carta de Aceptación
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" data-doc="carta-aceptacion-fq">Carta de Aceptación FQ</a></li>
+                                        <li><a class="dropdown-item" href="#" data-doc="carta-aceptacion-prepa">Carta de Aceptación Prepa</a></li>
+                                    </ul>
+                                </div>
+
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-warning dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                                        Formato SICA
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" data-doc="formato-asesor-ss">Formato Asesor + SS</a></li>
+                                        <li><a class="dropdown-item" href="#" data-doc="formato-solo-ss">Formato Solo SS</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="guardarCambios">
+                        <i class="bi bi-check-circle"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="loading-spinner"></div>
+                    <h5 class="mt-3">Procesando...</h5>
+                    <p id="loadingMessage">Guardando información</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/servicio-social.js"></script>
+</body>
+</html>

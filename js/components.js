@@ -196,14 +196,14 @@ class SICAComponents {
                                                 <span>Reportes</span>
                                             </div>
                                         </button>
-                                        <button class="option-btn" data-action="configuracion">
-                                            <div class="option-content">
-                                                <div class="option-icon">
-                                                    <i class="bi bi-gear"></i>
-                                                </div>
-                                                <span>Configuración</span>
+                                        <button class="option-btn" data-action="horario">
+                                        <div class="option-content">
+                                            <div class="option-icon">
+                                                <i class="bi bi-clock"></i>
                                             </div>
-                                        </button>
+                                            <span>Horario</span>
+                                        </div>
+                                    </button>
                                     </div>
                                 </div>
                             </div>
