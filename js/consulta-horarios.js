@@ -204,7 +204,7 @@ class ConsultaHorariosManager {
                 const data = doc.data();
                 this.asesores.set(doc.id, {
                     id: doc.id,
-                    nombre: data.nombre,
+                    nombre: data.nombreHorario,
                     numeroAsesor: data.numeroAsesor,
                     numeroCuenta: data.numeroCuenta, // Agregar este campo
                     foto: data.fotoUrl || data.foto || null, // Usar fotoUrl como campo principal
@@ -271,7 +271,7 @@ class ConsultaHorariosManager {
                     const asesor = this.asesores.get(horarioData.asesorId);
                     if (asesor && asesoresDisponibles[horarioData.sala]) {
                         // Verificar asistencia usando numeroCuenta como prioridad
-                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta || asesor.numeroAsesor);
+                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta);
                         
                         asesoresDisponibles[horarioData.sala].push({
                             ...asesor,
@@ -551,7 +551,7 @@ class ConsultaHorariosManager {
                     const asesor = this.asesores.get(horarioData.asesorId);
                     if (asesor && asesoresDisponibles[horarioData.sala]) {
                         // Verificar asistencia usando numeroCuenta como prioridad
-                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta || asesor.numeroAsesor);
+                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta);
                         
                         // Evitar duplicados si un asesor tiene múltiples horarios que coinciden
                         const yaExiste = asesoresDisponibles[horarioData.sala].some(a => a.id === asesor.id);

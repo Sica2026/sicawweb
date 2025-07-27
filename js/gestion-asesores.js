@@ -414,6 +414,7 @@ function fillAsesorForm(asesor) {
     // ====== ADMINISTRACIÓN Y ASIGNACIONES ======
     setValue('administrador', asesor.administrador);
     setValue('procedencia', asesor.procedencia);
+    setValue('nombreHorario', asesor.nombreHorario);
     setValue('locker', asesor.locker);
     setValue('bloques', asesor.bloques);
     
@@ -759,6 +760,7 @@ async function guardarAsesorCompleto() {
         
         // Guardar en Firebase
         if (editingMode && currentAsesor && currentAsesor.id) {
+            // Si estamos editando, mantener el ID existente
             const docRef = gestionDB.collection('asesores').doc(currentAsesor.id);
             const docSnap = await docRef.get();
             
@@ -773,10 +775,12 @@ async function guardarAsesorCompleto() {
                 showNotification('Asesor creado exitosamente', 'success');
             }
         } else {
+            // ✅ CREAR NUEVO REGISTRO CON ID PERSONALIZADO
+            const customId = `asesor_${asesorData.numeroCuenta}`;
             asesorData.fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
             asesorData.registradoPor = gestionAuth.currentUser?.email;
-            await gestionDB.collection('asesores').add(asesorData);
-            console.log('✅ Asesor creado');
+            await gestionDB.collection('asesores').doc(customId).set(asesorData);
+            console.log('✅ Asesor creado con ID personalizado:', customId);
             showNotification('Asesor creado exitosamente', 'success');
         }
         
@@ -849,6 +853,7 @@ function collectFormData() {
         avance: getValue('avanceCarrera'),
         administrador: getValue('administrador'),
         procedencia: getValue('procedencia'),
+        nombreHorario: getValue('nombreHorario'),
         locker: getInteger('locker'),
         bloques: getValue('bloques'),
         horasSemana: getInteger('horasSemana') || 8,
@@ -862,8 +867,9 @@ function collectFormData() {
         motivacion: getValue('motivacion'),
         experiencia: getValue('experiencia'),
         observaciones: getValue('observaciones'),
-        estado: getValue('estadoAsesor'),
-        tipoRegistro: getValue('tipoRegistro'),
+        // ✅ ESTABLECER ESTADO SEGÚN SI ES NUEVO O EDICIÓN
+        estado: editingMode ? getValue('estadoAsesor') : 'aprobado', // Nuevo = aprobado, Edición = mantener valor actual
+        tipoRegistro: 'admin', // ✅ MARCAR COMO REGISTRO ADMINISTRATIVO
         fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
         actualizadoPor: gestionAuth.currentUser?.email
     };
@@ -924,6 +930,12 @@ function validateAllSections() {
         const element = document.getElementById(id);
         return element ? element.value.trim() : '';
     };
+    
+    // ✅ NÚMERO DE CUENTA OBLIGATORIO
+    const numeroCuenta = getValue('numeroCuentaAsesor');
+    if (!numeroCuenta) {
+        errors.push('Número de cuenta es obligatorio');
+    }
     
     // Validar información personal (requerida)
     if (!getValue('numeroAsesor')) {

@@ -195,71 +195,71 @@ class HorariosAsesorManager {
         }
     }
 
-    async loadAsesores() {
-        try {
-            const snapshot = await this.db.collection('asesores')
-                .where('estado', '==', 'aprobado')
-                .orderBy('nombre')
-                .get();
-            
-            this.asesores = [];
-            snapshot.forEach(doc => {
-                this.asesores.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
+async loadAsesores() {
+    try {
+        const snapshot = await this.db.collection('asesores')
+            .where('estado', '==', 'aprobado')
+            .orderBy('nombreHorario')  // ← Cambio aquí
+            .get();
+        
+        this.asesores = [];
+        snapshot.forEach(doc => {
+            this.asesores.push({
+                id: doc.id,
+                ...doc.data()
             });
-            
-            this.renderAsesores();
-            console.log(`✅ ${this.asesores.length} asesores cargados`);
-            
-        } catch (error) {
-            console.error('❌ Error cargando asesores:', error);
-            throw error;
-        }
-    }
-
-    renderAsesores(filteredAsesores = null) {
-        const grid = document.getElementById('asesoresGrid');
-        const asesores = filteredAsesores || this.asesores;
-        
-        if (asesores.length === 0) {
-            grid.innerHTML = `
-                <div class="text-center p-4">
-                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-2">No se encontraron asesores</p>
-                </div>
-            `;
-            return;
-        }
-        
-        grid.innerHTML = asesores.map(asesor => `
-            <div class="asesor-card" data-asesor-id="${asesor.id}">
-                <div class="asesor-avatar">
-                    ${this.getInitials(asesor.nombre)}
-                </div>
-                <div class="asesor-info">
-                    <h6>${asesor.nombre}</h6>
-                    <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
-                    <small class="text-muted">${asesor.email || 'Sin email'}</small>
-                </div>
-            </div>
-        `).join('');
-        
-        // Add click events
-        grid.querySelectorAll('.asesor-card').forEach(card => {
-            card.addEventListener('click', () => this.selectAsesor(card));
         });
+        
+        this.renderAsesores();
+        console.log(`✅ ${this.asesores.length} asesores cargados`);
+        
+    } catch (error) {
+        console.error('❌ Error cargando asesores:', error);
+        throw error;
     }
+}
 
-    filterAsesores(searchTerm) {
-        const filtered = this.asesores.filter(asesor => 
-            asesor.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (asesor.email && asesor.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (asesor.numeroCuenta && asesor.numeroCuenta.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-        this.renderAsesores(filtered);
+renderAsesores(filteredAsesores = null) {
+    const grid = document.getElementById('asesoresGrid');
+    const asesores = filteredAsesores || this.asesores;
+    
+    if (asesores.length === 0) {
+        grid.innerHTML = `
+            <div class="text-center p-4">
+                <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">No se encontraron asesores</p>
+            </div>
+        `;
+        return;
     }
+    
+    grid.innerHTML = asesores.map(asesor => `
+        <div class="asesor-card" data-asesor-id="${asesor.id}">
+            <div class="asesor-avatar">
+                ${this.getInitials(asesor.nombreHorario || 'Sin Nombre')}
+            </div>
+            <div class="asesor-info">
+                <h6>${asesor.nombreHorario || 'Sin nombre'}</h6>
+                <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
+                <small class="text-muted">${asesor.email || 'Sin email'}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add click events
+    grid.querySelectorAll('.asesor-card').forEach(card => {
+        card.addEventListener('click', () => this.selectAsesor(card));
+    });
+}
+
+filterAsesores(searchTerm) {
+    const filtered = this.asesores.filter(asesor => 
+        (asesor.nombreHorario && asesor.nombreHorario.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (asesor.email && asesor.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (asesor.numeroCuenta && asesor.numeroCuenta.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    this.renderAsesores(filtered);
+}
 
     getInitials(name) {
         return name.split(' ')
@@ -439,20 +439,19 @@ class HorariosAsesorManager {
     // STEP 2: ASESOR SELECTION
     // ========================================
 
-    selectAsesor(card) {
-        // Remove previous selections
-        document.querySelectorAll('.asesor-card').forEach(c => c.classList.remove('selected'));
-        
-        // Select current card
-        card.classList.add('selected');
-        const asesorId = card.getAttribute('data-asesor-id');
-        this.config.asesor = this.asesores.find(a => a.id === asesorId);
-        
-        this.showNotification(`Asesor seleccionado: ${this.config.asesor.nombre}`, 'success');
-        
-        console.log('👤 Asesor seleccionado:', this.config.asesor);
-    }
-
+selectAsesor(card) {
+    // Remove previous selections
+    document.querySelectorAll('.asesor-card').forEach(c => c.classList.remove('selected'));
+    
+    // Select current card
+    card.classList.add('selected');
+    const asesorId = card.getAttribute('data-asesor-id');
+    this.config.asesor = this.asesores.find(a => a.id === asesorId);
+    
+    this.showNotification(`Asesor seleccionado: ${this.config.asesor.nombreHorario}`, 'success');
+    
+    console.log('👤 Asesor seleccionado:', this.config.asesor);
+}
     // ========================================
     // STEP 3: CONFIGURACIÓN COMPLETA
     // ========================================
@@ -539,12 +538,13 @@ class HorariosAsesorManager {
         const hours = this.calculateHours(horaInicio, horaFinal);
         
         // Create horario object
+        // En la parte donde se crea el objeto nuevoHorario
         const nuevoHorario = {
-            id: `temp_${Date.now()}`, // Temporary ID
+            id: `temp_${Date.now()}`,
             tipoBloque: this.config.tipoBloque,
             asesorId: this.config.asesor.id,
-            asesorNombre: this.config.asesor.nombre,
-            numeroCuenta: this.config.asesor.numeroCuenta || null, // NUEVO CAMPO
+            nombreHorario: this.config.asesor.nombreHorario,  // ← Cambio aquí
+            numeroCuenta: this.config.asesor.numeroCuenta || null,
             sala: this.config.sala,
             posicion: this.config.posicion,
             dias: diasSeleccionados,
@@ -703,7 +703,7 @@ class HorariosAsesorManager {
         summary.innerHTML = `
             <div class="summary-item">
                 <span class="summary-label">Asesor:</span>
-                <span class="summary-value">${this.config.asesor.nombre}</span>
+                <span class="summary-value">${this.config.asesor.nombreHorario}</span>
             </div>
             <div class="summary-item">
                 <span class="summary-label">Número de Cuenta:</span>
@@ -755,7 +755,7 @@ class HorariosAsesorManager {
                 const horarioData = {
                     tipoBloque: horario.tipoBloque,
                     asesorId: horario.asesorId,
-                    asesorNombre: horario.asesorNombre,
+                    nombreHorario: horario.nombreHorario,
                     numeroCuenta: horario.numeroCuenta, // NUEVO CAMPO
                     sala: horario.sala,
                     posicion: horario.posicion,
@@ -872,10 +872,10 @@ class HorariosAsesorManager {
         list.innerHTML = missingAsesores.map(asesor => `
             <div class="missing-advisor-item">
                 <div class="missing-advisor-avatar">
-                    ${this.getInitials(asesor.nombre)}
+                    ${this.getInitials(asesor.nombreHorario || 'Sin Nombre')}
                 </div>
                 <div class="missing-advisor-info">
-                    <h6>${asesor.nombre}</h6>
+                    <h6>${asesor.nombreHorario || 'Sin nombre'}</h6>
                     <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
                     <small class="text-muted">${asesor.email || 'Sin email'}</small>
                 </div>

@@ -304,7 +304,7 @@
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label">Número de Cuenta</label>
-                                            <input type="text" class="form-control" id="numeroCuentaAsesor" placeholder="123456789">
+                                            <input type="text" class="form-control" id="numeroCuentaAsesor" placeholder="123456789" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Plantel/Facultad</label>
@@ -360,7 +360,7 @@
                         </div>
 
                         <!-- ====== SECCIÓN 4: ADMINISTRACIÓN ====== -->
-                        <div class="accordion-item">
+                       <div class="accordion-item">
                             <h2 class="accordion-header" id="headingAdmin">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdmin" aria-expanded="false" aria-controls="collapseAdmin">
                                     <i class="bi bi-gear me-2"></i>
@@ -378,6 +378,11 @@
                                         <div class="col-md-6">
                                             <label class="form-label">Procedencia/Referencia</label>
                                             <input type="text" class="form-control" id="procedencia" placeholder="¿Cómo llegó al programa?">
+                                        </div>
+                                        <!-- ✅ NUEVO CAMPO -->
+                                        <div class="col-md-6">
+                                            <label class="form-label">Nombre del Asesor en el Horario</label>
+                                            <input type="text" class="form-control" id="nombreHorario" placeholder="Nombre que aparecerá en horarios" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Locker Asignado</label>
