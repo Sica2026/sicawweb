@@ -570,39 +570,10 @@ selectAsesor(card) {
         console.log('📍 Posición seleccionada:', this.config.posicion);
     }
 
-    async loadExistingSchedules() {
-        try {
-            this.showLoadingModal('Cargando horarios existentes...');
-            
-            const snapshot = await this.db.collection('horarios')
-                .where('tipoBloque', '==', this.config.tipoBloque)
-                .where('asesorId', '==', this.config.asesor.id)
-                .get();
-            
-            this.existingSchedules = [];
-            snapshot.forEach(doc => {
-                this.existingSchedules.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
-            
-            // Add existing schedules to current config
-            this.config.horarios = [...this.existingSchedules];
-            this.renderHorarios();
-            this.updateHoursCounter();
-            
-            this.hideLoadingModal();
-            
-            if (this.existingSchedules.length > 0) {
-                this.showNotification(`Se cargaron ${this.existingSchedules.length} horarios existentes`, 'info');
-            }
-            
-        } catch (error) {
-            console.error('❌ Error cargando horarios existentes:', error);
-            this.hideLoadingModal();
-        }
-    }
+async loadExistingSchedules() {
+    // Delegar completamente al método no bloqueante
+    await this.loadExistingSchedulesInBackground();
+}
 
     addHorario() {
         // Validate that location is selected
