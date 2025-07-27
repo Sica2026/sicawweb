@@ -340,22 +340,118 @@ filterAsesores(searchTerm) {
     // ========================================
     // STEP NAVIGATION
     // ========================================
-
-    nextStep() {
-        if (!this.validateCurrentStep()) {
+async loadExistingSchedulesInBackground() {
+    try {
+        console.log('🔄 === INICIO CARGA BACKGROUND ===');
+        console.log('📋 Tipo Bloque:', this.config.tipoBloque);
+        console.log('👤 Asesor ID:', this.config.asesor?.id);
+        
+        // Validaciones rápidas
+        if (!this.config.tipoBloque || !this.config.asesor?.id || !this.db) {
+            console.warn('⚠️ Datos insuficientes para cargar horarios existentes');
+            this.showNotification('Listo para agregar horarios nuevos', 'info');
             return;
         }
-
-        if (this.currentStep < this.totalSteps) {
-            this.currentStep++;
-            this.updateStepDisplay();
+        
+        // Timeout corto para no hacer esperar al usuario
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error('TIMEOUT: Carga en background cancelada después de 5 segundos'));
+            }, 5000); // Solo 5 segundos máximo
+        });
+        
+        console.log('🔍 Iniciando consulta background...');
+        const startTime = Date.now();
+        
+        const queryPromise = this.db.collection('horarios')
+            .where('tipoBloque', '==', this.config.tipoBloque)
+            .where('asesorId', '==', this.config.asesor.id)
+            .get();
+        
+        const snapshot = await Promise.race([queryPromise, timeoutPromise]);
+        
+        const duration = Date.now() - startTime;
+        console.log(`⏱️ Consulta background completada en ${duration}ms`);
+        console.log('📊 Horarios encontrados:', snapshot.size);
+        
+        if (snapshot.size > 0) {
+            this.existingSchedules = [];
+            snapshot.forEach((doc, index) => {
+                console.log(`📄 Horario ${index + 1}:`, doc.id);
+                this.existingSchedules.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
             
-            // Load existing schedules when reaching step 3 (final step)
-            if (this.currentStep === 3) {
-                this.loadExistingSchedules();
-            }
+            // Actualizar la interfaz con los horarios encontrados
+            this.config.horarios = [...this.existingSchedules];
+            this.renderHorarios();
+            this.updateHoursCounter();
+            
+            this.showNotification(
+                `✅ Se encontraron ${this.existingSchedules.length} horarios existentes`, 
+                'success'
+            );
+        } else {
+            console.log('ℹ️ No se encontraron horarios existentes');
+            this.showNotification('Sin horarios previos. Puedes agregar nuevos horarios.', 'info');
+        }
+        
+        console.log('✅ === FIN CARGA BACKGROUND EXITOSA ===');
+        
+    } catch (error) {
+        console.warn('⚠️ === ERROR EN CARGA BACKGROUND ===');
+        console.warn('⚠️ Error:', error.message);
+        
+        // Mensajes suaves, sin alarmar al usuario
+        if (error.message.includes('TIMEOUT')) {
+            console.log('⏱️ Timeout en carga background - continuando normalmente');
+            this.showNotification('Listo para configurar horarios', 'info');
+        } else if (error.message.includes('indexes')) {
+            console.log('📊 Problema de índices - continuando sin horarios existentes');
+            this.showNotification('Listo para agregar nuevos horarios', 'info');
+        } else {
+            console.log('🔄 Error general en carga - continuando normalmente');
+            this.showNotification('Puedes agregar horarios nuevos', 'info');
+        }
+        
+        // La interfaz ya está lista para usar, no hay problema
+        console.log('✅ Interfaz lista para usar sin horarios existentes');
+    }
+}
+
+    nextStep() {
+    if (!this.validateCurrentStep()) {
+        return;
+    }
+
+    if (this.currentStep < this.totalSteps) {
+        this.currentStep++;
+        this.updateStepDisplay();
+        
+        // Load existing schedules when reaching step 3 (final step)
+        if (this.currentStep === 3) {
+            // ✅ CAMBIO: No bloquear la interfaz
+            this.initializeStep3();
         }
     }
+}
+
+initializeStep3() {
+    console.log('🚀 Inicializando paso 3 (no bloqueante)...');
+    
+    // Mostrar interfaz inmediatamente (sin horarios)
+    this.config.horarios = [];
+    this.renderHorarios();
+    this.updateHoursCounter();
+    
+    // Mostrar mensaje informativo pequeño
+    this.showNotification('Revisando horarios existentes...', 'info');
+    
+    // Cargar horarios existentes en background (no bloqueante)
+    this.loadExistingSchedulesInBackground();
+}
 
     prevStep() {
         if (this.currentStep > 1) {

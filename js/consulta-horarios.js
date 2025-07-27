@@ -253,7 +253,7 @@ class ConsultaHorariosManager {
             .where('dias', 'array-contains', dia)
             .get();
         
-        // Cargar registros de asistencia del día consultado (no del día actual)
+        // Cargar registros de asistencia del día específico que se está consultando
         await this.loadRegistrosAsistencia(dia);
         
         // Filtrar por horario específico
@@ -295,50 +295,30 @@ class ConsultaHorariosManager {
 }
 
     // Nuevo método para cargar registros de asistencia del día actual
-    async loadRegistrosAsistencia(diaConsultado = null) {
+  async loadRegistrosAsistencia(diaConsultado) {
     try {
-        // Si no se especifica día, usar el día actual
-        const targetDay = diaConsultado || this.getCurrentDay();
+        const diaIngles = this.convertirDiaAIngles(diaConsultado);
         
-        // Obtener fecha actual en formato esperado
-        const today = new Date();
-        const todayString = today.toDateString(); // Formato: "Mon Jul 28 2025"
+        console.log('📅 Día consultado:', diaConsultado, '→', diaIngles);
+        console.log('📅 Buscando registros que inicien con:', diaIngles);
         
-        console.log('📅 Día consultado:', targetDay);
-        console.log('📅 Buscando registros de asistencia para:', todayString);
+        // Obtener todos los registros y filtrar por el día de la semana
+        const snapshot = await this.db.collection('registroasistencia').get();
         
-        // Buscar registros del día actual
-        const snapshot = await this.db.collection('registroasistencia')
-            .where('fecha', '==', todayString)
-            .get();
-        
-        console.log(`🔍 Encontrados ${snapshot.size} registros de asistencia para hoy`);
+        console.log(`🔍 Encontrados ${snapshot.size} registros totales`);
         
         // Limpiar cache anterior
         this.registrosAsistencia.clear();
         
-        // Convertir día consultado a formato de JavaScript para comparación
-        const dayMap = {
-            'lunes': 1,
-            'martes': 2,
-            'miercoles': 3,
-            'jueves': 4,
-            'viernes': 5,
-            'sabado': 6,
-            'domingo': 0
-        };
+        // Filtrar registros que coincidan con el día consultado
+        let registrosFiltrados = 0;
         
-        const targetDayNumber = dayMap[targetDay];
-        const todayDayNumber = today.getDay();
-        
-        console.log('🗓️ Día consultado número:', targetDayNumber, '(', targetDay, ')');
-        console.log('🗓️ Día actual número:', todayDayNumber);
-        
-        // Solo procesar registros si el día consultado coincide con el día actual
-        if (targetDayNumber === todayDayNumber) {
-            // Procesar registros
-            snapshot.forEach(doc => {
-                const data = doc.data();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const fecha = data.fecha; // "Mon Jul 27 2025"
+            
+            // Extraer el día de la semana (primeras 3 letras)
+            if (fecha && fecha.startsWith(diaIngles)) {
                 const numeroCuenta = data.numeroCuenta;
                 
                 console.log('📄 Procesando registro:', {
@@ -347,7 +327,8 @@ class ConsultaHorariosManager {
                     nombreAsesor: data.nombreAsesor,
                     tipo: data.tipo,
                     hora: data.hora,
-                    fecha: data.fecha
+                    fecha: data.fecha,
+                    diaExtraido: fecha.substring(0, 3)
                 });
                 
                 if (numeroCuenta) {
@@ -363,15 +344,13 @@ class ConsultaHorariosManager {
                             fecha: data.fecha
                         });
                         console.log(`💾 Guardado registro para ${numeroCuenta}: ${data.tipo} a las ${data.hora}`);
+                        registrosFiltrados++;
                     }
                 }
-            });
-            
-            console.log(`✅ ${this.registrosAsistencia.size} registros de asistencia procesados para ${targetDay}`);
-        } else {
-            console.log(`ℹ️ No hay registros de asistencia para ${targetDay} (hoy es ${this.getDayName(todayDayNumber)})`);
-        }
+            }
+        });
         
+        console.log(`✅ ${registrosFiltrados} registros de asistencia procesados para ${diaConsultado} (${diaIngles})`);
         console.log('📋 Registros en cache:', Array.from(this.registrosAsistencia.entries()));
         
     } catch (error) {
@@ -379,11 +358,43 @@ class ConsultaHorariosManager {
     }
 }
 
-getDayName(dayNumber) {
-    const days = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-    return days[dayNumber];
+getFechaDelDiaConsultado(diaConsultado) {
+    const dayMap = {
+        'lunes': 1,
+        'martes': 2,
+        'miercoles': 3,
+        'jueves': 4,
+        'viernes': 5,
+        'sabado': 6,
+        'domingo': 0
+    };
+    
+    const targetDayNumber = dayMap[diaConsultado];
+    const today = new Date();
+    const currentDayNumber = today.getDay();
+    
+    // Calcular cuántos días hay que agregar o restar para llegar al día consultado
+    let dayDifference = targetDayNumber - currentDayNumber;
+    
+    // Crear fecha del día consultado
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + dayDifference);
+    
+    return targetDate.toDateString(); // Formato: "Mon Jul 28 2025"
 }
 
+convertirDiaAIngles(diaEspanol) {
+    const mapaDias = {
+        'lunes': 'Mon',
+        'martes': 'Tue', 
+        'miercoles': 'Wed',
+        'jueves': 'Thu',
+        'viernes': 'Fri',
+        'sabado': 'Sat',
+        'domingo': 'Sun'
+    };
+    return mapaDias[diaEspanol];
+}
 
     // Verificar si un asesor está presente basado en su último registro
     verificarAsistencia(numeroCuenta) {
@@ -540,76 +551,79 @@ getDayName(dayNumber) {
     }
 
     async buscarEnModal() {
-        const dia = document.getElementById('modalDiaSelect').value;
-        const desde = document.getElementById('modalDesdeSelect').value;
-        const hasta = document.getElementById('modalHastaSelect').value;
+    const dia = document.getElementById('modalDiaSelect').value;
+    const desde = document.getElementById('modalDesdeSelect').value;
+    const hasta = document.getElementById('modalHastaSelect').value;
+    
+    if (!dia || !desde || !hasta) {
+        this.showNotification('Selecciona día, hora de inicio y hora final', 'warning');
+        return;
+    }
+    
+    // Validar que "hasta" sea mayor que "desde"
+    if (desde >= hasta) {
+        this.showNotification('La hora final debe ser mayor que la hora de inicio', 'warning');
+        return;
+    }
+    
+    try {
+        this.showModalLoading();
         
-        if (!dia || !desde || !hasta) {
-            this.showNotification('Selecciona día, hora de inicio y hora final', 'warning');
-            return;
-        }
+        // Buscar horarios que coincidan con el día
+        const horariosSnapshot = await this.db.collection('horarios')
+            .where('tipoBloque', '==', this.currentTipoBloque)
+            .where('dias', 'array-contains', dia)
+            .get();
         
-        // Validar que "hasta" sea mayor que "desde"
-        if (desde >= hasta) {
-            this.showNotification('La hora final debe ser mayor que la hora de inicio', 'warning');
-            return;
-        }
+        // Cargar registros de asistencia del día específico que se está consultando
+        await this.loadRegistrosAsistencia(dia);
         
-        try {
-            this.showModalLoading();
+        // Filtrar por rango de tiempo específico
+        const asesoresDisponibles = {
+            'SICA-1': [],
+            'SICA-2': [],
+            'SICA-4': []
+        };
+        
+        horariosSnapshot.forEach(doc => {
+            const horarioData = doc.data();
             
-            // Buscar horarios que coincidan con el día
-            const horariosSnapshot = await this.db.collection('horarios')
-                .where('tipoBloque', '==', this.currentTipoBloque)
-                .where('dias', 'array-contains', dia)
-                .get();
-            
-            // Filtrar por rango de tiempo específico
-            const asesoresDisponibles = {
-                'SICA-1': [],
-                'SICA-2': [],
-                'SICA-4': []
-            };
-            
-            horariosSnapshot.forEach(doc => {
-                const horarioData = doc.data();
-                
-                // Verificar si el horario del asesor se superpone con el rango solicitado
-                if (this.horariosSeSuperponen(
-                    horarioData.horaInicio, 
-                    horarioData.horaFinal, 
-                    desde, 
-                    hasta
-                )) {
-                    const asesor = this.asesores.get(horarioData.asesorId);
-                    if (asesor && asesoresDisponibles[horarioData.sala]) {
-                        // Verificar asistencia usando numeroCuenta como prioridad
-                        const estaPresente = this.verificarAsistencia(asesor.numeroCuenta);
-                        
-                        // Evitar duplicados si un asesor tiene múltiples horarios que coinciden
-                        const yaExiste = asesoresDisponibles[horarioData.sala].some(a => a.id === asesor.id);
-                        if (!yaExiste) {
-                            asesoresDisponibles[horarioData.sala].push({
-                                ...asesor,
-                                posicion: horarioData.posicion,
-                                horarioInicio: horarioData.horaInicio,
-                                horarioFinal: horarioData.horaFinal,
-                                presente: estaPresente
-                            });
-                        }
+            // Verificar si el horario del asesor se superpone con el rango solicitado
+            if (this.horariosSeSuperponen(
+                horarioData.horaInicio, 
+                horarioData.horaFinal, 
+                desde, 
+                hasta
+            )) {
+                const asesor = this.asesores.get(horarioData.asesorId);
+                if (asesor && asesoresDisponibles[horarioData.sala]) {
+                    // Verificar asistencia usando numeroCuenta como prioridad
+                    const estaPresente = this.verificarAsistencia(asesor.numeroCuenta);
+                    
+                    // Evitar duplicados si un asesor tiene múltiples horarios que coinciden
+                    const yaExiste = asesoresDisponibles[horarioData.sala].some(a => a.id === asesor.id);
+                    if (!yaExiste) {
+                        asesoresDisponibles[horarioData.sala].push({
+                            ...asesor,
+                            posicion: horarioData.posicion,
+                            horarioInicio: horarioData.horaInicio,
+                            horarioFinal: horarioData.horaFinal,
+                            presente: estaPresente
+                        });
                     }
                 }
-            });
-            
-            this.hideModalLoading();
-            this.displayModalResults(asesoresDisponibles, desde, hasta);
-            
-        } catch (error) {
-            console.error('❌ Error buscando en modal:', error);
-            this.hideModalLoading();
-            this.showError('Error al buscar asesores');
-        }
+            }
+        });
+        
+        this.hideModalLoading();
+        this.displayModalResults(asesoresDisponibles, desde, hasta);
+        
+    } catch (error) {
+        console.error('❌ Error buscando en modal:', error);
+        this.hideModalLoading();
+        this.showError('Error al buscar asesores');
     }
+}
 
     // Nuevo método para verificar si dos rangos de horarios se superponen
     horariosSeSuperponen(inicioAsesor, finalAsesor, inicioBusqueda, finalBusqueda) {
