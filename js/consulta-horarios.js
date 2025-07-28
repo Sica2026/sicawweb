@@ -823,6 +823,7 @@ hideLoading() {
     }
 }
 
+
     showNotification(message, type = 'info') {
         // Crear notificación simple sin dependencias externas
         const notification = document.createElement('div');
