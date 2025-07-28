@@ -1,0 +1,524 @@
+/* ========================================
+   PÁGINA DE IMPRESIONES - ESTILOS ESPECÍFICOS
+   ======================================== */
+
+/* Variables específicas */
+:root {
+    --print-primary: #4a90e2;
+    --print-secondary: #7b68ee;
+    --print-accent: #00d4ff;
+    --print-success: #00c851;
+    --print-gradient: linear-gradient(135deg, var(--print-primary) 0%, var(--print-secondary) 100%);
+    --print-glow: 0 0 20px rgba(74, 144, 226, 0.3);
+    --card-glass: rgba(255, 255, 255, 0.1);
+    --card-border: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+    --card-glass: rgba(255, 255, 255, 0.05);
+    --card-border: rgba(255, 255, 255, 0.1);
+}
+
+/* ========================================
+   LAYOUT PRINCIPAL
+   ======================================== */
+
+.main-content {
+    min-height: calc(100vh - 200px);
+    padding: 2rem 0;
+    background: linear-gradient(135deg, 
+        rgba(32, 44, 86, 0.02) 0%, 
+        rgba(172, 150, 90, 0.02) 100%);
+}
+
+[data-theme="dark"] .main-content {
+    background: linear-gradient(135deg, 
+        rgba(32, 44, 86, 0.1) 0%, 
+        rgba(172, 150, 90, 0.1) 100%);
+}
+
+/* ========================================
+   HEADER DE PÁGINA
+   ======================================== */
+
+.page-header {
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    background: var(--print-gradient);
+    border-radius: 24px;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--print-glow);
+    transform: perspective(1000px) rotateX(15deg);
+    transition: all 0.3s ease;
+}
+
+.header-icon:hover {
+    transform: perspective(1000px) rotateX(0deg) translateY(-5px);
+    box-shadow: 0 10px 30px rgba(74, 144, 226, 0.4);
+}
+
+.header-icon i {
+    font-size: 2.5rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: var(--print-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    margin-bottom: 0;
+}
+
+/* ========================================
+   TARJETA DE FORMULARIO
+   ======================================== */
+
+.form-card {
+    background: var(--card-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-header {
+    background: var(--print-gradient);
+    color: white;
+    padding: 1.5rem 2rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.1), 
+        transparent);
+    transform: skewX(-20deg);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) skewX(-20deg); }
+    100% { transform: translateX(200%) skewX(-20deg); }
+}
+
+.form-body {
+    padding: 2.5rem 2rem;
+}
+
+/* ========================================
+   GRUPOS DE FORMULARIO
+   ======================================== */
+
+.form-group {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-label-sica {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+}
+
+.form-control-sica {
+    height: 60px;
+    border: 2px solid var(--input-border);
+    border-radius: 16px;
+    padding: 0 1.25rem;
+    font-size: 1rem;
+    font-weight: 500;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.form-control-sica:focus {
+    border-color: var(--print-primary);
+    box-shadow: 
+        0 0 0 4px rgba(74, 144, 226, 0.1),
+        0 8px 24px rgba(74, 144, 226, 0.15);
+    background: var(--input-bg-focus);
+    transform: translateY(-1px);
+}
+
+.form-control-sica.is-valid {
+    border-color: var(--print-success);
+    background: var(--input-bg-focus);
+}
+
+.form-control-sica.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+}
+
+/* Input Group Styling */
+.input-group {
+    position: relative;
+}
+
+.input-group-text {
+    background: var(--print-gradient);
+    border: none;
+    color: white;
+    padding: 0 1rem;
+    border-radius: 0 16px 16px 0;
+    font-weight: 600;
+}
+
+.input-group .form-control-sica {
+    border-right: none;
+    border-radius: 16px 0 0 16px;
+}
+
+.input-group .form-control-sica:focus {
+    box-shadow: 
+        0 0 0 4px rgba(74, 144, 226, 0.1),
+        0 8px 24px rgba(74, 144, 226, 0.15);
+}
+
+/* Feedback Messages */
+.valid-feedback {
+    display: block !important;
+    color: var(--print-success);
+    font-weight: 600;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 200, 81, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid var(--print-success);
+}
+
+.invalid-feedback {
+    color: var(--danger);
+    font-weight: 600;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(220, 53, 69, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid var(--danger);
+}
+
+/* ========================================
+   BOTÓN DE ENVÍO
+   ======================================== */
+
+.form-actions {
+    margin-top: 3rem;
+    text-align: center;
+}
+
+.btn-submit {
+    height: 60px;
+    padding: 0 3rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-radius: 16px;
+    background: var(--print-gradient);
+    border: none;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 8px 24px rgba(74, 144, 226, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    min-width: 240px;
+}
+
+.btn-submit:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 
+        0 12px 32px rgba(74, 144, 226, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.btn-submit:active {
+    transform: translateY(-1px);
+}
+
+.btn-submit:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    transition: left 0.5s;
+    z-index: 1;
+}
+
+.btn-submit:hover::before {
+    left: 100%;
+}
+
+.btn-text, .btn-loader {
+    position: relative;
+    z-index: 2;
+}
+
+/* ========================================
+   REGISTROS RECIENTES
+   ======================================== */
+
+.recent-records {
+    background: var(--card-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+.records-header {
+    background: linear-gradient(135deg, 
+        var(--primary-blue) 0%, 
+        var(--primary-gold) 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+}
+
+.records-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.records-list {
+    padding: 1.5rem 2rem;
+}
+
+.record-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.record-item:last-child {
+    border-bottom: none;
+}
+
+.record-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.record-date {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.record-count {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--print-primary);
+}
+
+/* ========================================
+   MODAL DE ÉXITO
+   ======================================== */
+
+.success-modal .modal-content {
+    background: var(--card-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--print-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    animation: successPulse 0.6s ease-out;
+}
+
+.success-icon i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success-title {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.success-message {
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+    margin-bottom: 0;
+}
+
+/* ========================================
+   ANIMACIONES
+   ======================================== */
+
+.form-card, .recent-records {
+    animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: 1rem 0;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .header-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 1rem;
+    }
+    
+    .header-icon i {
+        font-size: 2rem;
+    }
+    
+    .form-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .card-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .form-control-sica {
+        height: 56px;
+    }
+    
+    .btn-submit {
+        height: 56px;
+        min-width: 200px;
+        font-size: 1rem;
+    }
+    
+    .records-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .records-list {
+        padding: 1.25rem 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-body {
+        padding: 1.5rem 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+        font-size: 1.125rem;
+    }
+    
+    .btn-submit {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .page-subtitle {
+        font-size: 1rem;
+    }
+}

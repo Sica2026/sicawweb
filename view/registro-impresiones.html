@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Registro de Impresiones - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/registro-impresiones.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-md-10">
+                    <!-- Header Section -->
+                    <div class="page-header text-center mb-5">
+                        <div class="header-icon">
+                            <i class="bi bi-printer-fill"></i>
+                        </div>
+                        <h1 class="page-title">Registro de Impresiones</h1>
+                        <p class="page-subtitle">Registra el número de impresiones realizadas</p>
+                    </div>
+
+                    <!-- Main Form Card -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <i class="bi bi-file-text-fill me-2"></i>
+                            <span>Nuevo Registro</span>
+                        </div>
+                        
+                        <form id="impresionesForm" class="needs-validation" novalidate>
+                            <div class="form-body">
+                                <!-- Número de Cuenta -->
+                                <div class="form-group">
+                                    <label class="form-label-sica" for="numeroCuenta">
+                                        <i class="bi bi-person-badge me-2"></i>
+                                        Número de Cuenta
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="numeroCuenta" 
+                                        name="numeroCuenta" 
+                                        class="form-control form-control-sica" 
+                                        placeholder="Ingresa tu número de cuenta"
+                                        required
+                                        autocomplete="off">
+                                    <div class="invalid-feedback">
+                                        Por favor ingresa un número de cuenta válido.
+                                    </div>
+                                    <div class="valid-feedback" id="asesorInfo" style="display: none;">
+                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                        <span id="asesorNombre"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Número de Impresiones -->
+                                <div class="form-group">
+                                    <label class="form-label-sica" for="numeroImpresiones">
+                                        <i class="bi bi-printer me-2"></i>
+                                        Número de Impresiones
+                                    </label>
+                                    <div class="input-group">
+                                        <input 
+                                            type="number" 
+                                            id="numeroImpresiones" 
+                                            name="numeroImpresiones" 
+                                            class="form-control form-control-sica" 
+                                            placeholder="0"
+                                            min="1"
+                                            max="9999"
+                                            required>
+                                        <span class="input-group-text">
+                                            <i class="bi bi-hash"></i>
+                                        </span>
+                                    </div>
+                                    <div class="invalid-feedback">
+                                        Por favor ingresa un número válido de impresiones (1-9999).
+                                    </div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-sica btn-submit" id="submitBtn">
+                                        <span class="btn-text">
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                            Registrar Impresiones
+                                        </span>
+                                        <div class="btn-loader" style="display: none;">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                            Registrando...
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Recent Records (Optional - Simple List) -->
+                    <div class="recent-records" id="recentRecords" style="display: none;">
+                        <div class="records-header">
+                            <h3><i class="bi bi-clock-history me-2"></i>Últimos Registros</h3>
+                        </div>
+                        <div class="records-list" id="recordsList">
+                            <!-- Records will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content success-modal">
+                <div class="modal-body text-center p-4">
+                    <div class="success-icon mb-3">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <h4 class="success-title">¡Registro Exitoso!</h4>
+                    <p class="success-message">Las impresiones han sido registradas correctamente.</p>
+                    <button type="button" class="btn btn-sica mt-3" data-bs-dismiss="modal">
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/registro-impresiones.js"></script>
+</body>
+</html>
