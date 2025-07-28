@@ -108,20 +108,18 @@ class SICAComponents {
                                         <span>Cerrar Sesión</span>
                                 </div>
                             </button>
-                        </div>
-
+                        </div>                        
+                        <button class="nav-btn" id="homeBtn">
+                            <div class="btn-content">
+                                <i class="bi bi-house-fill"></i>
+                                <span id="homeBtnText">Inicio</span>
+                            </div>
+                        </button>
                         <!-- Botones Comunes (siempre visibles) -->
                         <button class="nav-btn" id="darkModeToggle">
                             <div class="btn-content">
                                 <i class="bi bi-moon"></i>
                                 <span>Modo Oscuro</span>
-                            </div>
-                        </button>
-
-                        <button class="nav-btn" id="homeBtn">
-                            <div class="btn-content">
-                                <i class="bi bi-house-fill"></i>
-                                <span id="homeBtnText">Inicio</span>
                             </div>
                         </button>
                     </div>
@@ -180,6 +178,14 @@ class SICAComponents {
                                                 <span>Pase de Lista</span>
                                             </div>
                                         </button>
+                                        <button class="option-btn" data-action="horario">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-clock"></i>
+                                                </div>
+                                                <span>Horario</span>
+                                            </div>
+                                        </button>
                                         <button class="option-btn" data-action="impresiones">
                                             <div class="option-content">
                                                 <div class="option-icon">
@@ -195,15 +201,7 @@ class SICAComponents {
                                                 </div>
                                                 <span>Reportes</span>
                                             </div>
-                                        </button>
-                                        <button class="option-btn" data-action="horario">
-                                        <div class="option-content">
-                                            <div class="option-icon">
-                                                <i class="bi bi-clock"></i>
-                                            </div>
-                                            <span>Horario</span>
-                                        </div>
-                                    </button>
+                                        </button>                                        
                                     </div>
                                 </div>
                             </div>
