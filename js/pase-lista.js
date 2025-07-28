@@ -23,152 +23,192 @@ class PaseLista {
     }
 
     setupEventListeners() {
-        // Manual entry form
-        const form = document.getElementById('manualEntryForm');
-        const numeroCuentaInput = document.getElementById('numeroCuentaInput');
-        const entryBtn = document.getElementById('entryBtn');
-        const exitBtn = document.getElementById('exitBtn');
-        const toggleCameraBtn = document.getElementById('toggleCameraBtn');
-        const completeRecordsBtn = document.getElementById('completeRecordsBtn');
+    // Manual entry form
+    const form = document.getElementById('manualEntryForm');
+    const numeroCuentaInput = document.getElementById('numeroCuentaInput');
+    const registerBtn = document.getElementById('registerBtn'); // Solo un botón
+    const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+    const completeRecordsBtn = document.getElementById('completeRecordsBtn');
 
-        // Form validation
-        numeroCuentaInput?.addEventListener('input', (e) => {
-            this.validateNumeroCuenta(e.target.value);
-        });
+    // Form validation
+    numeroCuentaInput?.addEventListener('input', (e) => {
+        this.validateNumeroCuenta(e.target.value);
+    });
 
-        // Entry/Exit buttons
-        entryBtn?.addEventListener('click', () => {
-            this.handleManualEntry('entrada');
-        });
+    // CAMBIO: Solo un botón que detecta automáticamente
+    registerBtn?.addEventListener('click', () => {
+        this.handleManualEntry();
+    });
 
-        exitBtn?.addEventListener('click', () => {
-            this.handleManualEntry('salida');
-        });
+    // Camera toggle
+    toggleCameraBtn?.addEventListener('click', () => {
+        this.toggleCamera();
+    });
 
-        // Camera toggle
-        toggleCameraBtn?.addEventListener('click', () => {
-            this.toggleCamera();
-        });
+    // Complete records modal
+    completeRecordsBtn?.addEventListener('click', () => {
+        this.openCompleteRecordsModal();
+    });
 
-        // Complete records modal
-        completeRecordsBtn?.addEventListener('click', () => {
-            this.openCompleteRecordsModal();
-        });
-
-        // Enter key submit
-        numeroCuentaInput?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !this.isProcessing) {
-                e.preventDefault();
-                this.handleManualEntry('entrada');
-            }
-        });
-    }
+    // Enter key submit
+    numeroCuentaInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !this.isProcessing) {
+            e.preventDefault();
+            this.handleManualEntry();
+        }
+    });
+}
 
     validateNumeroCuenta(numeroCuenta) {
-        const input = document.getElementById('numeroCuentaInput');
-        const feedback = document.getElementById('inputFeedback');
-        
-        // Remove non-numeric characters
-        const cleaned = numeroCuenta.replace(/\D/g, '');
-        if (cleaned !== numeroCuenta) {
-            input.value = cleaned;
-        }
+    const input = document.getElementById('numeroCuentaInput');
+    const feedback = document.getElementById('inputFeedback');
+    
+    // Remove non-numeric characters
+    const cleaned = numeroCuenta.replace(/\D/g, '');
+    if (cleaned !== numeroCuenta) {
+        input.value = cleaned;
+    }
 
-        // Validate length and format
-        if (cleaned.length === 0) {
-            feedback.textContent = '';
-            feedback.className = 'input-feedback';
-            return false;
-        } else if (cleaned.length < 9) {
-            feedback.textContent = 'El número de cuenta debe tener 9 dígitos';
-            feedback.className = 'input-feedback invalid';
-            return false;
-        } else if (cleaned.length === 9) {
-            feedback.textContent = '✓ Número de cuenta válido';
-            feedback.className = 'input-feedback valid';
-            return true;
-        }
-
+    // Validate length and format
+    if (cleaned.length === 0) {
+        feedback.textContent = '';
+        feedback.className = 'input-feedback';
+        // Reset button
+        this.resetRegisterButton();
         return false;
-    }
-
-    async handleManualEntry(tipo) {
-        if (this.isProcessing) return;
-
-        const numeroCuentaInput = document.getElementById('numeroCuentaInput');
-        const numeroCuenta = numeroCuentaInput.value.trim();
-
-        if (!this.validateNumeroCuenta(numeroCuenta)) {
-            this.showError('Por favor ingresa un número de cuenta válido');
-            this.shakeInput(numeroCuentaInput);
-            return;
-        }
-
-        this.isProcessing = true;
-        const button = tipo === 'entrada' ? document.getElementById('entryBtn') : document.getElementById('exitBtn');
+    } else if (cleaned.length < 9) {
+        feedback.textContent = 'El número de cuenta debe tener 9 dígitos';
+        feedback.className = 'input-feedback invalid';
+        return false;
+    } else if (cleaned.length === 9) {
+        feedback.textContent = '✓ Número de cuenta válido';
+        feedback.className = 'input-feedback valid';
         
-        try {
-            // Show loading state
-            this.setButtonLoading(button, true);
-
-            // Search for asesor by numeroCuenta field
-            const asesorQuery = await this.db.collection('asesores')
-                .where('numeroCuenta', '==', numeroCuenta)
-                .get();
-            
-            if (asesorQuery.empty) {
-                throw new Error('Número de cuenta no encontrado en el sistema');
-            }
-
-            const asesorDoc = asesorQuery.docs[0];
-            const asesorData = asesorDoc.data();
-            const nombreAsesor = asesorData.nombreAsesor || 'Asesor';
-
-            // Create registro
-            const registro = {
-                numeroCuenta: numeroCuenta,
-                nombreAsesor: nombreAsesor,
-                tipo: tipo,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                fecha: new Date().toDateString(),
-                hora: new Date().toLocaleTimeString('es-MX', { hour12: false }),
-                metodo: 'manual'
-            };
-
-            // Save to Firestore in registroasistencia collection
-            await this.db.collection('registroasistencia').add(registro);
-
-            // Show success
-            this.showSuccessScreen(nombreAsesor, tipo);
-            
-            // Add to local log
-            this.addToActivityLog({
-                ...registro,
-                timestamp: new Date()
-            });
-
-            // Clear form
-            numeroCuentaInput.value = '';
-            document.getElementById('inputFeedback').textContent = '';
-            document.getElementById('inputFeedback').className = 'input-feedback';
-
-            // Update stats
-            if (tipo === 'entrada') {
-                this.entryCount++;
-            } else {
-                this.exitCount++;
-            }
-            this.updateStats();
-
-        } catch (error) {
-            console.error('Error en registro:', error);
-            this.showError(error.message || 'Error al procesar el registro');
-            this.shakeInput(numeroCuentaInput);
-        } finally {
-            this.setButtonLoading(button, false);
-            this.isProcessing = false;
-        }
+        // Mostrar qué tipo de registro se hará
+        this.showUpcomingRegistrationType(cleaned);
+        
+        return true;
     }
+
+    return false;
+}
+
+    async handleManualEntry() {
+    if (this.isProcessing) return;
+
+    const numeroCuentaInput = document.getElementById('numeroCuentaInput');
+    const numeroCuenta = numeroCuentaInput.value.trim();
+
+    if (!this.validateNumeroCuenta(numeroCuenta)) {
+        this.showError('Por favor ingresa un número de cuenta válido');
+        this.shakeInput(numeroCuentaInput);
+        return;
+    }
+
+    this.isProcessing = true;
+    const registerBtn = document.getElementById('registerBtn'); // Solo un botón
+    
+    try {
+        // Show loading state
+        this.setButtonLoading(registerBtn, true);
+
+        // Search for asesor by numeroCuenta field
+        const asesorQuery = await this.db.collection('asesores')
+            .where('numeroCuenta', '==', numeroCuenta)
+            .get();
+        
+        if (asesorQuery.empty) {
+            throw new Error('Número de cuenta no encontrado en el sistema');
+        }
+
+        const asesorDoc = asesorQuery.docs[0];
+        const asesorData = asesorDoc.data();
+        const nombreAsesor = asesorData.nombreAsesor || 'Asesor';
+
+        // Determinar automáticamente si es entrada o salida
+        const tipo = await this.determineEntryOrExit(numeroCuenta);
+
+        // Create registro
+        const registro = {
+            numeroCuenta: numeroCuenta,
+            nombreAsesor: nombreAsesor,
+            tipo: tipo,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            fecha: new Date().toDateString(),
+            hora: new Date().toLocaleTimeString('es-MX', { hour12: false }),
+            metodo: 'manual'
+        };
+
+        // Save to Firestore in registroasistencia collection
+        await this.db.collection('registroasistencia').add(registro);
+
+        // Show success
+        this.showSuccessScreen(nombreAsesor, tipo);
+        
+        // Add to local log
+        this.addToActivityLog({
+            ...registro,
+            timestamp: new Date()
+        });
+
+        // Clear form and reset button
+        numeroCuentaInput.value = '';
+        document.getElementById('inputFeedback').textContent = '';
+        document.getElementById('inputFeedback').className = 'input-feedback';
+        this.resetRegisterButton();
+
+        // Update stats
+        if (tipo === 'entrada') {
+            this.entryCount++;
+        } else {
+            this.exitCount++;
+        }
+        this.updateStats();
+
+    } catch (error) {
+        console.error('Error en registro:', error);
+        this.showError(error.message || 'Error al procesar el registro');
+        this.shakeInput(numeroCuentaInput);
+    } finally {
+        this.setButtonLoading(registerBtn, false);
+        this.isProcessing = false;
+    }
+}
+
+async showUpcomingRegistrationType(numeroCuenta) {
+    try {
+        const tipo = await this.determineEntryOrExit(numeroCuenta);
+        const registerBtn = document.getElementById('registerBtn');
+        
+        if (tipo === 'entrada') {
+            registerBtn.className = 'btn-action btn-entry btn-highlighted';
+            registerBtn.innerHTML = `
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>Registrar Entrada</span>
+            `;
+        } else {
+            registerBtn.className = 'btn-action btn-exit btn-highlighted';
+            registerBtn.innerHTML = `
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Registrar Salida</span>
+            `;
+        }
+    } catch (error) {
+        // Reset button on error
+        this.resetRegisterButton();
+    }
+}
+
+resetRegisterButton() {
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        registerBtn.className = 'btn-action btn-primary';
+        registerBtn.innerHTML = `
+            <i class="bi bi-person-check"></i>
+            <span>Registrar Asistencia</span>
+        `;
+    }
+}
 
     async toggleCamera() {
         const video = document.getElementById('cameraVideo');
