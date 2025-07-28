@@ -733,39 +733,95 @@ convertirDiaAIngles(diaEspanol) {
     // ========================================
 
     showLoading(message = 'Cargando...') {
-        const modal = document.getElementById('loadingModal');
-        const messageElement = document.getElementById('loadingMessage');
+    const modal = document.getElementById('loadingModal');
+    const messageElement = document.getElementById('loadingMessage');
+    
+    if (modal && messageElement) {
+        messageElement.textContent = message;
         
-        if (modal && messageElement) {
-            messageElement.textContent = message;
-            const bsModal = new bootstrap.Modal(modal);
+        // Cerrar cualquier instancia anterior antes de abrir
+        const existingInstance = bootstrap.Modal.getInstance(modal);
+        if (existingInstance) {
+            existingInstance.hide();
+        }
+        
+        // Crear nueva instancia y mostrar
+        setTimeout(() => {
+            const bsModal = new bootstrap.Modal(modal, {
+                backdrop: 'static',
+                keyboard: false
+            });
             bsModal.show();
-        }
-        
-        // También agregar estado de loading al botón principal
-        const btn = document.getElementById('buscarBtn');
-        if (btn) {
-            btn.classList.add('btn-loading');
-            btn.disabled = true;
-        }
+            
+            // Guardar referencia para poder cerrar después
+            this.currentLoadingModal = bsModal;
+        }, 100);
     }
+    
+    // Agregar estado de loading al botón principal
+    const btn = document.getElementById('buscarBtn');
+    if (btn) {
+        btn.classList.add('btn-loading');
+        btn.disabled = true;
+    }
+}
 
-    hideLoading() {
-        const modal = document.getElementById('loadingModal');
-        if (modal) {
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) {
-                bsModal.hide();
+hideLoading() {
+    console.log('🔄 Intentando cerrar modal de loading...');
+    
+    const modal = document.getElementById('loadingModal');
+    if (modal) {
+        // Método 1: Usar la referencia guardada
+        if (this.currentLoadingModal) {
+            try {
+                this.currentLoadingModal.hide();
+                this.currentLoadingModal = null;
+                console.log('✅ Modal cerrado usando referencia guardada');
+            } catch (error) {
+                console.log('⚠️ Error con referencia guardada, intentando alternativas...');
             }
         }
         
-        // Remover estado de loading del botón principal
-        const btn = document.getElementById('buscarBtn');
-        if (btn) {
-            btn.classList.remove('btn-loading');
-            btn.disabled = false;
+        // Método 2: Buscar instancia existente
+        const existingInstance = bootstrap.Modal.getInstance(modal);
+        if (existingInstance) {
+            try {
+                existingInstance.hide();
+                console.log('✅ Modal cerrado usando instancia existente');
+            } catch (error) {
+                console.log('⚠️ Error con instancia existente');
+            }
         }
+        
+        // Método 3: Forzar cierre manual (fallback)
+        setTimeout(() => {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            modal.removeAttribute('aria-modal', 'role');
+            
+            // Remover backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            
+            // Restaurar body
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            console.log('✅ Modal cerrado forzadamente');
+        }, 500);
     }
+    
+    // Remover estado de loading del botón principal
+    const btn = document.getElementById('buscarBtn');
+    if (btn) {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+    }
+}
 
     showNotification(message, type = 'info') {
         // Crear notificación simple sin dependencias externas
