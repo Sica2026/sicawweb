@@ -344,6 +344,9 @@ async handleFacialRecognition(recognitionResult) {
             }
         }
 
+        // 🚨 NUEVA FUNCIONALIDAD: Desactivar cámara inmediatamente tras registro exitoso
+        this.disableCameraAfterRegistration();
+
         // Mostrar éxito
         this.showSuccessScreen(nombreAsesor, tipo, registroResultado);
         
@@ -369,10 +372,55 @@ async handleFacialRecognition(recognitionResult) {
 
     } catch (error) {
         console.error('Error en reconocimiento facial:', error);
+        // En caso de error, también desactivar la cámara para evitar problemas
+        this.disableCameraAfterRegistration();
     } finally {
+        // Reducir el tiempo de bloqueo ya que la cámara se desactivará
         setTimeout(() => {
             this.isProcessing = false;
-        }, 3000);
+        }, 1000); // Reducido de 3000ms a 1000ms
+    }
+}
+
+// 🚨 NUEVO MÉTODO: Desactivar cámara después de registro
+disableCameraAfterRegistration() {
+    try {
+        // Detener el stream de la cámara
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+            this.currentStream = null;
+        }
+
+        // Actualizar la UI
+        const video = document.getElementById('cameraVideo');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const toggleBtn = document.getElementById('toggleCameraBtn');
+        const statusIndicator = document.querySelector('#facialStatus .status-indicator');
+        const statusText = document.querySelector('#facialStatus .status-text');
+        const scanFrame = document.querySelector('.scan-frame');
+
+        if (video && placeholder && toggleBtn) {
+            video.style.display = 'none';
+            placeholder.style.display = 'flex';
+            
+            // Actualizar botón
+            toggleBtn.innerHTML = '<i class="bi bi-camera-video"></i><span>Activar Cámara</span>';
+            
+            // Actualizar indicadores de estado
+            if (statusIndicator) statusIndicator.classList.remove('active');
+            if (statusText) statusText.textContent = 'Desactivado';
+            if (scanFrame) scanFrame.classList.remove('active');
+        }
+
+        // Detener reconocimiento facial
+        if (window.FacialRecognition) {
+            window.FacialRecognition.stopRecognition();
+        }
+
+        console.log('📷 Cámara desactivada automáticamente tras registro exitoso');
+
+    } catch (error) {
+        console.error('Error al desactivar cámara:', error);
     }
 }
 
@@ -399,7 +447,7 @@ async determineEntryOrExit(numeroCuenta) {
     }
 }
 
-   showSuccessScreen(nombreAsesor, tipo, registroData = null) {
+showSuccessScreen(nombreAsesor, tipo, registroData = null) {
     const screenId = tipo === 'entrada' ? 'welcomeScreen' : 'exitScreen';
     const nameId = tipo === 'entrada' ? 'welcomeName' : 'exitName';
     const timeId = tipo === 'entrada' ? 'welcomeTime' : 'exitTime';
@@ -422,12 +470,25 @@ async determineEntryOrExit(numeroCuenta) {
         
         timeElement.textContent = timeText;
         
+        // 🚨 NUEVO: Agregar mensaje sobre reactivación de cámara
+        const infoMessage = document.createElement('div');
+        infoMessage.className = 'camera-info-message';
+        infoMessage.innerHTML = `
+            <i class="bi bi-info-circle"></i>
+            Cámara desactivada. El siguiente asesor debe reactivarla.
+        `;
+        timeElement.appendChild(infoMessage);
+        
         screen.style.display = 'flex';
         
-        // Auto hide after 5 seconds for exit (más tiempo para leer la info)
-        const hideTime = tipo === 'salida' ? 5000 : 3000;
+        // Auto hide después de tiempo extendido para leer el mensaje
+        const hideTime = tipo === 'salida' ? 6000 : 4000; // Más tiempo para leer
         setTimeout(() => {
             screen.style.display = 'none';
+            // Limpiar mensaje informativo
+            if (infoMessage.parentNode) {
+                infoMessage.remove();
+            }
         }, hideTime);
     }
 
