@@ -295,63 +295,129 @@ class ConsultaHorariosManager {
 }
 
     // Nuevo método para cargar registros de asistencia del día actual
-  async loadRegistrosAsistencia(diaConsultado) {
+async loadRegistrosAsistencia(diaConsultado) {
     try {
         const diaIngles = this.convertirDiaAIngles(diaConsultado);
         
+        console.log('🔄 Iniciando carga de registros de asistencia...');
         console.log('📅 Día consultado:', diaConsultado, '→', diaIngles);
         console.log('📅 Buscando registros que inicien con:', diaIngles);
         
         // Obtener todos los registros y filtrar por el día de la semana
         const snapshot = await this.db.collection('registroasistencia').get();
         
-        console.log(`🔍 Encontrados ${snapshot.size} registros totales`);
+        console.log(`🔍 Encontrados ${snapshot.size} registros totales en la base de datos`);
         
         // Limpiar cache anterior
         this.registrosAsistencia.clear();
         
         // Filtrar registros que coincidan con el día consultado
         let registrosFiltrados = 0;
+        let registrosDelDia = [];
         
         snapshot.forEach(doc => {
             const data = doc.data();
             const fecha = data.fecha; // "Mon Jul 27 2025"
             
+            // 🔍 DEBUG: Mostrar estructura completa del registro
+            console.log('📄 Estructura completa del registro:', {
+                id: doc.id,
+                data: data
+            });
+            
             // Extraer el día de la semana (primeras 3 letras)
             if (fecha && fecha.startsWith(diaIngles)) {
                 const numeroCuenta = data.numeroCuenta;
                 
-                console.log('📄 Procesando registro:', {
+                // 🔧 CORREGIDO: Leer la estructura correcta
+                let tipo = null;
+                let hora = null;
+                let timestamp = null;
+                
+                // Verificar si existe el campo 'entrada'
+                if (data.entrada) {
+                    console.log('✅ Encontrado registro de ENTRADA:', data.entrada);
+                    tipo = 'entrada';
+                    hora = data.entrada.horaRedondeada || data.entrada.hora;
+                    timestamp = data.entrada.timestamp || data.timestamp;
+                }
+                
+                // Verificar si existe el campo 'salida'
+                if (data.salida) {
+                    console.log('✅ Encontrado registro de SALIDA:', data.salida);
+                    tipo = 'salida';
+                    hora = data.salida.horaRedondeada || data.salida.hora;
+                    timestamp = data.salida.timestamp || data.timestamp;
+                }
+                
+                // Si no hay entrada ni salida, revisar campos directos (estructura antigua)
+                if (!tipo && data.tipo) {
+                    tipo = data.tipo;
+                    hora = data.hora;
+                    timestamp = data.timestamp;
+                }
+                
+                console.log('✅ Registro procesado:', {
                     id: doc.id,
                     numeroCuenta: numeroCuenta,
                     nombreAsesor: data.nombreAsesor,
-                    tipo: data.tipo,
-                    hora: data.hora,
+                    tipo: tipo,
+                    hora: hora,
                     fecha: data.fecha,
-                    diaExtraido: fecha.substring(0, 3)
+                    timestamp: timestamp
                 });
                 
-                if (numeroCuenta) {
+                registrosDelDia.push({
+                    id: doc.id,
+                    numeroCuenta: numeroCuenta,
+                    nombreAsesor: data.nombreAsesor,
+                    tipo: tipo,
+                    hora: hora,
+                    fecha: data.fecha,
+                    timestamp: timestamp
+                });
+                
+                if (numeroCuenta && tipo) {
                     // Si ya existe un registro para este asesor, mantener solo el más reciente
+                    const timestampValue = timestamp || Date.now();
+                    
                     if (!this.registrosAsistencia.has(numeroCuenta) || 
-                        data.timestamp > this.registrosAsistencia.get(numeroCuenta).timestamp) {
+                        timestampValue > (this.registrosAsistencia.get(numeroCuenta).timestamp || 0)) {
+                        
                         this.registrosAsistencia.set(numeroCuenta, {
                             nombreAsesor: data.nombreAsesor,
-                            numeroCuenta: data.numeroCuenta,
-                            tipo: data.tipo, // "entrada" o "salida"
-                            hora: data.hora,
-                            timestamp: data.timestamp,
+                            numeroCuenta: numeroCuenta,
+                            tipo: tipo, // "entrada" o "salida"
+                            hora: hora,
+                            timestamp: timestampValue,
                             fecha: data.fecha
                         });
-                        console.log(`💾 Guardado registro para ${numeroCuenta}: ${data.tipo} a las ${data.hora}`);
+                        
+                        console.log(`💾 Guardado registro para numeroCuenta ${numeroCuenta}: ${tipo} a las ${hora}`);
                         registrosFiltrados++;
+                    } else {
+                        console.log(`⏭️ Registro más antiguo ignorado para numeroCuenta ${numeroCuenta}`);
+                    }
+                } else {
+                    if (!numeroCuenta) {
+                        console.log('⚠️ Registro sin numeroCuenta:', doc.id);
+                    }
+                    if (!tipo) {
+                        console.log('⚠️ Registro sin tipo válido:', doc.id, '- data:', data);
                     }
                 }
+            } else {
+                console.log(`❌ Registro NO coincide con día ${diaIngles}:`, {
+                    fecha: fecha,
+                    diaExtraido: fecha ? fecha.substring(0, 3) : 'undefined'
+                });
             }
         });
         
         console.log(`✅ ${registrosFiltrados} registros de asistencia procesados para ${diaConsultado} (${diaIngles})`);
-        console.log('📋 Registros en cache:', Array.from(this.registrosAsistencia.entries()));
+        console.log('📋 Todos los registros del día encontrados:', registrosDelDia);
+        console.log('📋 Registros finales en cache:', Array.from(this.registrosAsistencia.entries()));
+        console.log('🔑 numeroCuentas con registros:', Array.from(this.registrosAsistencia.keys()));
         
     } catch (error) {
         console.error('❌ Error cargando registros de asistencia:', error);
