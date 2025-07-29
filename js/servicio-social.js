@@ -468,12 +468,12 @@ class ServicioSocialManager {
         card.setAttribute('data-asesor-id', asesor.id);
         
         const nombreCompleto = `${asesor.nombre || ''} ${asesor.apellidoPaterno || ''} ${asesor.apellidoMaterno || ''}`.trim();
-        const fotoUrl = asesor.fotoUrl || '../images/default-avatar.png';
+        const fotoUrl = asesor.fotoUrl || '../image/default-avatar.png';
         const estado = asesor.servicioSocial.estadoTermino;
         
         let cardContent = `
             <img src="${fotoUrl}" alt="${nombreCompleto}" class="card-avatar" 
-                 onerror="this.src='../images/default-avatar.png'">
+                 onerror="this.src='../image/default-avatar.png'">
             <h5 class="card-name">${nombreCompleto}</h5>
             <div class="card-cuenta">${asesor.numeroCuenta || 'Sin número'}</div>
             <div class="card-info">
@@ -566,8 +566,8 @@ class ServicioSocialManager {
         const nombreCompleto = `${asesor.nombre || ''} ${asesor.apellidoPaterno || ''} ${asesor.apellidoMaterno || ''}`.trim();
         
         // Header
-        document.getElementById('asignacionFoto').src = asesor.fotoUrl || '../images/default-avatar.png';
-        document.getElementById('asignacionFoto').onerror = (e) => e.target.src = '../images/default-avatar.png';
+        document.getElementById('asignacionFoto').src = asesor.fotoUrl || '../image/default-avatar.png';
+        document.getElementById('asignacionFoto').onerror = (e) => e.target.src = '../image/default-avatar.png';
         document.getElementById('asignacionSubtitle').textContent = `${nombreCompleto} • ${asesor.numeroCuenta || 'Sin número'}`;
         
         // Limpiar selección anterior
@@ -726,8 +726,8 @@ class ServicioSocialManager {
         const nombreCompleto = `${asesor.nombre || ''} ${asesor.apellidoPaterno || ''} ${asesor.apellidoMaterno || ''}`.trim();
         
         if (modalFoto) {
-            modalFoto.src = asesor.fotoUrl || '../images/default-avatar.png';
-            modalFoto.onerror = () => modalFoto.src = '../images/default-avatar.png';
+            modalFoto.src = asesor.fotoUrl || '../image/default-avatar.png';
+            modalFoto.onerror = () => modalFoto.src = '../image/default-avatar.png';
         }
         
         if (modalTitle) {

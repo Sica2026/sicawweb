@@ -102,12 +102,7 @@ class SICAComponents {
                                     <i class="bi bi-chevron-down chevron-icon"></i>
                                 </div>
                             </button>
-                            <button class="nav-btn logout-btn" id="logoutBtn">
-                                <div class="btn-content">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                        <span>Cerrar Sesión</span>
-                                </div>
-                            </button>
+                            
                         </div>                        
                         <button class="nav-btn" id="homeBtn">
                             <div class="btn-content">
@@ -120,6 +115,12 @@ class SICAComponents {
                             <div class="btn-content">
                                 <i class="bi bi-moon"></i>
                                 <span>Modo Oscuro</span>
+                            </div>
+                        </button>
+                        <button class="nav-btn logout-btn" id="logoutBtn">
+                            <div class="btn-content">
+                                <i class="bi bi-box-arrow-right"></i>
+                                    <span>Cerrar Sesión</span>
                             </div>
                         </button>
                     </div>
