@@ -182,7 +182,7 @@ class RealFacialRecognition {
             // Find best match
             const match = this.findBestMatch(faceDescriptor);
             
-            if (match && match.confidence > 0.5) {
+            if (match && match.confidence > 0.75) {
                 return {
                     numeroCuenta: match.numeroCuenta,
                     confidence: match.confidence,
@@ -259,7 +259,7 @@ class RealFacialRecognition {
         for (const [numeroCuenta, storedDescriptor] of this.faceDescriptors.entries()) {
             const similarity = this.calculateCosineSimilarity(currentDescriptor, storedDescriptor);
             
-            if (similarity > bestSimilarity && similarity > 0.5) {
+            if (similarity > bestSimilarity && similarity > 0.75) {
                 bestSimilarity = similarity;
                 bestMatch = {
                     numeroCuenta: numeroCuenta,
