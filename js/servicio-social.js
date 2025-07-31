@@ -1099,59 +1099,127 @@ class ServicioSocialManager {
         delete this.currentAsesor.servicioSocial.filesToDelete;
     }
 
-    generateDocument(docType) {
-        if (!this.currentAsesor) return;
-        
-        console.log(`📄 Generando documento: ${docType}`);
-        
-        // Mapear tipos de documento a archivos JS
-        const docScripts = {
-            'carta-termino-fq': 'carta-termino-FQ.js',
-            'carta-termino-prepa': 'carta-termino-prepa.js',
-            'carta-aceptacion-fq': 'carta-aceptacion-FQ.js',
-            'carta-aceptacion-prepa': 'carta-aceptacion-prepa.js',
-            'formato-asesor-ss': 'formato-asesor-ss.js',
-            'formato-solo-ss': 'formato-solo-ss.js'
-        };
-        
-        const scriptFile = docScripts[docType];
-        
-        if (scriptFile) {
-            this.showNotification(
-                'Generando documento...',
-                `Preparando ${this.getDocumentName(docType)}`,
-                'info',
-                'bi-file-earmark-pdf'
-            );
-            
-            // En el futuro, aquí cargarías el script correspondiente
-            // loadScript(`../js/documents/${scriptFile}`).then(() => {
-            //     // Ejecutar generación del documento
-            // });
-            
-            setTimeout(() => {
-                this.showNotification(
-                    'Documento preparado',
-                    'La funcionalidad de generación estará disponible próximamente',
-                    'warning'
-                );
-            }, 1500);
-        } else {
-            this.showNotification('Tipo de documento no reconocido', 'error');
-        }
-    }
 
-    getDocumentName(docType) {
-        const names = {
-            'carta-termino-fq': 'Carta de Término FQ',
-            'carta-termino-prepa': 'Carta de Término Prepa',
-            'carta-aceptacion-fq': 'Carta de Aceptación FQ',
-            'carta-aceptacion-prepa': 'Carta de Aceptación Prepa',
-            'formato-asesor-ss': 'Formato Asesor + SS',
-            'formato-solo-ss': 'Formato Solo SS'
-        };
-        return names[docType] || docType;
+generateDocument(docType) {
+    if (!this.currentAsesor) return;
+    
+    console.log(`📄 Generando documento: ${docType}`);
+    
+    // Mapear tipos de documento a archivos JS
+    const docScripts = {
+    'carta-termino-fq': 'carta-termino-FQ-pdf.js',  // ← Cambiar aquí
+    'carta-termino-prepa': 'carta-termino-prepa.js',
+    'carta-aceptacion-fq': 'carta-aceptacion-FQ.js',
+    'carta-aceptacion-prepa': 'carta-aceptacion-prepa.js',
+    'formato-asesor-ss': 'formato-asesor-ss.js',
+    'formato-solo-ss': 'formato-solo-ss.js'
+    };
+    
+    const scriptFile = docScripts[docType];
+    
+    if (scriptFile) {
+        this.showNotification(
+        'Generando documento...',
+        `Preparando ${this.getDocumentName(docType)}`,
+        'info',
+        'bi-file-earmark-pdf'  // ← Cambiar de 'bi-file-earmark-word' a 'bi-file-earmark-pdf'
+    );
+        
+        // Preparar datos del asesor
+        const datosAsesor = this.prepareAsesorData();
+        
+        // Cargar script y ejecutar generación
+        loadScript(`../js/documents/${scriptFile}`)
+            .then(() => {
+                // Ejecutar función específica según el tipo de documento
+                switch(docType) {
+                    case 'carta-termino-fq':
+                        return window.generarCartaTerminoFQWord(datosAsesor);
+                    
+                    case 'carta-termino-prepa':
+                        return window.generarCartaTerminoPrepaWord(datosAsesor);
+                    
+                    case 'carta-aceptacion-fq':
+                        return window.generarCartaAceptacionFQWord(datosAsesor);
+                    
+                    case 'carta-aceptacion-prepa':
+                        return window.generarCartaAceptacionPrepaWord(datosAsesor);
+                    
+                    case 'formato-asesor-ss':
+                        return window.generarFormatoAsesorSS(datosAsesor);
+                    
+                    case 'formato-solo-ss':
+                        return window.generarFormatoSoloSS(datosAsesor);
+                    
+                    default:
+                        throw new Error(`Función de generación no encontrada para: ${docType}`);
+                }
+            })
+            .then((resultado) => {
+                console.log('✅ Documento generado exitosamente:', resultado);
+            })
+            .catch((error) => {
+                console.error('❌ Error generando documento:', error);
+                this.showNotification(
+                    'Error al generar documento',
+                    `No se pudo generar ${this.getDocumentName(docType)}`,
+                    'error'
+                );
+            });
+            
+    } else {
+        this.showNotification('Tipo de documento no reconocido', 'error');
     }
+}
+
+// Función auxiliar para preparar los datos del asesor
+prepareAsesorData() {
+    const nombreCompleto = `${this.currentAsesor.nombre || ''} ${this.currentAsesor.apellidoPaterno || ''} ${this.currentAsesor.apellidoMaterno || ''}`.trim();
+    
+    return {
+        // Datos personales del asesor
+        nombreAsesor: nombreCompleto,
+        numeroCuenta: this.currentAsesor.numeroCuenta || '',
+        escuela: this.currentAsesor.escuela || '',
+        carrera: this.currentAsesor.carrera || '',
+        avance: this.currentAsesor.avance || '',
+        
+        // Datos del servicio social desde el formulario
+        folioTermino: document.getElementById('folioTermino')?.value || '',
+        folioAceptacion: document.getElementById('folioAceptacion')?.value || '',
+        clavePrograma: document.getElementById('clavePrograma')?.value || '',
+        fechaInicio: document.getElementById('fechaInicio')?.value || '',
+        fechaTermino: document.getElementById('fechaTermino')?.value || '',
+        fechaEntregaCarta: document.getElementById('fechaEntregaCarta')?.value || '',
+        estadoTermino: document.getElementById('estadoTermino')?.value || '',
+        
+        // Datos de horas
+        horasAsesor: parseFloat(document.getElementById('horasAsesor')?.value) || 0,
+        horasServicioSocial: parseFloat(document.getElementById('horasServicioSocial')?.value) || 0,
+        totalHoras: parseFloat(document.getElementById('totalHoras')?.value) || 0,
+        
+        // Datos adicionales que pueden ser útiles
+        fechaGeneracion: new Date().toISOString().split('T')[0],
+        usuarioGenerador: this.currentUser?.email || '',
+        
+        // Datos específicos del sistema
+        sistemaGenerador: 'SICA Administrativo',
+        versionSistema: '1.0'
+    };
+}
+
+// Función auxiliar mejorada para nombres de documentos
+getDocumentName(docType) {
+    const names = {
+        'carta-termino-fq': 'Carta de Término FQ',
+        'carta-termino-prepa': 'Carta de Término Prepa',
+        'carta-aceptacion-fq': 'Carta de Aceptación FQ',
+        'carta-aceptacion-prepa': 'Carta de Aceptación Prepa',
+        'formato-asesor-ss': 'Formato Asesor + SS',
+        'formato-solo-ss': 'Formato Solo SS'
+    };
+    return names[docType] || docType;
+}
 
     // ========================================
     // ESTADÍSTICAS Y ACTUALIZACIÓN UI
