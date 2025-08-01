@@ -467,7 +467,7 @@ class ServicioSocialManager {
         card.style.animationDelay = `${index * 0.1}s`;
         card.setAttribute('data-asesor-id', asesor.id);
         
-        const nombreCompleto = `${asesor.nombre || ''} ${asesor.apellidoPaterno || ''} ${asesor.apellidoMaterno || ''}`.trim();
+        const nombreCompleto = asesor.nombreAsesor || 'Sin nombre';
         const fotoUrl = asesor.fotoUrl || '../image/default-avatar.png';
         const estado = asesor.servicioSocial.estadoTermino;
         
@@ -563,7 +563,7 @@ class ServicioSocialManager {
     }
 
     populateAssignmentModal(asesor) {
-        const nombreCompleto = `${asesor.nombre || ''} ${asesor.apellidoPaterno || ''} ${asesor.apellidoMaterno || ''}`.trim();
+        const nombreCompleto = asesor.nombreAsesor || 'Sin nombre';
         
         // Header
         document.getElementById('asignacionFoto').src = asesor.fotoUrl || '../image/default-avatar.png';
@@ -723,7 +723,7 @@ class ServicioSocialManager {
         const modalTitle = document.getElementById('modalTitle');
         const modalSubtitle = document.getElementById('modalSubtitle');
         
-        const nombreCompleto = `${asesor.nombre || ''} ${asesor.apellidoPaterno || ''} ${asesor.apellidoMaterno || ''}`.trim();
+        const nombreCompleto = asesor.nombreAsesor || 'Sin nombre';
         
         if (modalFoto) {
             modalFoto.src = asesor.fotoUrl || '../image/default-avatar.png';
@@ -1174,7 +1174,7 @@ generateDocument(docType) {
 
 // Función auxiliar para preparar los datos del asesor
 prepareAsesorData() {
-    const nombreCompleto = `${this.currentAsesor.nombre || ''} ${this.currentAsesor.apellidoPaterno || ''} ${this.currentAsesor.apellidoMaterno || ''}`.trim();
+    const nombreCompleto = this.currentAsesor.nombreAsesor || 'Sin nombre';
     
     return {
         // Datos personales del asesor
