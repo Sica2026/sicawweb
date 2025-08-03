@@ -4,28 +4,95 @@ let formulariosAuth;
 // Configuraciones de formularios
 const formConfigs = {
     'registro-asesor': {
-    title: 'Convocatoria Registro de Asesor',
-    type: 'whatsapp',
-    icon: 'bi-person-plus',
-    fields: [
-        { name: 'numeros', label: 'Números de WhatsApp', type: 'textarea', placeholder: 'Un número por línea (ej: 5551234567)', required: true },
-        { name: 'fecha_limite', label: 'Fecha Límite de Registro', type: 'date', required: true },
-        { name: 'mensaje_adicional', label: 'Mensaje Adicional (opcional)', type: 'textarea', rows: 3, placeholder: 'Información extra sobre la convocatoria...' }
-    ]
-    },
-
-    'actualizacion-datos': {
-        title: 'Actualización de Datos',
-        type: 'email',
-        icon: 'bi-arrow-clockwise',
+        title: 'Convocatoria Registro de Asesor',
+        type: 'whatsapp',
+        icon: 'bi-person-plus',
         fields: [
-            { name: 'destinatarios', label: 'Destinatarios', type: 'email', multiple: true, required: true },
-            { name: 'asunto', label: 'Asunto', type: 'text', value: 'Solicitud de Actualización de Datos - SICA', required: true },
-            { name: 'tipo_datos', label: 'Tipo de Datos', type: 'select', options: ['Datos Personales', 'Datos Académicos', 'Datos de Contacto', 'Todos'], required: true },
-            { name: 'urgencia', label: 'Nivel de Urgencia', type: 'select', options: ['Normal', 'Urgente', 'Crítico'], required: true },
-            { name: 'fecha_limite', label: 'Fecha Límite', type: 'date', required: true }
+            { name: 'numeros', label: 'Números de WhatsApp', type: 'textarea', placeholder: 'Un número por línea (ej: 5551234567)', required: true },
+            { name: 'fecha_limite', label: 'Fecha Límite de Registro', type: 'date', required: true },
+            { name: 'mensaje_adicional', label: 'Mensaje Adicional (opcional)', type: 'textarea', rows: 3, placeholder: 'Información extra sobre la convocatoria...' }
         ]
     },
+
+    // ✅ ACTUALIZADO: Configuración para Actualización de Datos
+    'actualizacion-datos': {
+        title: 'Actualización de Datos',
+        type: 'url',
+        icon: 'bi-arrow-clockwise',
+        fields: [
+            { 
+                name: 'mensaje_completo', 
+                label: 'Mensaje para el Grupo SICA', 
+                type: 'message_display', 
+                value: `📋 *ACTUALIZACIÓN DE DOCUMENTOS - SICA*
+
+¡Hola compañeras y compañeros asesores! 👋
+
+Es necesario que actualicen sus documentos personales en el sistema SICA para mantener su información al día.
+
+🔗 *ACCEDE AL FORMULARIO:*
+https://sica-a5c24.web.app/view/actualizacion-datos.html
+
+📄 *DOCUMENTOS REQUERIDOS:*
+• Historial Académico actualizado
+• Comprobante de Domicilio reciente (Julio/Agosto 2025)
+• CURP
+• INE (ambos lados en un solo archivo)
+• Credencial UNAM (ambos lados en un solo archivo)
+
+⏰ *IMPORTANTE:* Por favor completen la actualización lo antes posible para evitar inconvenientes.
+
+Si tienen dudas, pueden contactar al equipo administrativo.
+
+¡Gracias por su colaboración! 🙌
+
+*Equipo SICA - Facultad de Química, UNAM* 🧪⚗️`,
+                readonly: true 
+            }
+        ]
+    },
+
+    // ✅ NUEVO: Configuración para Comprobante de Inscripción
+    'comprobante-inscripcion': {
+        title: 'Actualizar Comprobante de Inscripción',
+        type: 'url',
+        icon: 'bi-file-earmark-check',
+        fields: [
+            { 
+                name: 'mensaje_completo', 
+                label: 'Mensaje para el Grupo SICA', 
+                type: 'message_display', 
+                value: `📚 *ACTUALIZACIÓN DE COMPROBANTE DE INSCRIPCIÓN - SICA*
+
+¡Hola compañeras y compañeros asesores! 👋
+
+Es necesario que actualicen su comprobante de inscripción en el sistema SICA para el semestre actual.
+
+🔗 *ACCEDE AL FORMULARIO:*
+https://sica-a5c24.web.app/view/comprobante-inscripcion.html
+
+📋 *DOCUMENTO REQUERIDO:*
+• Comprobante de Inscripción actualizado del semestre 2025-2
+• El documento debe estar en formato PDF
+• Verificar que contenga todos los datos legibles
+
+📅 *SEMESTRE ACTUAL:* 2025-2
+
+⏰ *IMPORTANTE:* Por favor suban su comprobante actualizado lo antes posible para mantener activo su estatus como asesor.
+
+Si tienen dudas sobre cómo obtener su comprobante de inscripción:
+• Ingresen al portal de alumnos UNAM
+• Sección "Servicios Escolares"
+• Generar comprobante de inscripción
+
+¡Gracias por mantener sus documentos actualizados! 🙌
+
+*Equipo SICA - Facultad de Química, UNAM* 🧪⚗️`,
+                readonly: true 
+            }
+        ]
+    },
+    
     'becas': {
         title: 'Aviso de Entrega de Becas',
         type: 'email',
@@ -63,18 +130,6 @@ const formConfigs = {
             { name: 'lugar', label: 'Lugar del Evento', type: 'text', required: true },
             { name: 'dress_code', label: 'Código de Vestimenta', type: 'text' },
             { name: 'mensaje_adicional', label: 'Mensaje Adicional', type: 'textarea', rows: 3 }
-        ]
-    },
-    'recordatorios': {
-        title: 'Recordatorios Importantes',
-        type: 'whatsapp',
-        icon: 'bi-alarm',
-        fields: [
-            { name: 'numeros', label: 'Números de WhatsApp', type: 'textarea', placeholder: 'Un número por línea', required: true },
-            { name: 'tipo_recordatorio', label: 'Tipo de Recordatorio', type: 'select', options: ['Reunión', 'Entrega', 'Evento', 'Tarea', 'Otro'], required: true },
-            { name: 'titulo', label: 'Título del Recordatorio', type: 'text', required: true },
-            { name: 'fecha_recordatorio', label: 'Fecha/Hora', type: 'datetime-local', required: true },
-            { name: 'mensaje', label: 'Mensaje del Recordatorio', type: 'textarea', rows: 4, required: true }
         ]
     },
     'encuesta-usuarios': {
@@ -116,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setTimeout(() => {
         clearInterval(checkFirebase);
-        if (!db) {
+        if (!formulariosDB) {
             showNotification('Error de conexión con Firebase', 'error');
         }
     }, 10000);
@@ -220,17 +275,25 @@ function openFormConfig(type, formKey) {
     enviarBtn.setAttribute('data-form-key', formKey);
     enviarBtn.setAttribute('data-form-type', type);
     
-    // Actualizar texto del botón según el tipo
-    const buttonTexts = {
-        'email': 'Enviar Email',
-        'whatsapp': 'Enviar WhatsApp',
-        'survey': 'Crear Encuesta'
-    };
-    
-    enviarBtn.innerHTML = `
-        <i class="bi ${getTypeIcon(type)} me-1"></i>
-        ${buttonTexts[type] || 'Enviar'}
-    `;
+    // ✅ ACTUALIZAR texto del botón según el tipo
+    if (formKey === 'actualizacion-datos' || formKey === 'comprobante-inscripcion') {
+        // Para formularios de mensaje, ocultar el botón principal
+        enviarBtn.style.display = 'none';
+    } else {
+        // Para otros formularios, mostrar botón normal
+        enviarBtn.style.display = 'inline-block';
+        const buttonTexts = {
+            'email': 'Enviar Email',
+            'whatsapp': 'Enviar WhatsApp',
+            'survey': 'Crear Encuesta',
+            'url': 'Compartir Mensaje'
+        };
+        
+        enviarBtn.innerHTML = `
+            <i class="bi ${getTypeIcon(type)} me-1"></i>
+            ${buttonTexts[type] || 'Enviar'}
+        `;
+    }
     
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('formConfigModal'));
@@ -257,6 +320,7 @@ function generateFormHTML(fields, type) {
                         placeholder="${field.placeholder || ''}"
                         ${field.required ? 'required' : ''}
                         ${field.multiple ? 'multiple' : ''}
+                        ${field.readonly ? 'readonly' : ''}
                     >
                 `;
                 break;
@@ -270,6 +334,7 @@ function generateFormHTML(fields, type) {
                         rows="${field.rows || 3}"
                         placeholder="${field.placeholder || ''}"
                         ${field.required ? 'required' : ''}
+                        ${field.readonly ? 'readonly' : ''}
                     >${field.value || ''}</textarea>
                 `;
                 break;
@@ -280,6 +345,49 @@ function generateFormHTML(fields, type) {
                         <option value="">Seleccionar...</option>
                         ${field.options.map(option => `<option value="${option}">${option}</option>`).join('')}
                     </select>
+                `;
+                break;
+                
+            // ✅ SOPORTE para url_display
+            case 'url_display':
+                fieldHTML = `
+                    <div class="input-group">
+                        <input 
+                            type="url" 
+                            class="form-control" 
+                            id="${field.name}" 
+                            name="${field.name}"
+                            value="${field.value || ''}"
+                            readonly
+                            style="background-color: #f8f9fa; color: #495057;"
+                        >
+                        <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('${field.value}')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                `;
+                break;
+                
+            // ✅ SOPORTE para message_display
+            case 'message_display':
+                fieldHTML = `
+                    <div class="message-display-container" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+                        <div class="message-preview" style="font-family: 'Segoe UI', sans-serif; line-height: 1.5; color: #495057; white-space: pre-line; max-height: 300px; overflow-y: auto; border: 1px solid #e9ecef; padding: 1rem; border-radius: 6px; background: white;">
+${field.value}
+                        </div>
+                        <div class="copy-section text-center mt-3">
+                            <button class="btn btn-primary btn-lg" type="button" onclick="copyToClipboard(\`${field.value.replace(/`/g, '\\`')}\`)">
+                                <i class="bi bi-clipboard me-2"></i>
+                                Copiar Mensaje Completo
+                            </button>
+                        </div>
+                        <div class="instructions mt-2" style="background: #e3f2fd; border-radius: 6px; padding: 1rem; border-left: 4px solid #2196f3;">
+                            <small style="color: #1976d2;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <strong>Instrucciones:</strong> Copia el mensaje y envíalo al grupo "SICA Todos" en WhatsApp para notificar a todos los asesores.
+                            </small>
+                        </div>
+                    </div>
                 `;
                 break;
                 
@@ -323,7 +431,7 @@ async function handleFormSubmit() {
         
         // Mostrar estado de carga
         const originalText = enviarBtn.innerHTML;
-        enviarBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-1"></i> Enviando...';
+        enviarBtn.innerHTML = '<i class="bi bi-arrow-clockwise spinning me-1"></i> Procesando...';
         enviarBtn.disabled = true;
         
         // Recopilar datos del formulario
@@ -347,6 +455,9 @@ async function handleFormSubmit() {
                 break;
             case 'survey':
                 result = await processSurveyForm(formKey, formData);
+                break;
+            case 'url':
+                result = await processURLForm(formKey, formData);
                 break;
             default:
                 throw new Error('Tipo de formulario no válido');
@@ -507,6 +618,16 @@ async function processSurveyForm(formKey, formData) {
     };
 }
 
+// ✅ Función para procesar formularios de URL
+async function processURLForm(formKey, formData) {
+    console.log('🔗 Procesando formulario de URL:', formKey, formData);
+    
+    return {
+        type: 'url',
+        status: 'procesado'
+    };
+}
+
 async function saveToHistory(formKey, formType, formData, result) {
     try {
         const historyEntry = {
@@ -515,7 +636,7 @@ async function saveToHistory(formKey, formType, formData, result) {
             form_data: formData,
             result: result,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            user: formulariosformulariosAuth.currentUser?.email || 'unknown'
+            user: formulariosAuth.currentUser?.email || 'unknown'
         };
         
         await formulariosDB.collection('formularios_historial').add(historyEntry);
@@ -588,9 +709,44 @@ function getTypeIcon(type) {
     const icons = {
         'email': 'bi-envelope-fill',
         'whatsapp': 'bi-whatsapp',
-        'survey': 'bi-clipboard-data'
+        'survey': 'bi-clipboard-data',
+        'url': 'bi-share'
     };
     return icons[type] || 'bi-send';
+}
+
+// ✅ Función de utilidad para copiar al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification('Mensaje copiado al portapapeles exitosamente', 'success');
+        
+        // Encontrar el botón que se presionó y cambiar su texto temporalmente
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button.textContent.includes('Copiar Mensaje Completo')) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check-circle me-2"></i> ¡Mensaje Copiado!';
+                button.style.background = '#28a745';
+                button.style.borderColor = '#28a745';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '';
+                    button.style.borderColor = '';
+                }, 3000);
+            }
+        });
+        
+    }).catch(() => {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showNotification('Mensaje copiado al portapapeles', 'success');
+    });
 }
 
 function showNotification(message, type = 'info') {

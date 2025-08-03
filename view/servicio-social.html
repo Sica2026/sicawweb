@@ -563,7 +563,12 @@
                                     <label class="form-label">Total de Horas</label>
                                     <input type="number" id="totalHoras" class="form-control" readonly>
                                 </div>
-                            </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Ajustes de Horas</label>
+                                    <input type="number" id="ajustesHoras" class="form-control" min="0" step="0.5" placeholder="Horas acumuladas">
+                                    <div class="form-text">Horas ya realizadas</div>
+                                </div>
+                                </div>
                         </div>
 
                         <!-- Generar Documentos -->
@@ -635,6 +640,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Notifications Container -->
     <div id="notification-container"></div>

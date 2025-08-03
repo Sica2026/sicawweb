@@ -311,6 +311,7 @@ class ServicioSocialManager {
                     horasAsesor: 0,
                     horasServicioSocial: 0,
                     totalHoras: 0,
+                    ajustesHoras: 0,
                     cartaPresentacion: null,
                     cartaAceptacion: null,
                     cartaTermino: null,
@@ -768,6 +769,7 @@ class ServicioSocialManager {
         this.setElementValue('horasAsesor', ss.horasAsesor || 0);
         this.setElementValue('horasServicioSocial', ss.horasServicioSocial || 0);
         this.setElementValue('totalHoras', ss.totalHoras || 0);
+        this.setElementValue('ajustesHoras', ss.ajustesHoras || 0);
         
         // Archivos
         this.displayFileStatus('cartaPresentacion', ss.cartaPresentacion);
@@ -1025,6 +1027,7 @@ class ServicioSocialManager {
             horasAsesor: parseFloat(document.getElementById('horasAsesor')?.value) || 0,
             horasServicioSocial: parseFloat(document.getElementById('horasServicioSocial')?.value) || 0,
             totalHoras: parseFloat(document.getElementById('totalHoras')?.value) || 0,
+            ajustesHoras: parseFloat(document.getElementById('ajustesHoras')?.value) || 0,
             cartaPresentacion: this.currentAsesor.servicioSocial.cartaPresentacion,
             cartaAceptacion: this.currentAsesor.servicioSocial.cartaAceptacion,
             cartaTermino: this.currentAsesor.servicioSocial.cartaTermino,

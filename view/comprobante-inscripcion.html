@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante de Inscripción - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Comprobante Inscripción Styles -->
+    <link href="../css/comprobante-inscripcion.css" rel="stylesheet">
+</head>
+<body class="public-form" data-theme="light">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+        <div class="container">
+            <!-- Hero Section -->
+            <div class="hero-section">
+                <div class="hero-content">
+                    <div class="hero-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h1 class="hero-title">Comprobante de Inscripción</h1>
+                    <p class="hero-subtitle">Sistema Integral de Cómputo para Alumnos - UNAM</p>
+                </div>
+            </div>
+
+            <!-- Verification Section -->
+            <div class="form-section" id="verificationSection">
+                <div class="verification-card card-base">
+                    <div class="verification-header">
+                        <div class="verification-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h2 class="verification-title">Verificación de Identidad</h2>
+                        <p class="verification-subtitle">Ingresa tu número de cuenta para continuar</p>
+                    </div>
+                    
+                    <div class="verification-form">
+                        <div class="input-group">
+                            <label for="numeroCuenta" class="form-label">Número de Cuenta</label>
+                            <div class="input-with-icon">
+                                <i class="bi bi-person-badge input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    class="form-control modern-input" 
+                                    id="numeroCuenta" 
+                                    placeholder="Ej: 123456789"
+                                    maxlength="9"
+                                >
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-verify btn-base" id="verifyBtn">
+                            <i class="bi bi-search me-2"></i>
+                            Verificar Identidad
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Section -->
+            <div class="form-section d-none" id="confirmationSection">
+                <div class="confirmation-card card-base">
+                    <div class="confirmation-header">
+                        <div class="confirmation-icon">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <h2 class="confirmation-title">Confirma tu Identidad</h2>
+                    </div>
+                    
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <h3 class="user-name" id="confirmedName">-</h3>
+                            <p class="user-account" id="confirmedAccount">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="confirmation-actions">
+                        <button type="button" class="btn btn-secondary btn-base" id="backBtn">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Cambiar Número
+                        </button>
+                        <button type="button" class="btn btn-confirm btn-base" id="confirmBtn">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Sí, soy yo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Form Section -->
+            <div class="form-section d-none" id="uploadSection">
+                <div class="upload-card card-base">
+                    <div class="upload-header">
+                        <div class="upload-icon">
+                            <i class="bi bi-cloud-upload"></i>
+                        </div>
+                        <h2 class="upload-title">Subir Comprobante</h2>
+                        <p class="upload-subtitle">Carga tu comprobante de inscripción más reciente</p>
+                    </div>
+
+                    <!-- User Info Bar -->
+                    <div class="user-info-bar">
+                        <div class="user-info-content">
+                            <i class="bi bi-person-circle me-3"></i>
+                            <div>
+                                <span class="user-info-name" id="uploadUserName">-</span>
+                                <span class="user-info-account" id="uploadUserAccount">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <form id="uploadForm" class="upload-form">
+                        <!-- Comprobante de Inscripción -->
+                        <div class="upload-group">
+                            <label class="upload-label">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                Comprobante de Inscripción
+                                <span class="required">*</span>
+                                <small class="label-note">Documento actualizado del semestre vigente</small>
+                            </label>
+                            <div class="upload-field">
+                                <input type="file" class="file-input" id="comprobante_inscripcion" accept=".pdf" required>
+                                <div class="file-drop-zone" data-target="comprobante_inscripcion">
+                                    <i class="bi bi-cloud-upload"></i>
+                                    <span class="drop-text">Arrastra tu comprobante aquí o haz clic para seleccionar</span>
+                                    <span class="file-info">Solo archivos PDF • Máximo 10MB</span>
+                                </div>
+                                <div class="file-preview d-none"></div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="submit-section">
+                            <button type="submit" class="btn btn-submit btn-base" id="submitBtn">
+                                <i class="bi bi-cloud-upload me-2"></i>
+                                Subir Comprobante
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Success Section -->
+            <div class="form-section d-none" id="successSection">
+                <div class="success-card card-base">
+                    <div class="success-animation">
+                        <div class="success-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                    </div>
+                    <h2 class="success-title">¡Comprobante Subido!</h2>
+                    <p class="success-message">
+                        Tu comprobante de inscripción ha sido cargado exitosamente en el sistema SICA.
+                        La información se verá reflejada en tu perfil de asesor.
+                    </p>
+                    <div class="success-details">
+                        <div class="detail-item">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Fecha de carga: <span id="updateDate">-</span></span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="bi bi-file-check"></i>
+                            <span>Documento procesado: Comprobante de Inscripción</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-new-update btn-base" id="newUpdateBtn">
+                        <i class="bi bi-arrow-clockwise me-2"></i>
+                        Subir Nuevo Comprobante
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay d-none" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Procesando comprobante...</div>
+            <div class="loading-progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Comprobante Inscripción JS -->
+    <script src="../js/comprobante-inscripcion.js"></script>
+</body>
+</html>

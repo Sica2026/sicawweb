@@ -103,24 +103,27 @@ class SICAComponents {
                                 </div>
                             </button>
                             
-                        </div>                        
+                            <!-- ✅ BOTÓN CERRAR SESIÓN MOVIDO AQUÍ (solo visible en modo admin) -->
+                            <button class="nav-btn logout-btn" id="logoutBtn">
+                                <div class="btn-content">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                        <span>Cerrar Sesión</span>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- Botones Comunes (siempre visibles) -->                        
                         <button class="nav-btn" id="homeBtn">
                             <div class="btn-content">
                                 <i class="bi bi-house-fill"></i>
                                 <span id="homeBtnText">Inicio</span>
                             </div>
                         </button>
-                        <!-- Botones Comunes (siempre visibles) -->
+                        
                         <button class="nav-btn" id="darkModeToggle">
                             <div class="btn-content">
                                 <i class="bi bi-moon"></i>
                                 <span>Modo Oscuro</span>
-                            </div>
-                        </button>
-                        <button class="nav-btn logout-btn" id="logoutBtn">
-                            <div class="btn-content">
-                                <i class="bi bi-box-arrow-right"></i>
-                                    <span>Cerrar Sesión</span>
                             </div>
                         </button>
                     </div>
