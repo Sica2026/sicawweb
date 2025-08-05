@@ -31,12 +31,66 @@
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     
+    <!-- ✅ FIREBASE (si está disponible) -->
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
     
     <!-- Base Components JS -->
     <script src="../js/components.js"></script>
     <!-- Base Navigation JS -->
     <script src="../js/navigation.js"></script>
+    
+    <!-- ✅ SISTEMA DE CIERRE AUTOMÁTICO 9 PM -->
+    <script src="../js/auto-cierre-9pm.js"></script>
+    
     <!-- Page Specific JS (will be added dynamically) -->
     <script id="page-script" src=""></script>
+
+    <!-- ✅ INSTANCIA GLOBAL DEL SISTEMA DE CIERRE -->
+    <script>
+        // Inicializar sistema de cierre automático cuando todo esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para que Firebase se inicialice
+            setTimeout(function() {
+                try {
+                    // Instanciar el sistema de cierre automático
+                    window.sistemaAutoCierre9PM = new AutoCierre9PM();
+                    
+                    console.log('🎯 Sistema de cierre automático 9 PM inicializado globalmente');
+                    console.log('💡 Funciones disponibles en consola:');
+                    console.log('   - probarCierre9PM()');
+                    console.log('   - estadoCierre9PM()');
+                    console.log('   - configurarHoraCierre(hora, minuto)');
+                    
+                } catch (error) {
+                    console.error('❌ Error inicializando sistema de cierre automático:', error);
+                }
+            }, 2000); // Esperar 2 segundos para que Firebase esté listo
+        });
+
+        // ✅ LIMPIAR AL SALIR DE LA PÁGINA
+        window.addEventListener('beforeunload', function() {
+            if (window.sistemaAutoCierre9PM) {
+                window.sistemaAutoCierre9PM.detenerVigilante();
+            }
+        });
+
+        // ✅ REACTIVAR SI LA PÁGINA VUELVE A ESTAR VISIBLE (opcional)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && window.sistemaAutoCierre9PM) {
+                // Verificar si el vigilante sigue activo
+                if (!window.sistemaAutoCierre9PM.vigilanteActivo) {
+                    console.log('🔄 Reactivando vigilante de cierre automático');
+                    window.sistemaAutoCierre9PM.iniciarVigilante();
+                }
+            }
+        });
+    </script>
 </body>
 </html>

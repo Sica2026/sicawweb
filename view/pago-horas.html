@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Pago de Horas - SICA Admin</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/pago-horas.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid py-4">
+            <!-- Breadcrumbs -->
+            <nav aria-label="breadcrumb" class="breadcrumb-nav">
+                <div class="container">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="../admin-dashboard.html">Panel Admin</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Pago de Horas</li>
+                    </ol>
+                </div>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1 class="page-title">Pago de Horas</h1>
+                        <p class="page-subtitle">Registro de horas trabajadas por asesores</p>
+                    </div>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalRegistrosHoy">0</span>
+                        <span class="stat-label">Registros Hoy</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalHorasHoy">0</span>
+                        <span class="stat-label">Horas Hoy</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Form Section -->
+            <div class="form-section">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8 col-xl-6">
+                        <div class="payment-form-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="bi bi-plus-circle-fill me-2"></i>
+                                    Nuevo Registro de Horas
+                                </h3>
+                            </div>
+                            
+                            <form id="pagoHorasForm" class="payment-form">
+                                <!-- Asesor Field -->
+                                <div class="form-group">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-person-badge me-2"></i>
+                                        Asesor
+                                    </label>
+                                    <div class="autocomplete-container">
+                                        <input 
+                                            type="text" 
+                                            id="nombreAsesor" 
+                                            class="form-control form-control-sica autocomplete-input" 
+                                            placeholder="Buscar asesor..."
+                                            autocomplete="off"
+                                            required
+                                        >
+                                        <div class="autocomplete-dropdown" id="asesorDropdown"></div>
+                                        <input type="hidden" id="numeroCuenta" name="numeroCuenta">
+                                        <div class="field-status" id="asesorStatus"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Sala Field -->
+                                <div class="form-group">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-door-open me-2"></i>
+                                        Sala
+                                    </label>
+                                    <select id="sala" class="form-control form-control-sica" required>
+                                        <option value="">Seleccionar sala...</option>
+                                        <option value="SICA 1">SICA 1</option>
+                                        <option value="SICA 2">SICA 2</option>
+                                        <option value="SICA 3">SICA 3</option>
+                                        <option value="SICA 4">SICA 4</option>
+                                        <option value="SALON INTELIGENTE 1">SALÓN INTELIGENTE 1</option>
+                                        <option value="SALON INTELIGENTE 2">SALÓN INTELIGENTE 2</option>
+                                    </select>
+                                </div>
+
+                                <!-- Fecha Field -->
+                                <div class="form-group">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-calendar-date me-2"></i>
+                                        Fecha
+                                    </label>
+                                    <input 
+                                        type="date" 
+                                        id="fecha" 
+                                        class="form-control form-control-sica" 
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Horarios Row -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label-sica">
+                                                <i class="bi bi-clock me-2"></i>
+                                                Hora Inicio
+                                            </label>
+                                            <input 
+                                                type="time" 
+                                                id="horaInicio" 
+                                                class="form-control form-control-sica" 
+                                                required
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label-sica">
+                                                <i class="bi bi-clock-fill me-2"></i>
+                                                Hora Fin
+                                            </label>
+                                            <input 
+                                                type="time" 
+                                                id="horaFin" 
+                                                class="form-control form-control-sica" 
+                                                required
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Total Horas Display -->
+                                <div class="hours-calculation">
+                                    <div class="calculation-display">
+                                        <i class="bi bi-stopwatch"></i>
+                                        <span>Total de Horas:</span>
+                                        <span id="totalHoras" class="hours-value">0.00</span>
+                                    </div>
+                                </div>
+
+                                <!-- Quien Autorizo Field -->
+                                <div class="form-group">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-shield-check me-2"></i>
+                                        Quién Autorizó
+                                    </label>
+                                    <div class="autocomplete-container">
+                                        <input 
+                                            type="text" 
+                                            id="quienAutorizo" 
+                                            class="form-control form-control-sica autocomplete-input" 
+                                            placeholder="Buscar autorización..."
+                                            autocomplete="off"
+                                            required
+                                        >
+                                        <div class="autocomplete-dropdown" id="autorizacionDropdown"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-sica btn-submit" id="submitBtn">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <span class="btn-text">Registrar Pago</span>
+                                        <div class="btn-loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Records Section -->
+            <div class="records-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="bi bi-clock-history me-2"></i>
+                        Registros Recientes
+                    </h3>
+                    <button class="btn btn-sica-outline btn-sm" id="refreshRecords">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Actualizar
+                    </button>
+                </div>
+
+                <div class="records-container">
+                    <div class="table-responsive">
+                        <table class="table table-sica">
+                            <thead>
+                                <tr>
+                                    <th>Asesor</th>
+                                    <th>Sala</th>
+                                    <th>Fecha</th>
+                                    <th>Horario</th>
+                                    <th>Horas</th>
+                                    <th>Autorizado por</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7" class="text-center">
+                                        <div class="loading-spinner">
+                                            <div class="spinner"></div>
+                                            <span>Cargando registros...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner-large">
+                <div class="spinner"></div>
+            </div>
+            <p>Procesando registro...</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/pago-horas.js"></script>
+</body>
+</html>

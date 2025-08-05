@@ -746,68 +746,74 @@ class ModernNavigation {
         });
     }
     
-    handleAdminAction(action, button) {
-        this.addSelectionEffect(button);
-        
-        const adminActions = {
-            'formularios': {
-                title: 'Formularios y Avisos',
-                message: 'Accediendo al centro de comunicaciones...',
-                icon: 'bi-file-earmark-text',
-                route: 'formularios-avisos.html'
-            },
-            'asesores': {
-                title: 'Gestión de Asesores',
-                message: 'Cargando panel de asesores...',
-                icon: 'bi-people',
-                route: 'gestion-asesores.html'
-            },
-            'mas': {
-                title: 'Más Opciones',
-                message: 'Cargando opciones adicionales...',
-                icon: 'bi-three-dots',
-                route: 'admin-mas.html'
-            },
-            'logout': {
-                title: 'Cerrar Sesión',
-                message: 'Cerrando sesión de administrador...',
-                icon: 'bi-box-arrow-right',
-                route: null
-            }
-        };
-        
-        const actionData = adminActions[action];
-        
-        if (actionData) {
-            this.showModernNotification(
-                actionData.title,
-                actionData.message,
-                action === 'logout' ? 'warning' : 'info',
-                actionData.icon
-            );
-            
-            if (action === 'logout') {
-                // Cerrar sesión
-                if (window.firebaseAuth) {
-                    window.firebaseAuth.signOut().then(() => {
-                        window.location.href = '../index.html';
-                    });
-                } else {
-                    window.location.href = '../index.html';
-                }
-            } else {
-                // Redirigir a la página
-                setTimeout(() => {
-                    window.location.href = actionData.route;
-                }, 1000);
-            }
+handleAdminAction(action, button) {
+    this.addSelectionEffect(button);
+    
+    const adminActions = {
+        'formularios': {
+            title: 'Formularios y Avisos',
+            message: 'Accediendo al centro de comunicaciones...',
+            icon: 'bi-file-earmark-text',
+            route: 'formularios-avisos.html'
+        },
+        'asesores': {
+            title: 'Gestión de Asesores',
+            message: 'Cargando panel de asesores...',
+            icon: 'bi-people',
+            route: 'gestion-asesores.html'
+        },
+        'pago-horas': {
+            title: 'Pago de Horas',
+            message: 'Accediendo al sistema de pagos...',
+            icon: 'bi-cash-coin',
+            route: 'pago-horas.html'
+        },
+        'mas': {
+            title: 'Más Opciones',
+            message: 'Cargando opciones adicionales...',
+            icon: 'bi-three-dots',
+            route: 'admin-mas.html'
+        },
+        'logout': {
+            title: 'Cerrar Sesión',
+            message: 'Cerrando sesión de administrador...',
+            icon: 'bi-box-arrow-right',
+            route: null
         }
+    };
+    
+    const actionData = adminActions[action];
+    
+    if (actionData) {
+        this.showModernNotification(
+            actionData.title,
+            actionData.message,
+            action === 'logout' ? 'warning' : 'info',
+            actionData.icon
+        );
         
-        // Cerrar panel
-        setTimeout(() => {
-            this.closeAllPanels();
-        }, 1000);
+        if (action === 'logout') {
+            // Cerrar sesión
+            if (window.firebaseAuth) {
+                window.firebaseAuth.signOut().then(() => {
+                    window.location.href = '../index.html';
+                });
+            } else {
+                window.location.href = '../index.html';
+            }
+        } else {
+            // Redirigir a la página
+            setTimeout(() => {
+                window.location.href = actionData.route;
+            }, 1000);
+        }
     }
+    
+    // Cerrar panel
+    setTimeout(() => {
+        this.closeAllPanels();
+    }, 1000);
+}
 
     // Método para habilitar/deshabilitar sonidos
     toggleSounds() {

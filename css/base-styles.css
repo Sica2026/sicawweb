@@ -944,3 +944,7 @@ body {
     display: none;
 }
 
+[data-theme="dark"] .header-section .main-title,
+[data-theme="dark"] .header-section .logo-text {
+    color: #ffffff !important;
+}

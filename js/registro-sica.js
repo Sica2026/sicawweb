@@ -1,4 +1,5 @@
 // JavaScript global para todas las páginas de registro SICA
+// ✅ SISTEMA COMPLETO DE ENTRADA Y SALIDA CON FORMULARIO INTELIGENTE
 
 // ✅ DETECTAR SICA Y TIPO AUTOMÁTICAMENTE DESDE LA URL
 function detectSICA() {
@@ -179,6 +180,10 @@ let currentSICA = '1';
 let currentTipo = 'computadora';
 let currentSICAConfig = null;
 
+// ✅ NUEVAS VARIABLES PARA EL SISTEMA INTELIGENTE
+let formularioModo = 'auto'; // auto, entrada, salida
+let registroEncontrado = null;
+
 // ✅ CONFIGURACIÓN DE MESAS (5 aminoácidos esenciales)
 const mesas = [
     { numero: 1, nombre: "Histidina", codigo: "His" },
@@ -193,6 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePage();
     setupEventListeners();
     loadElementsIntoSelect();
+    // ✅ CARGAR SCRIPTS ADICIONALES
+    loadAdditionalScripts();
 });
 
 function initializePage() {
@@ -259,8 +266,8 @@ function setupEventListeners() {
     // Manejar envío del formulario
     form.addEventListener('submit', handleFormSubmit);
 
-    // Validación en tiempo real
-    numeroCuenta.addEventListener('input', validateNumeroCuenta);
+    // ✅ NUEVO: Validación inteligente en tiempo real
+    numeroCuenta.addEventListener('input', handleNumeroCuentaInput);
     equipoSelect.addEventListener('change', validateEquipoSelect);
 
     // Limpiar errores al enfocar
@@ -268,11 +275,140 @@ function setupEventListeners() {
     equipoSelect.addEventListener('focus', () => clearFieldError(equipoSelect));
 }
 
+// ✅ NUEVA FUNCIÓN: Manejo inteligente del input de número de cuenta
+async function handleNumeroCuentaInput() {
+    const numeroCuentaInput = document.getElementById('numeroCuenta');
+    const value = numeroCuentaInput.value.trim();
+    
+    // Validación básica
+    if (!validateNumeroCuenta()) {
+        resetFormularioModo();
+        return;
+    }
+    
+    // Si tiene 9 dígitos completos, buscar registro activo
+    if (value.length >= 9) {
+        const numeroCuenta = value.substring(0, 9);
+        await verificarRegistroActivo(numeroCuenta);
+    } else {
+        resetFormularioModo();
+    }
+}
+
+// ✅ NUEVA FUNCIÓN: Verificar si existe registro activo
+async function verificarRegistroActivo(numeroCuenta) {
+    try {
+        // Buscar registro activo para esta cuenta en este SICA
+        const query = await window.firebaseDB.collection("registros")
+            .where("numeroCuenta", "==", numeroCuenta)
+            .where("sica", "==", currentSICAConfig.shortName)
+            .where("estado", "==", "activo")
+            .limit(1)
+            .get();
+        
+        if (!query.empty) {
+            const doc = query.docs[0];
+            const data = doc.data();
+            registroEncontrado = { id: doc.id, data: data };
+            activarModoSalida(data);
+        } else {
+            registroEncontrado = null;
+            activarModoEntrada();
+        }
+    } catch (error) {
+        console.error("Error verificando registro activo:", error);
+        resetFormularioModo();
+    }
+}
+
+// ✅ NUEVA FUNCIÓN: Activar modo salida
+function activarModoSalida(datosRegistro) {
+    formularioModo = 'salida';
+    
+    const equipoSelect = document.getElementById('equipoSelect');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const equipoContainer = equipoSelect.parentElement;
+    
+    // ✅ IMPORTANTE: Remover el atributo required del select cuando está oculto
+    equipoSelect.removeAttribute('required');
+    
+    // Crear mensaje informativo
+    const infoMessage = document.createElement('div');
+    infoMessage.id = 'registro-activo-info';
+    infoMessage.className = 'alert alert-info mt-2';
+    infoMessage.innerHTML = `
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Registro activo encontrado:</strong><br>
+        Equipo prestado: <strong>${datosRegistro.nombreElemento}</strong><br>
+        <small>Entrada: ${datosRegistro.fechaEntrada ? new Date(datosRegistro.fechaEntrada.seconds * 1000).toLocaleString() : 'N/A'}</small>
+    `;
+    
+    // Limpiar mensaje anterior si existe
+    const existingInfo = document.getElementById('registro-activo-info');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    // Insertar mensaje después del container del equipo
+    equipoContainer.parentNode.insertBefore(infoMessage, equipoContainer.nextSibling);
+    
+    // Ocultar selector de equipo
+    equipoContainer.style.display = 'none';
+    
+    // Cambiar botón
+    submitButton.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i>Registrar Salida';
+    submitButton.className = 'btn btn-warning btn-lg';
+}
+
+// ✅ NUEVA FUNCIÓN: Activar modo entrada
+function activarModoEntrada() {
+    formularioModo = 'entrada';
+    resetFormularioModo();
+    
+    const submitButton = document.querySelector('button[type="submit"]');
+    const equipoSelect = document.getElementById('equipoSelect');
+    
+    // ✅ IMPORTANTE: Restaurar el atributo required cuando se muestra el select
+    equipoSelect.setAttribute('required', 'true');
+    
+    submitButton.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Registrar Entrada';
+    submitButton.className = 'btn btn-success btn-lg';
+}
+
+// ✅ NUEVA FUNCIÓN: Resetear modo del formulario
+function resetFormularioModo() {
+    formularioModo = 'auto';
+    registroEncontrado = null;
+    
+    const equipoSelect = document.getElementById('equipoSelect');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const equipoContainer = equipoSelect.parentElement;
+    const existingInfo = document.getElementById('registro-activo-info');
+    
+    // Remover mensaje informativo
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    // Mostrar selector de equipo
+    equipoContainer.style.display = 'block';
+    
+    // ✅ IMPORTANTE: Restaurar el atributo required cuando se muestra el select
+    equipoSelect.setAttribute('required', 'true');
+    
+    // Resetear botón
+    submitButton.innerHTML = '<i class="bi bi-send me-2"></i>Enviar';
+    submitButton.className = 'btn btn-sica btn-lg';
+}
+
 function loadElementsIntoSelect() {
     const equipoSelect = document.getElementById('equipoSelect');
     
     // ✅ LIMPIAR OPCIONES ANTERIORES (importante para cuando se cambia de SICA)
     equipoSelect.innerHTML = '';
+    
+    // ✅ IMPORTANTE: Establecer required por defecto al cargar elementos  
+    equipoSelect.setAttribute('required', 'true');
     
     if (currentTipo === 'computadora') {
         // ✅ CARGAR ELEMENTOS QUÍMICOS PARA COMPUTADORAS
@@ -312,11 +448,10 @@ function handleFormSubmit(e) {
     const hideLoading = showLoading(submitButton);
     
     if (validateForm()) {
-        // ✅ GUARDAR EN FIRESTORE
+        // ✅ GUARDAR EN FIRESTORE CON SISTEMA ENTRADA/SALIDA INTELIGENTE
         saveToFirestore()
-            .then(() => {
+            .then((result) => {
                 hideLoading();
-                showSuccess();
                 resetForm();
             })
             .catch((error) => {
@@ -339,9 +474,14 @@ function validateForm() {
         isValid = false;
     }
 
-    // Validar selección de equipo
-    if (!validateEquipoSelect()) {
-        isValid = false;
+    // ✅ CORRECCIÓN: Solo validar equipo si el container está visible Y el formulario no está en modo salida
+    const equipoContainer = equipoSelect.parentElement;
+    const isEquipoVisible = equipoContainer.style.display !== 'none';
+    
+    if (isEquipoVisible && formularioModo !== 'salida') {
+        if (!validateEquipoSelect()) {
+            isValid = false;
+        }
     }
 
     return isValid;
@@ -384,6 +524,13 @@ function validateNumeroCuenta() {
 
 function validateEquipoSelect() {
     const equipoSelect = document.getElementById('equipoSelect');
+    const equipoContainer = equipoSelect.parentElement;
+    
+    // No validar si está oculto o en modo salida
+    if (equipoContainer.style.display === 'none' || formularioModo === 'salida') {
+        clearFieldError(equipoSelect);
+        return true;
+    }
     
     if (!equipoSelect.value) {
         showFieldError(equipoSelect, 'Debe seleccionar un equipo');
@@ -427,54 +574,23 @@ function showLoading(button) {
     };
 }
 
-function showSuccess() {
-    const numeroCuentaOriginal = document.getElementById('numeroCuenta').value;
-    const numeroCuentaGuardada = numeroCuentaOriginal.substring(0, 9); // Solo los primeros 9
-    const equipoNumero = document.getElementById('equipoSelect').value;
-    
-    let nombreElementoCompleto;
-    let tipoEquipoTexto;
-    
-    if (currentTipo === 'computadora') {
-        const elemento = elementosQuimicos.find(el => el.numero == equipoNumero);
-        nombreElementoCompleto = `${equipoNumero} ${elemento.nombre} ${elemento.simbolo}`;
-        tipoEquipoTexto = 'equipo';
-    } else {
-        const mesa = mesas.find(m => m.numero == equipoNumero);
-        nombreElementoCompleto = `Mesa ${equipoNumero} ${mesa.nombre} ${mesa.codigo}`;
-        tipoEquipoTexto = 'mesa';
-    }
-    
-    const message = `Registro guardado exitosamente para la cuenta ${numeroCuentaGuardada} con ${tipoEquipoTexto} ${nombreElementoCompleto} en ${currentSICAConfig.displayName}`;
-    
-    // Usar sistema de notificaciones de la plantilla si está disponible
-    if (window.SICAComponents && window.SICAComponents.notify) {
-        window.SICAComponents.notify(
-            "¡Registro Guardado!",
-            message,
-            "success",
-            "bi-check-circle-fill"
-        );
-    } else {
-        // Fallback: crear alerta personalizada
-        showAlert(message, 'success');
-    }
-}
-
-// ✅ FUNCIÓN PARA GUARDAR EN FIRESTORE (DINÁMICA)
+// ✅ SISTEMA INTELIGENTE DE ENTRADA Y SALIDA - FUNCIÓN PRINCIPAL MODIFICADA
 async function saveToFirestore() {
     try {
-        // Verificar que Firebase esté disponible
         if (!window.firebaseDB) {
             throw new Error('Firebase no está inicializado');
         }
         
         const numeroCuentaOriginal = document.getElementById('numeroCuenta').value;
-        const equipoNumero = document.getElementById('equipoSelect').value;
-        
-        // ✅ EXTRAER SOLO LOS PRIMEROS 9 DÍGITOS
         const numeroCuenta = numeroCuentaOriginal.substring(0, 9);
         
+        // ✅ MODO SALIDA: Usar registro encontrado
+        if (formularioModo === 'salida' && registroEncontrado) {
+            return await procesarSalida(registroEncontrado.id, registroEncontrado.data);
+        }
+        
+        // ✅ MODO ENTRADA: Crear nuevo registro
+        const equipoNumero = document.getElementById('equipoSelect').value;
         let nombreElemento;
         let tipoEquipo;
         
@@ -488,33 +604,131 @@ async function saveToFirestore() {
             tipoEquipo = "mesa";
         }
         
-        // Crear objeto de registro dinámico según el SICA y tipo
-        const registro = {
-            numeroCuenta: numeroCuenta, // Solo los primeros 9 dígitos
-            nombreElemento: nombreElemento, // Formato dinámico según tipo
-            tipoEquipo: tipoEquipo, // "computadora" o "mesa"
-            sica: currentSICAConfig.shortName, // ✅ DINÁMICO: SICA1, SICA2, SALON_INTELIGENTE1, SICA4
-            fechaHora: firebase.firestore.FieldValue.serverTimestamp() // Solo timestamp del servidor
-        };
-        
-        // Guardar en la colección "registros"
-        const docRef = await window.firebaseDB.collection("registros").add(registro);
-        
-        console.log("✅ Registro guardado con ID: ", docRef.id);
-        console.log("📊 Datos guardados:", {
-            numeroCuentaOriginal: numeroCuentaOriginal,
-            numeroCuentaGuardada: registro.numeroCuenta,
-            nombreElemento: registro.nombreElemento,
-            tipoEquipo: registro.tipoEquipo,
-            sica: registro.sica,
-            sicaDisplayName: currentSICAConfig.displayName,
-            tipo: currentTipo
-        });
-        return docRef;
+        return await procesarEntrada(numeroCuenta, nombreElemento, tipoEquipo);
         
     } catch (error) {
         console.error("❌ Error al guardar en Firestore: ", error);
         throw error;
+    }
+}
+
+// ✅ FUNCIÓN PARA PROCESAR ENTRADA (NUEVO REGISTRO)
+async function procesarEntrada(numeroCuenta, nombreElemento, tipoEquipo) {
+    const registroEntrada = {
+        numeroCuenta: numeroCuenta,
+        nombreElemento: nombreElemento,
+        tipoEquipo: tipoEquipo,
+        sica: currentSICAConfig.shortName,
+        fechaEntrada: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaSalida: null,
+        estado: "activo",
+        tipo: "entrada"
+    };
+    
+    const docRef = await window.firebaseDB.collection("registros").add(registroEntrada);
+    
+    console.log("✅ ENTRADA registrada con ID: ", docRef.id);
+    console.log("📊 Datos guardados:", {
+        numeroCuenta: registroEntrada.numeroCuenta,
+        nombreElemento: registroEntrada.nombreElemento,
+        tipoEquipo: registroEntrada.tipoEquipo,
+        sica: registroEntrada.sica,
+        sicaDisplayName: currentSICAConfig.displayName,
+        tipo: currentTipo
+    });
+    
+    // Mostrar mensaje de entrada
+    mostrarMensajeEntrada(numeroCuenta, nombreElemento);
+    
+    return docRef;
+}
+
+// ✅ FUNCIÓN PARA PROCESAR SALIDA (ACTUALIZAR REGISTRO)
+async function procesarSalida(docId, datosExistentes) {
+    // Actualizar el registro con la fecha de salida
+    await window.firebaseDB.collection("registros").doc(docId).update({
+        fechaSalida: firebase.firestore.FieldValue.serverTimestamp(),
+        estado: "completado"
+    });
+    
+    console.log("✅ SALIDA registrada para documento ID: ", docId);
+    
+    // Obtener el documento actualizado para moverlo
+    const docActualizado = await window.firebaseDB.collection("registros").doc(docId).get();
+    const datosCompletos = docActualizado.data();
+    
+    // ✅ MOVER A REGISTROS COMPLETOS
+    await moverARegistrosCompletos(datosCompletos);
+    
+    // ✅ ELIMINAR DE REGISTROS ACTIVOS
+    await window.firebaseDB.collection("registros").doc(docId).delete();
+    
+    // Mostrar mensaje de salida
+    mostrarMensajeSalida(datosExistentes.numeroCuenta, datosExistentes.nombreElemento);
+    
+    return { id: docId, moved: true };
+}
+
+// ✅ FUNCIÓN PARA MOVER A REGISTROS COMPLETOS
+async function moverARegistrosCompletos(datos) {
+    try {
+        // Calcular duración del préstamo
+        const duracionMinutos = calcularDuracion(datos.fechaEntrada.toDate(), datos.fechaSalida.toDate());
+        
+        const registroCompleto = {
+            ...datos,
+            duracionMinutos: duracionMinutos,
+            fechaCompletado: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        const docRef = await window.firebaseDB.collection("registros_completos").add(registroCompleto);
+        
+        console.log("✅ Registro movido a 'registros_completos' con ID: ", docRef.id);
+        console.log("⏱️ Duración del préstamo: ", duracionMinutos, "minutos");
+        
+        return docRef;
+    } catch (error) {
+        console.error("Error moviendo a registros completos:", error);
+        throw error;
+    }
+}
+
+// ✅ FUNCIÓN PARA CALCULAR DURACIÓN
+function calcularDuracion(fechaEntrada, fechaSalida) {
+    const diferenciaMilisegundos = fechaSalida.getTime() - fechaEntrada.getTime();
+    return Math.round(diferenciaMilisegundos / (1000 * 60)); // Convertir a minutos
+}
+
+// ✅ MENSAJES ESPECÍFICOS PARA ENTRADA Y SALIDA
+function mostrarMensajeEntrada(numeroCuenta, nombreElemento) {
+    const tipoEquipoTexto = currentTipo === 'computadora' ? 'equipo' : 'mesa';
+    const message = `ENTRADA registrada para la cuenta ${numeroCuenta} con ${tipoEquipoTexto} ${nombreElemento} en ${currentSICAConfig.displayName}`;
+    
+    if (window.SICAComponents && window.SICAComponents.notify) {
+        window.SICAComponents.notify(
+            "🔵 Entrada Registrada",
+            message,
+            "info",
+            "bi-box-arrow-in-right"
+        );
+    } else {
+        showAlert(message, 'info');
+    }
+}
+
+function mostrarMensajeSalida(numeroCuenta, nombreElemento) {
+    const tipoEquipoTexto = currentTipo === 'computadora' ? 'equipo' : 'mesa';
+    const message = `SALIDA registrada y préstamo completado para la cuenta ${numeroCuenta} con ${tipoEquipoTexto} ${nombreElemento} en ${currentSICAConfig.displayName}`;
+    
+    if (window.SICAComponents && window.SICAComponents.notify) {
+        window.SICAComponents.notify(
+            "🟢 Salida Registrada - Préstamo Completado",
+            message,
+            "success",
+            "bi-box-arrow-right"
+        );
+    } else {
+        showAlert(message, 'success');
     }
 }
 
@@ -537,8 +751,24 @@ function showError(message) {
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert-sica alert-sica-${type}`;
+    
+    let iconClass;
+    switch(type) {
+        case 'success':
+            iconClass = 'bi-check-circle-fill';
+            break;
+        case 'info':
+            iconClass = 'bi-info-circle-fill';
+            break;
+        case 'error':
+            iconClass = 'bi-exclamation-triangle-fill';
+            break;
+        default:
+            iconClass = 'bi-info-circle-fill';
+    }
+    
     alertDiv.innerHTML = `
-        <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'} me-2"></i>
+        <i class="bi ${iconClass} me-2"></i>
         ${message}
     `;
     
@@ -557,6 +787,15 @@ function resetForm() {
     // Limpiar cualquier error que pueda quedar
     const fields = document.querySelectorAll('.is-invalid');
     fields.forEach(field => clearFieldError(field));
+    
+    // ✅ RESETEAR MODO DEL FORMULARIO
+    resetFormularioModo();
+    
+    // ✅ IMPORTANTE: Asegurar que el campo equipo tenga required después del reset
+    const equipoSelect = document.getElementById('equipoSelect');
+    if (equipoSelect) {
+        equipoSelect.setAttribute('required', 'true');
+    }
 }
 
 // Función para buscar elementos por nombre o símbolo
@@ -575,20 +814,50 @@ function getSelectedElementInfo() {
     const selectedValue = equipoSelect.value;
     
     if (selectedValue) {
-        return elementosQuimicos.find(elemento => elemento.numero == selectedValue);
+        if (currentTipo === 'computadora') {
+            return elementosQuimicos.find(elemento => elemento.numero == selectedValue);
+        } else {
+            return mesas.find(mesa => mesa.numero == selectedValue);
+        }
     }
     
     return null;
 }
 
-// Exportar funciones para uso global
+// ✅ FUNCIÓN PARA CARGAR SCRIPTS ADICIONALES
+function loadAdditionalScripts() {
+    // Cargar script del mapa visual
+    const mapaScript = document.createElement('script');
+    mapaScript.src = SICA_CONFIG.jsPath + 'mapa-visual.js';
+    mapaScript.defer = true;
+    document.head.appendChild(mapaScript);
+    
+    console.log('📦 Scripts adicionales cargados');
+}
+
+// ✅ EXPORTAR FUNCIONES PARA USO GLOBAL (ACTUALIZADO)
 window.SICARegistro = {
     searchElement,
     getSelectedElementInfo,
     validateForm,
     resetForm,
     getCurrentSICA: () => currentSICA,
-    getCurrentSICAConfig: () => currentSICAConfig
+    getCurrentSICAConfig: () => currentSICAConfig,
+    getCurrentTipo: () => currentTipo,
+    getElementosQuimicos: () => elementosQuimicos,
+    getMesas: () => mesas,
+    // ✅ NUEVAS FUNCIONES DEL SISTEMA ENTRADA/SALIDA
+    verificarRegistroActivo,
+    procesarEntrada,
+    procesarSalida,
+    moverARegistrosCompletos,
+    calcularDuracion,
+    // ✅ FUNCIONES DEL FORMULARIO INTELIGENTE
+    activarModoEntrada,
+    activarModoSalida,
+    resetFormularioModo,
+    getFormularioModo: () => formularioModo,
+    getRegistroEncontrado: () => registroEncontrado
 };
 
 // ✅ SOLUCIÓN: Sobrescribir la función de navegación al inicio

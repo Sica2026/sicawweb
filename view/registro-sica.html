@@ -12,6 +12,8 @@
     <link href="../css/base-styles.css" rel="stylesheet">
     <!-- Page Specific Styles -->
     <link id="page-styles" href="../css/registro-sica.css" rel="stylesheet">
+    <!-- ✅ NUEVOS ESTILOS PARA EL SISTEMA INTELIGENTE -->
+    <link href="../css/registro-inteligente.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header Component -->
@@ -25,6 +27,7 @@
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-8 col-md-10">
+                    <!-- ✅ FORMULARIO PRINCIPAL CON SISTEMA INTELIGENTE -->
                     <div class="card-modern">
                         <div class="card-header text-center">
                             <h2 class="text-primary mb-0" id="main-title">
@@ -32,44 +35,144 @@
                                 <span id="title-text">Registro de préstamos de COMPUTADORAS</span>
                                 <span id="sica-name">SICA 1</span>
                             </h2>
+                            <!-- ✅ INDICADOR DE MODO DEL FORMULARIO -->
+                            <div class="mt-2">
+                                <span class="badge bg-info" id="modo-indicador" style="display: none;">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <span id="modo-texto">Modo Automático</span>
+                                </span>
+                            </div>
                         </div>
                         <div class="card-body p-4">
+                            <!-- ✅ AYUDA CONTEXTUAL -->
+                            <div class="alert alert-light border-primary mb-3" id="ayuda-contextual">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-lightbulb text-primary"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <small class="mb-0">
+                                            <strong>💡 Sistema Inteligente:</strong>
+                                            Ingresa tu número de cuenta y el sistema detectará automáticamente si es una entrada o salida.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <form id="registroForm">
                                 <!-- Número de cuenta -->
                                 <div class="mb-4">
                                     <label for="numeroCuenta" class="form-label-sica">
                                         <i class="bi bi-person-badge me-2"></i>
                                         Número de cuenta
+                                        <!-- ✅ INDICADOR DE VALIDACIÓN EN TIEMPO REAL -->
+                                        <span class="badge bg-success ms-2" id="validacion-cuenta" style="display: none;">
+                                            <i class="bi bi-check-circle me-1"></i>Válida
+                                        </span>
                                     </label>
-                                    <input 
-                                        type="text" 
-                                        id="numeroCuenta" 
-                                        class="form-control form-control-sica" 
-                                        placeholder="Ingrese 9 dígitos (ej: 314302498) o 13 dígitos (ej: 3143024980008)"
-                                        required
-                                    >
+                                    <div class="input-group">
+                                        <input 
+                                            type="text" 
+                                            id="numeroCuenta" 
+                                            class="form-control form-control-sica" 
+                                            placeholder="Ingrese 9 dígitos (ej: 314302498) o 13 dígitos (ej: 3143024980008)"
+                                            required
+                                            autocomplete="off"
+                                        >
+                                        <!-- ✅ BOTÓN DE LIMPIAR -->
+                                        <button class="btn btn-outline-secondary" type="button" id="limpiar-cuenta" style="display: none;">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <!-- Selección del equipo -->
-                                <div class="mb-4">
+                                <!-- ✅ CORRECCIÓN: Selector de equipo sin required por defecto -->
+                                <div class="mb-4" id="equipo-container">
                                     <label for="equipoSelect" class="form-label-sica">
                                         <i class="bi bi-pc-display me-2"></i>
                                         Selecciona el número del equipo
                                     </label>
-                                    <select id="equipoSelect" class="form-control form-control-sica" required>
+                                    <!-- ✅ REMOVED: required attribute - se manejará dinámicamente -->
+                                    <select id="equipoSelect" class="form-control form-control-sica">
                                         <option value="">Selecciona un equipo...</option>
                                         <!-- Los elementos se generarán con JavaScript -->
                                     </select>
                                 </div>
 
+                                <!-- ✅ ÁREA PARA INFORMACIÓN DE REGISTRO ACTIVO -->
+                                <div id="registro-activo-container"></div>
+
                                 <!-- Botón de envío -->
                                 <div class="text-center">
-                                    <button type="submit" class="btn btn-sica btn-lg">
+                                    <button type="submit" class="btn btn-sica btn-lg" id="submit-button">
                                         <i class="bi bi-send me-2"></i>
                                         Enviar
                                     </button>
                                 </div>
                             </form>
+
+                            <!-- ✅ ACCESOS RÁPIDOS -->
+                            <div class="mt-4 pt-3 border-top">
+                                <div class="row text-center">
+                                    <div class="col-12">
+                                        <small class="text-muted d-block mb-2">Accesos Rápidos:</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-info btn-sm w-100" id="btn-ver-activos">
+                                            <i class="bi bi-list-check me-1"></i>
+                                            Ver Activos
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-success btn-sm w-100" id="btn-modo-entrada">
+                                            <i class="bi bi-plus-circle me-1"></i>
+                                            Solo Entradas
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ EL MAPA VISUAL SE INSERTARÁ AQUÍ VÍA JAVASCRIPT -->
+                    <!-- Container para el mapa visual será creado dinámicamente -->
+                </div>
+            </div>
+
+            <!-- ✅ MODAL PARA LISTA DE PRÉSTAMOS ACTIVOS -->
+            <div class="modal fade" id="modalPrestamosActivos" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-list-check me-2"></i>
+                                Préstamos Activos - <span id="modal-sica-name"></span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span class="badge bg-primary" id="total-activos">0 activos</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary" id="actualizar-activos">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                                </button>
+                            </div>
+                            
+                            <!-- Lista de préstamos activos -->
+                            <div id="lista-prestamos-activos">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Cargando préstamos activos...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                         </div>
                     </div>
                 </div>
@@ -84,9 +187,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     
     <!-- Firebase CDN -->
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script> <!-- ✅ AGREGAR -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     
@@ -96,7 +198,10 @@
     <script src="../js/navigation.js"></script>
     <!-- Base Components JS -->
     <script src="../js/components.js"></script>
-    <!-- Page Specific JS -->
+    <!-- ✅ SISTEMA PRINCIPAL ACTUALIZADO -->
     <script src="../js/registro-sica.js"></script>
+    <!-- ✅ MAPA VISUAL (se carga automáticamente desde registro-sica.js) -->
+    <!-- ✅ FUNCIONALIDADES ADICIONALES -->
+    <script src="../js/prestamos-activos.js"></script>
 </body>
 </html>

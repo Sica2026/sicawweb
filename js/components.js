@@ -230,6 +230,14 @@ class SICAComponents {
                                                 <span>Gestión Asesores</span>
                                             </div>
                                         </button>
+                                        <button class="option-btn" data-admin-action="pago-horas">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-cash-coin"></i>
+                                                </div>
+                                                <span>Pago de Horas</span>
+                                            </div>
+                                        </button>
                                         <button class="option-btn" data-admin-action="mas">
                                             <div class="option-content">
                                                 <div class="option-icon">
@@ -241,7 +249,6 @@ class SICAComponents {
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
                         <!-- Mobile Menu Toggle -->
                         <button class="mobile-menu-toggle" id="mobileMenuToggle">
