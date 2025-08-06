@@ -501,21 +501,10 @@ function validateNumeroCuenta() {
         return false;
     }
     
-    // ✅ VALIDACIÓN ACTUALIZADA: Aceptar 9 o 13 dígitos
+    // ✅ VALIDACIÓN ACTUALIZADA: Aceptar 9 o 13 dígitos (sin restricción de terminación)
     if (value.length !== 9 && value.length !== 13) {
         showFieldError(numeroCuenta, 'El número de cuenta debe tener 9 o 13 dígitos');
         return false;
-    }
-    
-    // Si tiene 13 dígitos, verificar que comience con los primeros 9 + "0008"
-    if (value.length === 13) {
-        const primeros9 = value.substring(0, 9);
-        const ultimos4 = value.substring(9);
-        
-        if (ultimos4 !== "0008") {
-            showFieldError(numeroCuenta, 'El formato de 13 dígitos debe terminar en 0008');
-            return false;
-        }
     }
     
     clearFieldError(numeroCuenta);
