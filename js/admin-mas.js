@@ -232,9 +232,8 @@ class AdminMasManager {
         );
         
         setTimeout(() => {
-            // window.location.href = 'admin-organigrama.html';
-            console.log('🏢 Navegando a organigrama...');
-            this.showNotification('Módulo en desarrollo', 'warning');
+        window.location.href = 'organigrama.html';
+        console.log('🏢 Navegando a organigrama...');
         }, 1500);
     }
 

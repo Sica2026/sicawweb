@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Organigrama Interactivo - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Organigrama Specific Styles -->
+    <link id="page-styles" href="../css/organigrama.css" rel="stylesheet">
+    <!-- Organigrama Advanced Styles -->
+    <link href="../css/organigrama-advanced.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Organigrama Interactivo</li>
+            </ol>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="display-6 fw-bold text-blue">
+                        <i class="bi bi-diagram-3-fill me-3"></i>
+                        Organigrama Interactivo
+                    </h1>
+                    <p class="text-muted">Estructura organizacional del sistema SICA</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sica-outline" onclick="printOrganigrama()">
+                        <i class="bi bi-printer-fill"></i>
+                        <span class="d-none d-md-inline ms-1">Imprimir</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controls Panel (Solo para Administradores) -->
+            <div id="admin-controls" class="admin-panel mb-4" style="display: none;">
+                <div class="card-modern">
+                    <div class="card-header bg-gradient-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-gear-fill me-2"></i>
+                            Controles de Administrador
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6 col-lg-3">
+                                <button class="btn btn-success w-100" onclick="addRow()">
+                                    <i class="bi bi-plus-circle-fill me-2"></i>
+                                    Agregar Fila
+                                </button>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <button class="btn btn-info w-100" onclick="addColumn()">
+                                    <i class="bi bi-plus-square-fill me-2"></i>
+                                    Agregar Columna
+                                </button>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <button class="btn btn-warning w-100" onclick="removeRow()">
+                                    <i class="bi bi-dash-circle-fill me-2"></i>
+                                    Quitar Fila
+                                </button>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <button class="btn btn-secondary w-100" onclick="removeColumn()">
+                                    <i class="bi bi-dash-square-fill me-2"></i>
+                                    Quitar Columna
+                                </button>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-sica" onclick="saveChanges()">
+                                <i class="bi bi-save-fill me-2"></i>
+                                Guardar Cambios
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="resetOrganigrama()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Restablecer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Palette (Solo para usuarios avanzados) -->
+            <div id="color-palette" class="color-palette-panel mb-4" style="display: none;">
+                <div class="card-modern">
+                    <div class="card-header bg-gradient-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="bi bi-palette-fill me-2"></i>
+                            Paleta de Colores
+                        </h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="color-options d-flex gap-2 flex-wrap">
+                            <div class="color-option" data-color="" title="Sin color">
+                                <div class="color-circle default-color">
+                                    <i class="bi bi-x"></i>
+                                </div>
+                            </div>
+                            <div class="color-option" data-color="#e74c3c" title="Rojo">
+                                <div class="color-circle" style="background-color: #e74c3c;"></div>
+                            </div>
+                            <div class="color-option" data-color="#f39c12" title="Naranja">
+                                <div class="color-circle" style="background-color: #f39c12;"></div>
+                            </div>
+                            <div class="color-option" data-color="#f1c40f" title="Amarillo">
+                                <div class="color-circle" style="background-color: #f1c40f;"></div>
+                            </div>
+                            <div class="color-option" data-color="#27ae60" title="Verde">
+                                <div class="color-circle" style="background-color: #27ae60;"></div>
+                            </div>
+                            <div class="color-option" data-color="#3498db" title="Azul">
+                                <div class="color-circle" style="background-color: #3498db;"></div>
+                            </div>
+                            <div class="color-option" data-color="#9b59b6" title="Morado">
+                                <div class="color-circle" style="background-color: #9b59b6;"></div>
+                            </div>
+                            <div class="color-option" data-color="#e91e63" title="Rosa">
+                                <div class="color-circle" style="background-color: #e91e63;"></div>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Selecciona un color y luego haz clic en una tarjeta de asesor</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organigrama Container -->
+            <div class="organigrama-container">
+                <div class="organigrama-wrapper">
+                    <div id="organigrama-grid" class="organigrama-grid">
+                        <!-- El organigrama se genera dinámicamente aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3 text-muted">Cargando estructura organizacional...</p>
+            </div>
+
+            <!-- Estado del Organigrama -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="dimensiones">3 x 4</h3>
+                            <p>Dimensiones</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-asesores">0</h3>
+                            <p>Asesores</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="estado">Administrador</h3>
+                            <p>Estado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal para Seleccionar Asesor -->
+    <div class="modal fade" id="asesorModal" tabindex="-1" aria-labelledby="asesorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title" id="asesorModalLabel">
+                        <i class="bi bi-person-plus-fill me-2"></i>
+                        Seleccionar Asesor
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3" id="asesores-list">
+                        <!-- Lista de asesores se carga dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles del Asesor -->
+    <div class="modal fade" id="asesorDetailModal" tabindex="-1" aria-labelledby="asesorDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient-info text-white">
+                    <h5 class="modal-title" id="asesorDetailModalLabel">
+                        <i class="bi bi-person-lines-fill me-2"></i>
+                        Detalles del Asesor
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <img id="detail-foto" src="" alt="" class="detail-foto mb-3">
+                            <h5 id="detail-nombre" class="text-primary"></h5>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row g-3">
+                                <!-- Información básica -->
+                                <div class="col-12">
+                                    <h6 class="text-muted border-bottom pb-2">Información General</h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Procedencia:</label>
+                                    <div id="detail-procedencia" class="form-text"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Administrador:</label>
+                                    <div id="detail-administrador" class="form-text"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Semestre Consecutivo:</label>
+                                    <div id="detail-semestre" class="form-text"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tiene Beca:</label>
+                                    <div id="detail-tiene-beca" class="form-text"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Tipo de Beca:</label>
+                                    <div id="detail-tipo-beca" class="form-text"></div>
+                                </div>
+                                
+                                <!-- Evaluación -->
+                                <div class="col-12 mt-4">
+                                    <h6 class="text-muted border-bottom pb-2">Evaluación</h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Calificación:</label>
+                                    <div class="rating-container">
+                                        <div class="star-rating" id="star-rating">
+                                            <i class="bi bi-star star" data-rating="1"></i>
+                                            <i class="bi bi-star star" data-rating="2"></i>
+                                            <i class="bi bi-star star" data-rating="3"></i>
+                                            <i class="bi bi-star star" data-rating="4"></i>
+                                            <i class="bi bi-star star" data-rating="5"></i>
+                                        </div>
+                                        <span id="current-rating" class="rating-text">Sin calificar</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Comentarios:</label>
+                                    <textarea id="detail-comentarios" class="form-control" rows="3" placeholder="Escribe tus comentarios sobre este asesor..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAsesorEvaluation()">
+                        <i class="bi bi-save-fill me-1"></i>
+                        Guardar Evaluación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu">
+        <div class="context-menu-item" onclick="modifyAsesor()">
+            <i class="bi bi-pencil-fill me-2"></i>
+            Modificar
+        </div>
+        <div class="context-menu-item" onclick="viewAsesorDetail()">
+            <i class="bi bi-eye-fill me-2"></i>
+            Ver Detalle
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Organigrama Base JS -->
+    <script src="../js/organigrama.js"></script>
+    <!-- Organigrama Advanced JS -->
+    <script src="../js/organigrama-advanced.js"></script>
+</body>
+</html>

@@ -300,42 +300,45 @@ filterAsesores(searchTerm) {
     }
 
     renderStatistics() {
-        const grid = document.getElementById('statisticsGrid');
-        const blocks = [
-            { key: 'provisional-a', name: 'Provisional A', icon: 'bi-calendar-check' },
-            { key: 'provisional-b', name: 'Provisional B', icon: 'bi-calendar-plus' },
-            { key: 'definitivo', name: 'Definitivo', icon: 'bi-calendar-event' },
-            { key: 'bloque-1', name: 'Bloque 1', icon: 'bi-1-square' },
-            { key: 'bloque-2', name: 'Bloque 2', icon: 'bi-2-square' },
-            { key: 'extraordinarios', name: 'Extraordinarios', icon: 'bi-star-fill' }
-        ];
-        
-        grid.innerHTML = blocks.map(block => {
-            const stats = this.statistics[block.key] || { total: 0, assigned: 0, percentage: 0 };
-            return `
-                <div class="col-lg-4 col-md-6">
-                    <div class="stat-block-card" data-block="${block.key}">
-                        <div class="stat-icon">
-                            <i class="${block.icon}"></i>
-                        </div>
-                        <div class="stat-number">${stats.assigned}/${stats.total}</div>
-                        <div class="stat-label">${block.name}</div>
-                        <div class="stat-progress">
-                            <div class="stat-progress-bar" style="width: ${stats.percentage}%"></div>
-                        </div>
-                        <div class="stat-actions">
-                            <button class="btn btn-sm btn-outline-primary" onclick="horariosManager.showMissingAdvisors('${block.key}')">
-                                <i class="bi bi-eye me-1"></i>Ver Faltantes
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="horariosManager.confirmDeleteBlock('${block.key}')">
-                                <i class="bi bi-trash me-1"></i>Eliminar
-                            </button>
-                        </div>
+    const grid = document.getElementById('statisticsGrid');
+    const blocks = [
+        { key: 'provisional-a', name: 'Provisional A', icon: 'bi-calendar-check' },
+        { key: 'provisional-b', name: 'Provisional B', icon: 'bi-calendar-plus' },
+        { key: 'definitivo', name: 'Definitivo', icon: 'bi-calendar-event' },
+        { key: 'bloque-1', name: 'Bloque 1', icon: 'bi-1-square' },
+        { key: 'bloque-2', name: 'Bloque 2', icon: 'bi-2-square' },
+        { key: 'extraordinarios', name: 'Extraordinarios', icon: 'bi-star-fill' }
+    ];
+    
+    grid.innerHTML = blocks.map(block => {
+        const stats = this.statistics[block.key] || { total: 0, assigned: 0, percentage: 0 };
+        return `
+            <div class="col-lg-4 col-md-6">
+                <div class="stat-block-card" data-block="${block.key}">
+                    <div class="stat-icon">
+                        <i class="${block.icon}"></i>
+                    </div>
+                    <div class="stat-number">${stats.assigned}/${stats.total}</div>
+                    <div class="stat-label">${block.name}</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: ${stats.percentage}%"></div>
+                    </div>
+                    <div class="stat-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="horariosManager.showMissingAdvisors('${block.key}')">
+                            <i class="bi bi-eye me-1"></i>Ver Faltantes
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="horariosManager.openTablaMode('${block.key}')">
+                            <i class="bi bi-table me-1"></i>Modo Tabla
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="horariosManager.confirmDeleteBlock('${block.key}')">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </button>
                     </div>
                 </div>
-            `;
-        }).join('');
-    }
+            </div>
+        `;
+    }).join('');
+}
 
     // ========================================
     // STEP NAVIGATION
@@ -1036,6 +1039,16 @@ async loadExistingSchedules() {
             console.log(`${type.toUpperCase()}: ${title} - ${message}`);
         }
     }
+
+    openTablaMode(blockType) {
+    // Construir la URL con el parámetro del tipo de bloque
+    const url = `tabla-horarios.html?tipo=${encodeURIComponent(blockType)}`;
+    
+    // Abrir en nueva pestaña
+    window.open(url, '_blank');
+    
+    this.showNotification(`Abriendo modo tabla para ${blockType}`, 'info');
+}
 }
 
 // ========================================
