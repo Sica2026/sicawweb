@@ -199,7 +199,8 @@ class TablaHorariosManager {
 
     async loadHorariosData() {
         try {
-            this.showLoadingModal('Cargando datos de horarios...');
+            // Mostrar indicador de carga en lugar del modal
+            this.showLoadingIndicator(true);
             
             console.log(`🔍 Cargando horarios: ${this.currentTipoHorario} - ${this.currentSala}`);
             
@@ -231,11 +232,12 @@ class TablaHorariosManager {
             const statusText = document.querySelector('.status-text');
             statusText.textContent = `${this.horariosData.length} horarios cargados`;
             
-            this.hideLoadingModal();
+            // Ocultar indicador de carga
+            this.showLoadingIndicator(false);
             
         } catch (error) {
             console.error('❌ Error cargando horarios:', error);
-            this.hideLoadingModal();
+            this.showLoadingIndicator(false);
             this.showNotification('Error cargando datos', 'error');
         }
     }
@@ -426,52 +428,70 @@ class TablaHorariosManager {
             viernes: 'Viernes'
         };
         
-        // Update modal title and info
-        document.getElementById('modalTitle').textContent = 
-            `Asesores - ${dayNames[day]} ${this.formatTimeSlot(slot).replace('<br><small>', ' a ').replace('</small>', '')}`;
-        
-        const modalInfo = document.getElementById('modalInfo');
-        modalInfo.innerHTML = `
-            <div class="info-item">
-                <span class="info-label">Día:</span>
-                <span class="info-value">${dayNames[day]}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Horario:</span>
-                <span class="info-value">${slot}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Sala:</span>
-                <span class="info-value">${this.currentSala}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Tipo:</span>
-                <span class="info-value">${this.currentTipoHorario}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Total Asesores:</span>
-                <span class="info-value">${cellData.count}</span>
-            </div>
-        `;
-        
-        // Update asesores list
-        const asesoresList = document.getElementById('asesoresList');
-        asesoresList.innerHTML = cellData.asesores.map(asesor => `
-            <div class="asesor-item">
-                <div class="asesor-avatar">
-                    ${this.getInitials(asesor.nombre)}
-                </div>
-                <div class="asesor-info">
-                    <h6>${asesor.nombre}</h6>
-                    <p>Cuenta: ${asesor.numeroCuenta || 'No especificada'}</p>
-                    <small class="text-muted">Horario: ${asesor.horaInicio} - ${asesor.horaFinal}</small>
-                </div>
-            </div>
-        `).join('');
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('asesoresModal'));
-        modal.show();
+        try {
+            // Asegurar que no hay modales previos
+            this.closeAllModals();
+            
+            // Pequeño delay para asegurar que los modales anteriores se cierren
+            setTimeout(() => {
+                // Update modal title and info
+                document.getElementById('modalTitle').textContent = 
+                    `Asesores - ${dayNames[day]} ${this.formatTimeSlot(slot).replace('<br><small>', ' a ').replace('</small>', '')}`;
+                
+                const modalInfo = document.getElementById('modalInfo');
+                modalInfo.innerHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Día:</span>
+                        <span class="info-value">${dayNames[day]}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Horario:</span>
+                        <span class="info-value">${slot}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Sala:</span>
+                        <span class="info-value">${this.currentSala}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tipo:</span>
+                        <span class="info-value">${this.currentTipoHorario}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total Asesores:</span>
+                        <span class="info-value">${cellData.count}</span>
+                    </div>
+                `;
+                
+                // Update asesores list
+                const asesoresList = document.getElementById('asesoresList');
+                asesoresList.innerHTML = cellData.asesores.map(asesor => `
+                    <div class="asesor-item">
+                        <div class="asesor-avatar">
+                            ${this.getInitials(asesor.nombre)}
+                        </div>
+                        <div class="asesor-info">
+                            <h6>${asesor.nombre}</h6>
+                            <p>Cuenta: ${asesor.numeroCuenta || 'No especificada'}</p>
+                            <small class="text-muted">Horario: ${asesor.horaInicio} - ${asesor.horaFinal}</small>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Show modal con manejo de errores mejorado
+                const modalElement = document.getElementById('asesoresModal');
+                if (modalElement) {
+                    const modal = new bootstrap.Modal(modalElement, {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    modal.show();
+                }
+            }, 100);
+            
+        } catch (error) {
+            console.error('❌ Error abriendo modal:', error);
+            this.showNotification('Error al mostrar detalles', 'error');
+        }
     }
 
     getInitials(name) {
@@ -516,25 +536,44 @@ class TablaHorariosManager {
     // UTILITY METHODS
     // ========================================
 
-    showLoadingModal(message = 'Cargando...') {
-        const modal = document.getElementById('loadingModal');
-        const messageElement = document.getElementById('loadingMessage');
+    showLoadingIndicator(show) {
+        const statusText = document.querySelector('.status-text');
+        const statusIndicator = document.querySelector('.status-indicator');
+        const container = document.getElementById('tableContainer');
         
-        if (modal && messageElement) {
-            messageElement.textContent = message;
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
+        if (show) {
+            statusIndicator.classList.add('active');
+            if (container && !this.horariosData.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="loading-spinner mb-3"></div>
+                        <h4>Cargando datos...</h4>
+                        <p>Procesando información de horarios</p>
+                    </div>
+                `;
+            }
+        } else {
+            statusIndicator.classList.remove('active');
         }
     }
 
-    hideLoadingModal() {
-        const modal = document.getElementById('loadingModal');
-        if (modal) {
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) {
-                bsModal.hide();
+    closeAllModals() {
+        // Cerrar todos los modales de Bootstrap activos
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modalElement => {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                modalInstance.hide();
             }
-        }
+        });
+        
+        // Remover backdrops que puedan quedar
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        
+        // Restaurar scroll del body
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
     }
 
     showNotification(title, type = 'info', message = '') {
