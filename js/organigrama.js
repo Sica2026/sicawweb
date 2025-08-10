@@ -32,6 +32,10 @@ async function initializeOrganigrama() {
         
         // Configurar título y breadcrumbs
         SICAComponents.setPageTitle("Organigrama Interactivo - SICA");
+        SICAComponents.addBreadcrumbs([
+            { text: "Inicio", link: "../index.html" },
+            { text: "Organigrama Interactivo", active: true }
+        ]);
 
         // Verificar autenticación
         await checkAuthStatus();

@@ -12,8 +12,6 @@
     <link href="../css/base-styles.css" rel="stylesheet">
     <!-- Organigrama Specific Styles -->
     <link id="page-styles" href="../css/organigrama.css" rel="stylesheet">
-    <!-- Organigrama Advanced Styles -->
-    <link href="../css/organigrama-advanced.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header Component -->
@@ -103,49 +101,6 @@
                 </div>
             </div>
 
-            <!-- Color Palette (Solo para usuarios avanzados) -->
-            <div id="color-palette" class="color-palette-panel mb-4" style="display: none;">
-                <div class="card-modern">
-                    <div class="card-header bg-gradient-warning text-dark">
-                        <h6 class="mb-0">
-                            <i class="bi bi-palette-fill me-2"></i>
-                            Paleta de Colores
-                        </h6>
-                    </div>
-                    <div class="card-body p-3">
-                        <div class="color-options d-flex gap-2 flex-wrap">
-                            <div class="color-option" data-color="" title="Sin color">
-                                <div class="color-circle default-color">
-                                    <i class="bi bi-x"></i>
-                                </div>
-                            </div>
-                            <div class="color-option" data-color="#e74c3c" title="Rojo">
-                                <div class="color-circle" style="background-color: #e74c3c;"></div>
-                            </div>
-                            <div class="color-option" data-color="#f39c12" title="Naranja">
-                                <div class="color-circle" style="background-color: #f39c12;"></div>
-                            </div>
-                            <div class="color-option" data-color="#f1c40f" title="Amarillo">
-                                <div class="color-circle" style="background-color: #f1c40f;"></div>
-                            </div>
-                            <div class="color-option" data-color="#27ae60" title="Verde">
-                                <div class="color-circle" style="background-color: #27ae60;"></div>
-                            </div>
-                            <div class="color-option" data-color="#3498db" title="Azul">
-                                <div class="color-circle" style="background-color: #3498db;"></div>
-                            </div>
-                            <div class="color-option" data-color="#9b59b6" title="Morado">
-                                <div class="color-circle" style="background-color: #9b59b6;"></div>
-                            </div>
-                            <div class="color-option" data-color="#e91e63" title="Rosa">
-                                <div class="color-circle" style="background-color: #e91e63;"></div>
-                            </div>
-                        </div>
-                        <small class="text-muted d-block mt-2">Selecciona un color y luego haz clic en una tarjeta de asesor</small>
-                    </div>
-                </div>
-            </div>
-
             <!-- Organigrama Container -->
             <div class="organigrama-container">
                 <div class="organigrama-wrapper">
@@ -228,98 +183,6 @@
         </div>
     </div>
 
-    <!-- Modal de Detalles del Asesor -->
-    <div class="modal fade" id="asesorDetailModal" tabindex="-1" aria-labelledby="asesorDetailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-gradient-info text-white">
-                    <h5 class="modal-title" id="asesorDetailModalLabel">
-                        <i class="bi bi-person-lines-fill me-2"></i>
-                        Detalles del Asesor
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-4 text-center">
-                            <img id="detail-foto" src="" alt="" class="detail-foto mb-3">
-                            <h5 id="detail-nombre" class="text-primary"></h5>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="row g-3">
-                                <!-- Información básica -->
-                                <div class="col-12">
-                                    <h6 class="text-muted border-bottom pb-2">Información General</h6>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Procedencia:</label>
-                                    <div id="detail-procedencia" class="form-text"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Administrador:</label>
-                                    <div id="detail-administrador" class="form-text"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Semestre Consecutivo:</label>
-                                    <div id="detail-semestre" class="form-text"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Tiene Beca:</label>
-                                    <div id="detail-tiene-beca" class="form-text"></div>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Tipo de Beca:</label>
-                                    <div id="detail-tipo-beca" class="form-text"></div>
-                                </div>
-                                
-                                <!-- Evaluación -->
-                                <div class="col-12 mt-4">
-                                    <h6 class="text-muted border-bottom pb-2">Evaluación</h6>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Calificación:</label>
-                                    <div class="rating-container">
-                                        <div class="star-rating" id="star-rating">
-                                            <i class="bi bi-star star" data-rating="1"></i>
-                                            <i class="bi bi-star star" data-rating="2"></i>
-                                            <i class="bi bi-star star" data-rating="3"></i>
-                                            <i class="bi bi-star star" data-rating="4"></i>
-                                            <i class="bi bi-star star" data-rating="5"></i>
-                                        </div>
-                                        <span id="current-rating" class="rating-text">Sin calificar</span>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Comentarios:</label>
-                                    <textarea id="detail-comentarios" class="form-control" rows="3" placeholder="Escribe tus comentarios sobre este asesor..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" onclick="saveAsesorEvaluation()">
-                        <i class="bi bi-save-fill me-1"></i>
-                        Guardar Evaluación
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Context Menu -->
-    <div id="context-menu" class="context-menu">
-        <div class="context-menu-item" onclick="modifyAsesor()">
-            <i class="bi bi-pencil-fill me-2"></i>
-            Modificar
-        </div>
-        <div class="context-menu-item" onclick="viewAsesorDetail()">
-            <i class="bi bi-eye-fill me-2"></i>
-            Ver Detalle
-        </div>
-    </div>
-
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <!-- Firebase CDN -->
@@ -333,9 +196,7 @@
     <script src="../js/components.js"></script>
     <!-- Base Navigation JS -->
     <script src="../js/navigation.js"></script>
-    <!-- Organigrama Base JS -->
-    <script src="../js/organigrama.js"></script>
-    <!-- Organigrama Advanced JS -->
-    <script src="../js/organigrama-advanced.js"></script>
+    <!-- Organigrama Specific JS -->
+    <script id="page-script" src="../js/organigrama.js"></script>
 </body>
 </html>

@@ -178,7 +178,8 @@ class HorariosAsesorManager {
 
     async loadInitialData() {
         try {
-            this.showLoadingModal('Cargando datos...');
+            // Mostrar indicador ligero en lugar de modal
+            this.showNotification('Cargando datos del sistema...', 'info');
             
             // Load asesores
             await this.loadAsesores();
@@ -186,80 +187,79 @@ class HorariosAsesorManager {
             // Load statistics
             await this.loadStatistics();
             
-            this.hideLoadingModal();
+            this.showNotification('Sistema listo para usar', 'success');
             
         } catch (error) {
             console.error('❌ Error cargando datos iniciales:', error);
             this.showNotification('Error cargando datos', 'error');
-            this.hideLoadingModal();
         }
     }
 
-async loadAsesores() {
-    try {
-        const snapshot = await this.db.collection('asesores')
-            .where('estado', '==', 'aprobado')
-            .orderBy('nombreHorario')  // ← Cambio aquí
-            .get();
-        
-        this.asesores = [];
-        snapshot.forEach(doc => {
-            this.asesores.push({
-                id: doc.id,
-                ...doc.data()
+    async loadAsesores() {
+        try {
+            const snapshot = await this.db.collection('asesores')
+                .where('estado', '==', 'aprobado')
+                .orderBy('nombreHorario')
+                .get();
+            
+            this.asesores = [];
+            snapshot.forEach(doc => {
+                this.asesores.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
             });
+            
+            this.renderAsesores();
+            console.log(`✅ ${this.asesores.length} asesores cargados`);
+            
+        } catch (error) {
+            console.error('❌ Error cargando asesores:', error);
+            throw error;
+        }
+    }
+
+    renderAsesores(filteredAsesores = null) {
+        const grid = document.getElementById('asesoresGrid');
+        const asesores = filteredAsesores || this.asesores;
+        
+        if (asesores.length === 0) {
+            grid.innerHTML = `
+                <div class="text-center p-4">
+                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No se encontraron asesores</p>
+                </div>
+            `;
+            return;
+        }
+        
+        grid.innerHTML = asesores.map(asesor => `
+            <div class="asesor-card" data-asesor-id="${asesor.id}">
+                <div class="asesor-avatar">
+                    ${this.getInitials(asesor.nombreHorario || 'Sin Nombre')}
+                </div>
+                <div class="asesor-info">
+                    <h6>${asesor.nombreHorario || 'Sin nombre'}</h6>
+                    <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
+                    <small class="text-muted">${asesor.email || 'Sin email'}</small>
+                </div>
+            </div>
+        `).join('');
+        
+        // Add click events
+        grid.querySelectorAll('.asesor-card').forEach(card => {
+            card.addEventListener('click', () => this.selectAsesor(card));
         });
-        
-        this.renderAsesores();
-        console.log(`✅ ${this.asesores.length} asesores cargados`);
-        
-    } catch (error) {
-        console.error('❌ Error cargando asesores:', error);
-        throw error;
     }
-}
 
-renderAsesores(filteredAsesores = null) {
-    const grid = document.getElementById('asesoresGrid');
-    const asesores = filteredAsesores || this.asesores;
-    
-    if (asesores.length === 0) {
-        grid.innerHTML = `
-            <div class="text-center p-4">
-                <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
-                <p class="text-muted mt-2">No se encontraron asesores</p>
-            </div>
-        `;
-        return;
+    filterAsesores(searchTerm) {
+        const filtered = this.asesores.filter(asesor => 
+            (asesor.nombreHorario && asesor.nombreHorario.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (asesor.email && asesor.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (asesor.numeroCuenta && asesor.numeroCuenta.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        this.renderAsesores(filtered);
     }
-    
-    grid.innerHTML = asesores.map(asesor => `
-        <div class="asesor-card" data-asesor-id="${asesor.id}">
-            <div class="asesor-avatar">
-                ${this.getInitials(asesor.nombreHorario || 'Sin Nombre')}
-            </div>
-            <div class="asesor-info">
-                <h6>${asesor.nombreHorario || 'Sin nombre'}</h6>
-                <p>${asesor.numeroCuenta || 'Sin número de cuenta'}</p>
-                <small class="text-muted">${asesor.email || 'Sin email'}</small>
-            </div>
-        </div>
-    `).join('');
-    
-    // Add click events
-    grid.querySelectorAll('.asesor-card').forEach(card => {
-        card.addEventListener('click', () => this.selectAsesor(card));
-    });
-}
-
-filterAsesores(searchTerm) {
-    const filtered = this.asesores.filter(asesor => 
-        (asesor.nombreHorario && asesor.nombreHorario.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (asesor.email && asesor.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (asesor.numeroCuenta && asesor.numeroCuenta.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-    this.renderAsesores(filtered);
-}
 
     getInitials(name) {
         return name.split(' ')
@@ -300,161 +300,161 @@ filterAsesores(searchTerm) {
     }
 
     renderStatistics() {
-    const grid = document.getElementById('statisticsGrid');
-    const blocks = [
-        { key: 'provisional-a', name: 'Provisional A', icon: 'bi-calendar-check' },
-        { key: 'provisional-b', name: 'Provisional B', icon: 'bi-calendar-plus' },
-        { key: 'definitivo', name: 'Definitivo', icon: 'bi-calendar-event' },
-        { key: 'bloque-1', name: 'Bloque 1', icon: 'bi-1-square' },
-        { key: 'bloque-2', name: 'Bloque 2', icon: 'bi-2-square' },
-        { key: 'extraordinarios', name: 'Extraordinarios', icon: 'bi-star-fill' }
-    ];
-    
-    grid.innerHTML = blocks.map(block => {
-        const stats = this.statistics[block.key] || { total: 0, assigned: 0, percentage: 0 };
-        return `
-            <div class="col-lg-4 col-md-6">
-                <div class="stat-block-card" data-block="${block.key}">
-                    <div class="stat-icon">
-                        <i class="${block.icon}"></i>
-                    </div>
-                    <div class="stat-number">${stats.assigned}/${stats.total}</div>
-                    <div class="stat-label">${block.name}</div>
-                    <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${stats.percentage}%"></div>
-                    </div>
-                    <div class="stat-actions">
-                        <button class="btn btn-sm btn-outline-primary" onclick="horariosManager.showMissingAdvisors('${block.key}')">
-                            <i class="bi bi-eye me-1"></i>Ver Faltantes
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="horariosManager.openTablaMode('${block.key}')">
-                            <i class="bi bi-table me-1"></i>Modo Tabla
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="horariosManager.confirmDeleteBlock('${block.key}')">
-                            <i class="bi bi-trash me-1"></i>Eliminar
-                        </button>
+        const grid = document.getElementById('statisticsGrid');
+        const blocks = [
+            { key: 'provisional-a', name: 'Provisional A', icon: 'bi-calendar-check' },
+            { key: 'provisional-b', name: 'Provisional B', icon: 'bi-calendar-plus' },
+            { key: 'definitivo', name: 'Definitivo', icon: 'bi-calendar-event' },
+            { key: 'bloque-1', name: 'Bloque 1', icon: 'bi-1-square' },
+            { key: 'bloque-2', name: 'Bloque 2', icon: 'bi-2-square' },
+            { key: 'extraordinarios', name: 'Extraordinarios', icon: 'bi-star-fill' }
+        ];
+        
+        grid.innerHTML = blocks.map(block => {
+            const stats = this.statistics[block.key] || { total: 0, assigned: 0, percentage: 0 };
+            return `
+                <div class="col-lg-4 col-md-6">
+                    <div class="stat-block-card" data-block="${block.key}">
+                        <div class="stat-icon">
+                            <i class="${block.icon}"></i>
+                        </div>
+                        <div class="stat-number">${stats.assigned}/${stats.total}</div>
+                        <div class="stat-label">${block.name}</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: ${stats.percentage}%"></div>
+                        </div>
+                        <div class="stat-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="horariosManager.showMissingAdvisors('${block.key}')">
+                                <i class="bi bi-eye me-1"></i>Ver Faltantes
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="horariosManager.openTablaMode('${block.key}')">
+                                <i class="bi bi-table me-1"></i>Modo Tabla
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="horariosManager.confirmDeleteBlock('${block.key}')">
+                                <i class="bi bi-trash me-1"></i>Eliminar
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-    }).join('');
-}
+            `;
+        }).join('');
+    }
 
     // ========================================
     // STEP NAVIGATION
     // ========================================
-async loadExistingSchedulesInBackground() {
-    try {
-        console.log('🔄 === INICIO CARGA BACKGROUND ===');
-        console.log('📋 Tipo Bloque:', this.config.tipoBloque);
-        console.log('👤 Asesor ID:', this.config.asesor?.id);
-        
-        // Validaciones rápidas
-        if (!this.config.tipoBloque || !this.config.asesor?.id || !this.db) {
-            console.warn('⚠️ Datos insuficientes para cargar horarios existentes');
-            this.showNotification('Listo para agregar horarios nuevos', 'info');
-            return;
-        }
-        
-        // Timeout corto para no hacer esperar al usuario
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-                reject(new Error('TIMEOUT: Carga en background cancelada después de 5 segundos'));
-            }, 5000); // Solo 5 segundos máximo
-        });
-        
-        console.log('🔍 Iniciando consulta background...');
-        const startTime = Date.now();
-        
-        const queryPromise = this.db.collection('horarios')
-            .where('tipoBloque', '==', this.config.tipoBloque)
-            .where('asesorId', '==', this.config.asesor.id)
-            .get();
-        
-        const snapshot = await Promise.race([queryPromise, timeoutPromise]);
-        
-        const duration = Date.now() - startTime;
-        console.log(`⏱️ Consulta background completada en ${duration}ms`);
-        console.log('📊 Horarios encontrados:', snapshot.size);
-        
-        if (snapshot.size > 0) {
-            this.existingSchedules = [];
-            snapshot.forEach((doc, index) => {
-                console.log(`📄 Horario ${index + 1}:`, doc.id);
-                this.existingSchedules.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
+    async loadExistingSchedulesInBackground() {
+        try {
+            console.log('🔄 === INICIO CARGA BACKGROUND ===');
+            console.log('📋 Tipo Bloque:', this.config.tipoBloque);
+            console.log('👤 Asesor ID:', this.config.asesor?.id);
+            
+            // Validaciones rápidas
+            if (!this.config.tipoBloque || !this.config.asesor?.id || !this.db) {
+                console.warn('⚠️ Datos insuficientes para cargar horarios existentes');
+                this.showNotification('Listo para agregar horarios nuevos', 'info');
+                return;
+            }
+            
+            // Timeout corto para no hacer esperar al usuario
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('TIMEOUT: Carga en background cancelada después de 5 segundos'));
+                }, 5000); // Solo 5 segundos máximo
             });
             
-            // Actualizar la interfaz con los horarios encontrados
-            this.config.horarios = [...this.existingSchedules];
-            this.renderHorarios();
-            this.updateHoursCounter();
+            console.log('🔍 Iniciando consulta background...');
+            const startTime = Date.now();
             
-            this.showNotification(
-                `✅ Se encontraron ${this.existingSchedules.length} horarios existentes`, 
-                'success'
-            );
-        } else {
-            console.log('ℹ️ No se encontraron horarios existentes');
-            this.showNotification('Sin horarios previos. Puedes agregar nuevos horarios.', 'info');
+            const queryPromise = this.db.collection('horarios')
+                .where('tipoBloque', '==', this.config.tipoBloque)
+                .where('asesorId', '==', this.config.asesor.id)
+                .get();
+            
+            const snapshot = await Promise.race([queryPromise, timeoutPromise]);
+            
+            const duration = Date.now() - startTime;
+            console.log(`⏱️ Consulta background completada en ${duration}ms`);
+            console.log('📊 Horarios encontrados:', snapshot.size);
+            
+            if (snapshot.size > 0) {
+                this.existingSchedules = [];
+                snapshot.forEach((doc, index) => {
+                    console.log(`📄 Horario ${index + 1}:`, doc.id);
+                    this.existingSchedules.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Actualizar la interfaz con los horarios encontrados
+                this.config.horarios = [...this.existingSchedules];
+                this.renderHorarios();
+                this.updateHoursCounter();
+                
+                this.showNotification(
+                    `✅ Se encontraron ${this.existingSchedules.length} horarios existentes`, 
+                    'success'
+                );
+            } else {
+                console.log('ℹ️ No se encontraron horarios existentes');
+                this.showNotification('Sin horarios previos. Puedes agregar nuevos horarios.', 'info');
+            }
+            
+            console.log('✅ === FIN CARGA BACKGROUND EXITOSA ===');
+            
+        } catch (error) {
+            console.warn('⚠️ === ERROR EN CARGA BACKGROUND ===');
+            console.warn('⚠️ Error:', error.message);
+            
+            // Mensajes suaves, sin alarmar al usuario
+            if (error.message.includes('TIMEOUT')) {
+                console.log('⏱️ Timeout en carga background - continuando normalmente');
+                this.showNotification('Listo para configurar horarios', 'info');
+            } else if (error.message.includes('indexes')) {
+                console.log('📊 Problema de índices - continuando sin horarios existentes');
+                this.showNotification('Listo para agregar nuevos horarios', 'info');
+            } else {
+                console.log('🔄 Error general en carga - continuando normalmente');
+                this.showNotification('Puedes agregar horarios nuevos', 'info');
+            }
+            
+            // La interfaz ya está lista para usar, no hay problema
+            console.log('✅ Interfaz lista para usar sin horarios existentes');
         }
-        
-        console.log('✅ === FIN CARGA BACKGROUND EXITOSA ===');
-        
-    } catch (error) {
-        console.warn('⚠️ === ERROR EN CARGA BACKGROUND ===');
-        console.warn('⚠️ Error:', error.message);
-        
-        // Mensajes suaves, sin alarmar al usuario
-        if (error.message.includes('TIMEOUT')) {
-            console.log('⏱️ Timeout en carga background - continuando normalmente');
-            this.showNotification('Listo para configurar horarios', 'info');
-        } else if (error.message.includes('indexes')) {
-            console.log('📊 Problema de índices - continuando sin horarios existentes');
-            this.showNotification('Listo para agregar nuevos horarios', 'info');
-        } else {
-            console.log('🔄 Error general en carga - continuando normalmente');
-            this.showNotification('Puedes agregar horarios nuevos', 'info');
-        }
-        
-        // La interfaz ya está lista para usar, no hay problema
-        console.log('✅ Interfaz lista para usar sin horarios existentes');
     }
-}
 
     nextStep() {
-    if (!this.validateCurrentStep()) {
-        return;
-    }
+        if (!this.validateCurrentStep()) {
+            return;
+        }
 
-    if (this.currentStep < this.totalSteps) {
-        this.currentStep++;
-        this.updateStepDisplay();
-        
-        // Load existing schedules when reaching step 3 (final step)
-        if (this.currentStep === 3) {
-            // ✅ CAMBIO: No bloquear la interfaz
-            this.initializeStep3();
+        if (this.currentStep < this.totalSteps) {
+            this.currentStep++;
+            this.updateStepDisplay();
+            
+            // Load existing schedules when reaching step 3 (final step)
+            if (this.currentStep === 3) {
+                // ✅ CAMBIO: No bloquear la interfaz
+                this.initializeStep3();
+            }
         }
     }
-}
 
-initializeStep3() {
-    console.log('🚀 Inicializando paso 3 (no bloqueante)...');
-    
-    // Mostrar interfaz inmediatamente (sin horarios)
-    this.config.horarios = [];
-    this.renderHorarios();
-    this.updateHoursCounter();
-    
-    // Mostrar mensaje informativo pequeño
-    this.showNotification('Revisando horarios existentes...', 'info');
-    
-    // Cargar horarios existentes en background (no bloqueante)
-    this.loadExistingSchedulesInBackground();
-}
+    initializeStep3() {
+        console.log('🚀 Inicializando paso 3 (no bloqueante)...');
+        
+        // Mostrar interfaz inmediatamente (sin horarios)
+        this.config.horarios = [];
+        this.renderHorarios();
+        this.updateHoursCounter();
+        
+        // Mostrar mensaje informativo pequeño
+        this.showNotification('Revisando horarios existentes...', 'info');
+        
+        // Cargar horarios existentes en background (no bloqueante)
+        this.loadExistingSchedulesInBackground();
+    }
 
     prevStep() {
         if (this.currentStep > 1) {
@@ -538,19 +538,20 @@ initializeStep3() {
     // STEP 2: ASESOR SELECTION
     // ========================================
 
-selectAsesor(card) {
-    // Remove previous selections
-    document.querySelectorAll('.asesor-card').forEach(c => c.classList.remove('selected'));
+    selectAsesor(card) {
+        // Remove previous selections
+        document.querySelectorAll('.asesor-card').forEach(c => c.classList.remove('selected'));
+        
+        // Select current card
+        card.classList.add('selected');
+        const asesorId = card.getAttribute('data-asesor-id');
+        this.config.asesor = this.asesores.find(a => a.id === asesorId);
+        
+        this.showNotification(`Asesor seleccionado: ${this.config.asesor.nombreHorario}`, 'success');
+        
+        console.log('👤 Asesor seleccionado:', this.config.asesor);
+    }
     
-    // Select current card
-    card.classList.add('selected');
-    const asesorId = card.getAttribute('data-asesor-id');
-    this.config.asesor = this.asesores.find(a => a.id === asesorId);
-    
-    this.showNotification(`Asesor seleccionado: ${this.config.asesor.nombreHorario}`, 'success');
-    
-    console.log('👤 Asesor seleccionado:', this.config.asesor);
-}
     // ========================================
     // STEP 3: CONFIGURACIÓN COMPLETA
     // ========================================
@@ -573,10 +574,10 @@ selectAsesor(card) {
         console.log('📍 Posición seleccionada:', this.config.posicion);
     }
 
-async loadExistingSchedules() {
-    // Delegar completamente al método no bloqueante
-    await this.loadExistingSchedulesInBackground();
-}
+    async loadExistingSchedules() {
+        // Delegar completamente al método no bloqueante
+        await this.loadExistingSchedulesInBackground();
+    }
 
     addHorario() {
         // Validate that location is selected
@@ -608,12 +609,11 @@ async loadExistingSchedules() {
         const hours = this.calculateHours(horaInicio, horaFinal);
         
         // Create horario object
-        // En la parte donde se crea el objeto nuevoHorario
         const nuevoHorario = {
             id: `temp_${Date.now()}`,
             tipoBloque: this.config.tipoBloque,
             asesorId: this.config.asesor.id,
-            nombreHorario: this.config.asesor.nombreHorario,  // ← Cambio aquí
+            nombreHorario: this.config.asesor.nombreHorario,
             numeroCuenta: this.config.asesor.numeroCuenta || null,
             sala: this.config.sala,
             posicion: this.config.posicion,
@@ -804,7 +804,14 @@ async loadExistingSchedules() {
 
     async saveHorarios() {
         try {
-            this.showLoadingModal('Guardando horarios...');
+            // Mostrar notificación en lugar de modal
+            this.showNotification('Guardando horarios...', 'info');
+            
+            // Deshabilitar botón para evitar doble click
+            const confirmBtn = document.getElementById('finalConfirmBtn');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
             
             const batch = this.db.batch();
             const newHorarios = this.config.horarios.filter(h => h.isNew);
@@ -826,7 +833,7 @@ async loadExistingSchedules() {
                     tipoBloque: horario.tipoBloque,
                     asesorId: horario.asesorId,
                     nombreHorario: horario.nombreHorario,
-                    numeroCuenta: horario.numeroCuenta, // NUEVO CAMPO
+                    numeroCuenta: horario.numeroCuenta,
                     sala: horario.sala,
                     posicion: horario.posicion,
                     dias: horario.dias,
@@ -842,7 +849,9 @@ async loadExistingSchedules() {
             
             await batch.commit();
             
-            this.hideLoadingModal();
+            // Restaurar botón
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
@@ -858,7 +867,12 @@ async loadExistingSchedules() {
             
         } catch (error) {
             console.error('❌ Error guardando horarios:', error);
-            this.hideLoadingModal();
+            
+            // Restaurar botón en caso de error
+            const confirmBtn = document.getElementById('finalConfirmBtn');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="bi bi-save me-2"></i>Guardar Horarios';
+            
             this.showNotification('Error al guardar horarios', 'error');
         }
     }
@@ -894,7 +908,8 @@ async loadExistingSchedules() {
 
     async showMissingAdvisors(blockType) {
         try {
-            this.showLoadingModal('Cargando asesores faltantes...');
+            // Mostrar notificación ligera en lugar de modal de carga
+            this.showNotification('Cargando asesores faltantes...', 'info');
             
             const snapshot = await this.db.collection('horarios')
                 .where('tipoBloque', '==', blockType)
@@ -914,11 +929,10 @@ async loadExistingSchedules() {
             const modal = new bootstrap.Modal(document.getElementById('missingAdvisorsModal'));
             modal.show();
             
-            this.hideLoadingModal();
+            this.showNotification('Datos cargados correctamente', 'success');
             
         } catch (error) {
             console.error('❌ Error cargando asesores faltantes:', error);
-            this.hideLoadingModal();
             this.showNotification('Error cargando datos', 'error');
         }
     }
@@ -964,7 +978,14 @@ async loadExistingSchedules() {
 
     async deleteBlock() {
         try {
-            this.showLoadingModal('Eliminando horarios del bloque...');
+            // Mostrar notificación en lugar de modal
+            this.showNotification('Eliminando horarios del bloque...', 'info');
+            
+            // Deshabilitar botón
+            const deleteBtn = document.getElementById('confirmDeleteBlock');
+            const originalText = deleteBtn.innerHTML;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Eliminando...';
             
             const snapshot = await this.db.collection('horarios')
                 .where('tipoBloque', '==', this.blockToDelete)
@@ -977,7 +998,9 @@ async loadExistingSchedules() {
             
             await batch.commit();
             
-            this.hideLoadingModal();
+            // Restaurar botón
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('deleteBlockModal'));
@@ -990,35 +1013,19 @@ async loadExistingSchedules() {
             
         } catch (error) {
             console.error('❌ Error eliminando bloque:', error);
-            this.hideLoadingModal();
+            
+            // Restaurar botón en caso de error
+            const deleteBtn = document.getElementById('confirmDeleteBlock');
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Eliminar Bloque';
+            
             this.showNotification('Error al eliminar bloque', 'error');
         }
     }
 
     // ========================================
-    // UTILITY METHODS
+    // UTILITY METHODS (SIN MODALES DE CARGA)
     // ========================================
-
-    showLoadingModal(message = 'Cargando...') {
-        const modal = document.getElementById('loadingModal');
-        const messageElement = document.getElementById('loadingMessage');
-        
-        if (modal && messageElement) {
-            messageElement.textContent = message;
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
-        }
-    }
-
-    hideLoadingModal() {
-        const modal = document.getElementById('loadingModal');
-        if (modal) {
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) {
-                bsModal.hide();
-            }
-        }
-    }
 
     showNotification(title, type = 'info', message = '') {
         if (window.modernNav && window.modernNav.showModernNotification) {
@@ -1041,14 +1048,14 @@ async loadExistingSchedules() {
     }
 
     openTablaMode(blockType) {
-    // Construir la URL con el parámetro del tipo de bloque
-    const url = `tabla-horarios.html?tipo=${encodeURIComponent(blockType)}`;
-    
-    // Abrir en nueva pestaña
-    window.open(url, '_blank');
-    
-    this.showNotification(`Abriendo modo tabla para ${blockType}`, 'info');
-}
+        // Construir la URL con el parámetro del tipo de bloque
+        const url = `tabla-horarios.html?tipo=${encodeURIComponent(blockType)}`;
+        
+        // Abrir en nueva pestaña
+        window.open(url, '_blank');
+        
+        this.showNotification(`Abriendo modo tabla para ${blockType}`, 'info');
+    }
 }
 
 // ========================================

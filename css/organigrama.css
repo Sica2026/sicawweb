@@ -1,4 +1,4 @@
-/* ===== ORGANIGRAMA STYLES ===== */
+/* ===== ORGANIGRAMA STYLES - VERSIÓN COMPACTA ===== */
 
 /* Variables adicionales */
 :root {
@@ -7,8 +7,8 @@
     --unam-dark-blue: #003d7a;
     --organigrama-bg: #f8fafc;
     --card-hover: #ffffff;
-    --shadow-card: 0 8px 32px rgba(0, 102, 204, 0.1);
-    --shadow-hover: 0 12px 40px rgba(0, 102, 204, 0.2);
+    --shadow-card: 0 4px 12px rgba(0, 102, 204, 0.08);
+    --shadow-hover: 0 6px 20px rgba(0, 102, 204, 0.15);
     --gradient-primary: linear-gradient(135deg, var(--unam-blue), var(--unam-dark-blue));
     --gradient-gold: linear-gradient(135deg, var(--unam-gold), #e6b800);
 }
@@ -16,14 +16,14 @@
 [data-theme="dark"] {
     --organigrama-bg: #1a1a2e;
     --card-hover: #16213e;
-    --shadow-card: 0 8px 32px rgba(0, 102, 204, 0.3);
+    --shadow-card: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
 /* Layout Principal */
 .organigrama-container {
     background: var(--organigrama-bg);
-    border-radius: 20px;
-    padding: 2rem;
+    border-radius: 16px;
+    padding: 1.5rem;
     margin: 1rem 0;
     border: 1px solid rgba(0, 102, 204, 0.1);
     position: relative;
@@ -38,8 +38,8 @@
     right: 0;
     bottom: 0;
     background: 
-        radial-gradient(circle at 20% 80%, rgba(0, 102, 204, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 204, 0, 0.03) 0%, transparent 50%);
+        radial-gradient(circle at 20% 80%, rgba(0, 102, 204, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 204, 0, 0.02) 0%, transparent 50%);
     pointer-events: none;
     z-index: 1;
 }
@@ -47,54 +47,55 @@
 .organigrama-wrapper {
     position: relative;
     z-index: 2;
-    min-height: 500px;
+    min-height: 300px;
     overflow: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--unam-blue) transparent;
 }
 
 .organigrama-wrapper::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 .organigrama-wrapper::-webkit-scrollbar-track {
-    background: rgba(0, 102, 204, 0.1);
-    border-radius: 10px;
+    background: rgba(0, 102, 204, 0.05);
+    border-radius: 8px;
 }
 
 .organigrama-wrapper::-webkit-scrollbar-thumb {
     background: var(--gradient-primary);
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
-/* Grid del Organigrama */
+/* Grid del Organigrama - MÁS COMPACTO */
 .organigrama-grid {
     display: grid;
-    gap: 20px;
-    padding: 2rem;
+    gap: 12px; /* Reducido de 20px a 12px */
+    padding: 1rem; /* Reducido de 2rem a 1rem */
     min-width: fit-content;
     justify-content: center;
+    align-items: center;
 }
 
-/* Tarjetas de Asesores */
+/* Tarjetas de Asesores - OPTIMIZADAS PARA FOTO Y NOMBRE */
 .asesor-card {
-    width: 200px;
-    height: 240px;
+    width: 140px;
+    height: 160px;
     background: var(--card-hover);
-    border-radius: 16px;
-    border: 2px solid rgba(0, 102, 204, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 102, 204, 0.1);
     box-shadow: var(--shadow-card);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between; /* Distribuye el espacio entre foto y nombre */
     text-align: center;
-    padding: 1rem;
+    padding: 0.5rem 0.4rem; /* Padding más ajustado arriba/abajo, menos a los lados */
 }
 
 .asesor-card::before {
@@ -103,7 +104,7 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 3px; /* Reducido de 4px a 3px */
     background: var(--gradient-primary);
     transform: scaleX(0);
     transition: transform 0.3s ease;
@@ -114,105 +115,126 @@
 }
 
 .asesor-card:hover {
-    transform: translateY(-8px) scale(1.02);
+    transform: translateY(-4px) scale(1.02); /* Menos elevación */
     box-shadow: var(--shadow-hover);
     border-color: var(--unam-blue);
 }
 
 .asesor-card.dragging {
     opacity: 0.7;
-    transform: rotate(5deg) scale(1.05);
+    transform: rotate(3deg) scale(1.03); /* Rotación más sutil */
     z-index: 1000;
 }
 
-/* Foto del Asesor */
+/* Foto del Asesor - OCUPANDO MÁS ESPACIO */
 .asesor-foto {
-    width: 80px;
-    height: 80px;
+    width: 80px; /* Aumentado de 60px a 80px para ocupar más espacio */
+    height: 80px; /* Aumentado de 60px a 80px para ocupar más espacio */
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--unam-blue);
-    margin-bottom: 0.75rem;
+    border: 2px solid var(--unam-blue);
+    margin-bottom: 0.4rem; /* Reducido ligeramente para dar más espacio al nombre */
     transition: all 0.3s ease;
+    flex-shrink: 0; /* Evita que se encoja */
 }
 
 .asesor-card:hover .asesor-foto {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px rgba(0, 102, 204, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(0, 102, 204, 0.3);
 }
 
+/* Texto del Asesor - OCUPANDO MÁS ESPACIO */
 .asesor-nombre {
     font-weight: 600;
     color: var(--unam-dark-blue);
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
+    font-size: 0.85rem; /* Aumentado de 0.8rem a 0.85rem */
+    margin: 0; /* Sin márgenes para aprovechar todo el espacio */
+    line-height: 1.2; /* Mejor legibilidad */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    flex-grow: 1; /* Ocupa todo el espacio disponible */
+    display: flex;
+    align-items: center; /* Centra verticalmente el texto */
+    justify-content: center;
+    text-align: center;
+    padding: 0 0.25rem; /* Pequeño padding lateral */
 }
 
 .asesor-info {
-    font-size: 0.75rem;
+    font-size: 0.7rem; /* Ligeramente más pequeño */
     color: var(--text-secondary);
     opacity: 0.8;
+    display: none; /* Ocultar información adicional para más espacio */
 }
 
-/* Tarjeta Vacía */
+/* Tarjeta Vacía - OCUPANDO MÁS ESPACIO */
 .empty-card {
-    background: rgba(0, 102, 204, 0.05);
-    border: 2px dashed var(--unam-blue);
+    background: rgba(0, 102, 204, 0.03);
+    border: 1px dashed var(--unam-blue);
     color: var(--unam-blue);
+    justify-content: center; /* Centrar contenido */
 }
 
 .empty-card:hover {
-    background: rgba(0, 102, 204, 0.1);
+    background: rgba(0, 102, 204, 0.08);
     border-color: var(--unam-dark-blue);
 }
 
 .empty-card i {
-    font-size: 2rem;
+    font-size: 2rem; /* Aumentado de 1.5rem a 2rem para ocupar más espacio */
     opacity: 0.6;
     margin-bottom: 0.5rem;
 }
 
+.empty-card .asesor-nombre {
+    font-size: 0.8rem; /* Aumentado de 0.75rem a 0.8rem */
+    font-weight: 500;
+    margin: 0;
+}
+
 /* Panel de Administrador */
 .admin-panel {
-    animation: slideInDown 0.6s ease;
+    animation: slideInDown 0.5s ease;
 }
 
 .bg-gradient-primary {
     background: var(--gradient-primary) !important;
 }
 
-/* Estadísticas */
+/* Estadísticas - COMPACTAS */
 .stat-card {
     background: var(--card-hover);
-    border-radius: 16px;
-    padding: 1.5rem;
+    border-radius: 12px;
+    padding: 1rem; /* Reducido de 1.5rem a 1rem */
     border: 1px solid rgba(0, 102, 204, 0.1);
     box-shadow: var(--shadow-card);
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem; /* Reducido de 1rem a 0.75rem */
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px); /* Menos elevación */
     box-shadow: var(--shadow-hover);
 }
 
 .stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+    width: 50px; /* Reducido de 60px a 50px */
+    height: 50px; /* Reducido de 60px a 50px */
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.25rem; /* Reducido de 1.5rem a 1.25rem */
     color: white;
 }
 
 .stat-content h3 {
-    font-size: 1.75rem;
+    font-size: 1.5rem; /* Reducido de 1.75rem a 1.5rem */
     font-weight: 700;
     margin: 0;
     color: var(--unam-dark-blue);
@@ -221,26 +243,27 @@
 .stat-content p {
     margin: 0;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.85rem; /* Ligeramente reducido */
 }
 
 /* Modal de Asesores */
 .modal-content {
     border: none;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px 16px 0 0;
+    border-radius: 12px 12px 0 0;
+    padding: 1rem 1.5rem; /* Más compacto */
 }
 
 .asesor-option {
     background: var(--card-hover);
-    border: 2px solid rgba(0, 102, 204, 0.1);
-    border-radius: 12px;
-    padding: 1rem;
+    border: 1px solid rgba(0, 102, 204, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem; /* Reducido de 1rem a 0.75rem */
     transition: all 0.3s ease;
     cursor: pointer;
     text-align: center;
@@ -248,35 +271,43 @@
 
 .asesor-option:hover {
     border-color: var(--unam-blue);
-    transform: translateY(-2px);
+    transform: translateY(-1px); /* Menos elevación */
     box-shadow: var(--shadow-card);
 }
 
 .asesor-option img {
-    width: 50px;
-    height: 50px;
+    width: 40px; /* Reducido de 50px a 40px */
+    height: 40px; /* Reducido de 50px a 40px */
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--unam-blue);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem; /* Reducido */
+}
+
+.asesor-option strong {
+    font-size: 0.8rem; /* Texto más pequeño */
+}
+
+.asesor-option small {
+    font-size: 0.7rem;
 }
 
 /* Drag and Drop */
 .drop-zone {
-    border: 3px dashed var(--unam-gold) !important;
-    background: rgba(255, 204, 0, 0.1) !important;
+    border: 2px dashed var(--unam-gold) !important; /* Borde más fino */
+    background: rgba(255, 204, 0, 0.08) !important;
 }
 
 .drag-over {
-    transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(255, 204, 0, 0.4);
+    transform: scale(1.03); /* Menos zoom */
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
 }
 
 /* Animaciones */
 @keyframes slideInDown {
     from {
         opacity: 0;
-        transform: translateY(-30px);
+        transform: translateY(-20px); /* Menos movimiento */
     }
     to {
         opacity: 1;
@@ -287,7 +318,7 @@
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px); /* Menos movimiento */
     }
     to {
         opacity: 1;
@@ -296,10 +327,10 @@
 }
 
 .fade-in-up {
-    animation: fadeInUp 0.6s ease forwards;
+    animation: fadeInUp 0.5s ease forwards;
 }
 
-/* Responsive Design */
+/* Responsive Design - FOTOS Y NOMBRES OPTIMIZADOS */
 @media (max-width: 768px) {
     .organigrama-container {
         padding: 1rem;
@@ -307,30 +338,70 @@
     }
 
     .asesor-card {
-        width: 160px;
-        height: 200px;
+        width: 120px;
+        height: 140px;
+        padding: 0.4rem 0.3rem; /* Padding ajustado para móvil */
     }
 
     .asesor-foto {
-        width: 60px;
-        height: 60px;
+        width: 65px; /* Foto sigue siendo prominente en móvil */
+        height: 65px;
+    }
+
+    .asesor-nombre {
+        font-size: 0.75rem;
     }
 
     .organigrama-grid {
-        gap: 15px;
-        padding: 1rem;
+        gap: 10px;
+        padding: 0.75rem;
     }
 
     .stat-card {
         flex-direction: column;
         text-align: center;
-        padding: 1rem;
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .stat-content h3 {
+        font-size: 1.25rem;
     }
 }
 
-/* Print Styles */
+@media (max-width: 480px) {
+    .asesor-card {
+        width: 100px;
+        height: 120px;
+        padding: 0.3rem 0.2rem;
+    }
+
+    .asesor-foto {
+        width: 55px; /* Mantiene buena proporción incluso en móviles pequeños */
+        height: 55px;
+    }
+
+    .asesor-nombre {
+        font-size: 0.7rem;
+    }
+
+    .organigrama-grid {
+        gap: 8px;
+    }
+
+    .empty-card i {
+        font-size: 1.5rem; /* Ajustado para móviles pequeños */
+    }
+}
+
+/* Print Styles - OPTIMIZADO */
 @media print {
-    /* Ocultar todo excepto el organigrama */
     body * {
         visibility: hidden;
     }
@@ -349,7 +420,7 @@
         background: white !important;
         border: none !important;
         box-shadow: none !important;
-        padding: 20px !important;
+        padding: 15px !important;
         margin: 0 !important;
         border-radius: 0 !important;
     }
@@ -361,25 +432,25 @@
     
     .organigrama-grid {
         padding: 0 !important;
-        gap: 15px !important;
+        gap: 10px !important; /* Más compacto para impresión */
         justify-content: flex-start !important;
     }
     
-    /* Orientación horizontal */
     @page {
         size: landscape;
-        margin: 1cm;
+        margin: 0.5cm; /* Márgenes más pequeños */
     }
     
-    /* Estilo para tarjetas con asesores */
     .asesor-card:not(.empty-card) {
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        width: 120px !important;
+        height: 140px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
         break-inside: avoid;
         border: 1px solid #ddd !important;
         background: white !important;
+        padding: 0.3rem !important; /* Padding ajustado para impresión */
     }
     
-    /* Ocultar tarjetas vacías completamente */
     .asesor-card.empty-card {
         visibility: hidden !important;
         border: none !important;
@@ -387,16 +458,17 @@
     }
     
     .asesor-foto {
-        border: 2px solid #0066cc !important;
+        width: 60px !important; /* Foto prominente en impresión */
+        height: 60px !important;
+        border: 1px solid #0066cc !important;
+        margin-bottom: 0.25rem !important;
     }
     
     .asesor-nombre {
         color: #003d7a !important;
         font-weight: 600 !important;
-    }
-    
-    .asesor-info {
-        color: #666 !important;
+        font-size: 0.75rem !important;
+        line-height: 1.1 !important;
     }
 }
 
@@ -424,8 +496,8 @@
 }
 
 .spinner-border {
-    width: 3rem;
-    height: 3rem;
+    width: 2.5rem; /* Ligeramente más pequeño */
+    height: 2.5rem;
 }
 
 /* Dark Mode Adjustments */
@@ -439,7 +511,7 @@
 }
 
 [data-theme="dark"] .empty-card {
-    background: rgba(0, 102, 204, 0.1);
+    background: rgba(0, 102, 204, 0.08);
     color: var(--unam-blue);
 }
 
