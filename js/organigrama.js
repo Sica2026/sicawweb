@@ -14,7 +14,6 @@ let currentPosition = null;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar a que todos los componentes se carguen
     setTimeout(initializeOrganigrama, 500);
 });
 
@@ -23,28 +22,19 @@ async function initializeOrganigrama() {
     try {
         showLoading(true);
         
-        // Verificar que los elementos existan antes de continuar
         if (!waitForElements()) {
             console.log('Esperando elementos del DOM...');
             setTimeout(initializeOrganigrama, 200);
             return;
         }
         
-        // Configurar título y breadcrumbs
         SICAComponents.setPageTitle("Organigrama Interactivo - SICA");
-
-        // Verificar autenticación
         await checkAuthStatus();
-        
-        // Cargar datos
         await loadAsesores();
         await loadOrganigramaData();
         
-        // Renderizar organigrama
         renderOrganigrama();
         updateStats();
-        
-        // Configurar event listeners
         setupEventListeners();
         
         showLoading(false);
@@ -63,15 +53,10 @@ async function initializeOrganigrama() {
     }
 }
 
-// Verificar que los elementos necesarios existan
 function waitForElements() {
     const requiredElements = [
-        'admin-controls',
-        'organigrama-grid',
-        'loading-indicator',
-        'dimensiones',
-        'total-asesores',
-        'estado'
+        'admin-controls', 'organigrama-grid', 'loading-indicator',
+        'dimensiones', 'total-asesores', 'estado'
     ];
     
     for (const id of requiredElements) {
@@ -80,16 +65,14 @@ function waitForElements() {
             return false;
         }
     }
-    
     return true;
 }
 
-// Verificar estado de autenticación
 async function checkAuthStatus() {
     return new Promise((resolve) => {
         firebase.auth().onAuthStateChanged(async (user) => {
             currentUser = user;
-            isAdmin = !!user; // Solo usuarios autenticados son admin
+            isAdmin = !!user;
             
             const adminControls = document.getElementById('admin-controls');
             const estadoElement = document.getElementById('estado');
@@ -99,25 +82,19 @@ async function checkAuthStatus() {
                     adminControls.style.display = 'block';
                     estadoElement.textContent = 'Administrador';
                     const statIcon = estadoElement.parentElement.querySelector('.stat-icon');
-                    if (statIcon) {
-                        statIcon.className = 'stat-icon bg-success';
-                    }
+                    if (statIcon) statIcon.className = 'stat-icon bg-success';
                 } else {
                     adminControls.style.display = 'none';
                     estadoElement.textContent = 'Solo Lectura';
                     const statIcon = estadoElement.parentElement.querySelector('.stat-icon');
-                    if (statIcon) {
-                        statIcon.className = 'stat-icon bg-info';
-                    }
+                    if (statIcon) statIcon.className = 'stat-icon bg-info';
                 }
             }
-            
             resolve();
         });
     });
 }
 
-// Cargar asesores desde Firebase
 async function loadAsesores() {
     try {
         const snapshot = await firebase.firestore().collection('asesores').get();
@@ -125,7 +102,6 @@ async function loadAsesores() {
             id: doc.id,
             ...doc.data()
         }));
-        
         console.log(`Cargados ${asesores.length} asesores`);
     } catch (error) {
         console.error('Error cargando asesores:', error);
@@ -133,7 +109,6 @@ async function loadAsesores() {
     }
 }
 
-// Cargar configuración del organigrama
 async function loadOrganigramaData() {
     try {
         const doc = await firebase.firestore().collection('configuracion').doc('organigrama').get();
@@ -146,15 +121,12 @@ async function loadOrganigramaData() {
                 positions: data.positions || {}
             };
         }
-        
         console.log('Configuración del organigrama:', organigramaData);
     } catch (error) {
         console.error('Error cargando configuración:', error);
-        // Usar configuración por defecto
     }
 }
 
-// Renderizar el organigrama
 function renderOrganigrama() {
     const grid = document.getElementById('organigrama-grid');
     if (!grid) {
@@ -163,12 +135,9 @@ function renderOrganigrama() {
     }
     
     grid.innerHTML = '';
+    grid.style.gridTemplateColumns = `repeat(${organigramaData.cols}, 140px)`;
+    grid.style.gridTemplateRows = `repeat(${organigramaData.rows}, 160px)`;
     
-    // Configurar grid CSS
-    grid.style.gridTemplateColumns = `repeat(${organigramaData.cols}, 200px)`;
-    grid.style.gridTemplateRows = `repeat(${organigramaData.rows}, 240px)`;
-    
-    // Crear celdas
     for (let row = 0; row < organigramaData.rows; row++) {
         for (let col = 0; col < organigramaData.cols; col++) {
             const position = `${row}-${col}`;
@@ -181,7 +150,6 @@ function renderOrganigrama() {
     }
 }
 
-// Crear tarjeta de asesor
 function createAsesorCard(asesor, row, col) {
     const position = `${row}-${col}`;
     const card = document.createElement('div');
@@ -224,30 +192,23 @@ function createAsesorCard(asesor, row, col) {
         card.addEventListener('drop', handleDrop);
     }
     
-    // Animación escalonada
     card.style.animationDelay = `${(row * organigramaData.cols + col) * 0.1}s`;
-    
     return card;
 }
 
 // === DRAG AND DROP ===
 function handleDragStart(e) {
     if (!isAdmin) return;
-    
     draggedElement = e.target;
     currentPosition = e.target.dataset.position;
     e.target.classList.add('dragging');
-    
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', e.target.outerHTML);
 }
 
 function handleDragEnd(e) {
     if (!isAdmin) return;
-    
     e.target.classList.remove('dragging');
-    
-    // Remover estilos de drop zones
     document.querySelectorAll('.drop-zone').forEach(el => {
         el.classList.remove('drop-zone', 'drag-over');
     });
@@ -255,15 +216,12 @@ function handleDragEnd(e) {
 
 function handleDragOver(e) {
     if (!isAdmin || !draggedElement) return;
-    
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
     const target = e.currentTarget;
     if (target !== draggedElement) {
         target.classList.add('drop-zone');
-        
-        // Efecto hover
         target.addEventListener('mouseenter', () => target.classList.add('drag-over'));
         target.addEventListener('mouseleave', () => target.classList.remove('drag-over'));
     }
@@ -271,13 +229,11 @@ function handleDragOver(e) {
 
 function handleDrop(e) {
     if (!isAdmin || !draggedElement) return;
-    
     e.preventDefault();
     const target = e.currentTarget;
     const targetPosition = target.dataset.position;
     
     if (currentPosition !== targetPosition) {
-        // Intercambiar posiciones
         swapPositions(currentPosition, targetPosition);
     }
     
@@ -286,12 +242,10 @@ function handleDrop(e) {
     currentPosition = null;
 }
 
-// Intercambiar posiciones de asesores
 function swapPositions(pos1, pos2) {
     const asesor1 = organigramaData.positions[pos1];
     const asesor2 = organigramaData.positions[pos2];
     
-    // Intercambiar
     if (asesor1) {
         organigramaData.positions[pos2] = asesor1;
     } else {
@@ -304,7 +258,6 @@ function swapPositions(pos1, pos2) {
         delete organigramaData.positions[pos1];
     }
     
-    // Re-renderizar
     renderOrganigrama();
     updateStats();
     
@@ -319,11 +272,8 @@ function swapPositions(pos1, pos2) {
 // === GESTIÓN DE ASESORES ===
 function showAsesorOptions(position) {
     if (!isAdmin) return;
-    
     currentPosition = position;
     const modal = new bootstrap.Modal(document.getElementById('asesorModal'));
-    
-    // Cargar lista de asesores disponibles
     loadAsesorOptions();
     modal.show();
 }
@@ -337,7 +287,6 @@ function loadAsesorOptions() {
     
     container.innerHTML = '';
     
-    // Opción para quitar asesor
     if (organigramaData.positions[currentPosition]) {
         const removeOption = document.createElement('div');
         removeOption.className = 'col-md-6 col-lg-4';
@@ -351,7 +300,6 @@ function loadAsesorOptions() {
         container.appendChild(removeOption);
     }
     
-    // Asesores disponibles
     asesores.forEach(asesor => {
         const isAssigned = Object.values(organigramaData.positions).includes(asesor.id);
         const option = document.createElement('div');
@@ -367,18 +315,13 @@ function loadAsesorOptions() {
                 ${isAssigned ? '<small class="text-warning"><br>Ya asignado</small>' : ''}
             </div>
         `;
-        
         container.appendChild(option);
     });
 }
 
 function assignAsesor(asesorId) {
     organigramaData.positions[currentPosition] = asesorId;
-    
-    // Cerrar modal
     bootstrap.Modal.getInstance(document.getElementById('asesorModal')).hide();
-    
-    // Re-renderizar
     renderOrganigrama();
     updateStats();
     
@@ -393,11 +336,7 @@ function assignAsesor(asesorId) {
 
 function removeAsesor(position) {
     delete organigramaData.positions[position];
-    
-    // Cerrar modal
     bootstrap.Modal.getInstance(document.getElementById('asesorModal')).hide();
-    
-    // Re-renderizar
     renderOrganigrama();
     updateStats();
     
@@ -412,7 +351,6 @@ function removeAsesor(position) {
 // === GESTIÓN DE ESTRUCTURA ===
 function addRow() {
     if (!isAdmin) return;
-    
     organigramaData.rows++;
     renderOrganigrama();
     updateStats();
@@ -427,7 +365,6 @@ function addRow() {
 
 function addColumn() {
     if (!isAdmin) return;
-    
     organigramaData.cols++;
     renderOrganigrama();
     updateStats();
@@ -443,7 +380,6 @@ function addColumn() {
 function removeRow() {
     if (!isAdmin || organigramaData.rows <= 1) return;
     
-    // Verificar si hay asesores en la última fila
     const lastRow = organigramaData.rows - 1;
     let hasAsesores = false;
     
@@ -474,7 +410,6 @@ function removeRow() {
 function removeColumn() {
     if (!isAdmin || organigramaData.cols <= 1) return;
     
-    // Verificar si hay asesores en la última columna
     const lastCol = organigramaData.cols - 1;
     let hasAsesores = false;
     
@@ -542,12 +477,9 @@ async function resetOrganigrama() {
     
     try {
         showLoading(true, "Restableciendo...");
-        
-        // Recargar configuración original
         await loadOrganigramaData();
         renderOrganigrama();
         updateStats();
-        
         showLoading(false);
         
         SICAComponents.notify(
@@ -580,7 +512,6 @@ function updateStats() {
 }
 
 function setupEventListeners() {
-    // Eventos de teclado para administradores
     if (isAdmin) {
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey || e.metaKey) {
@@ -598,181 +529,12 @@ function setupEventListeners() {
         });
     }
     
-    // Redimensionar grid en cambio de ventana
     window.addEventListener('resize', debounce(() => {
         renderOrganigrama();
     }, 250));
 }
 
 // === FUNCIONES DE INTERFAZ ===
-function toggleFullscreen() {
-    const container = document.querySelector('.organigrama-container');
-    
-    if (!document.fullscreenElement) {
-        container.requestFullscreen().then(() => {
-            container.classList.add('fullscreen-mode');
-        });
-    } else {
-        document.exitFullscreen().then(() => {
-            container.classList.remove('fullscreen-mode');
-        });
-    }
-}
-
-function printOrganigrama() {
-    // Crear una nueva ventana para la impresión
-    const printWindow = window.open('', '_blank');
-    
-    // Obtener el contenido del organigrama
-    const organigramaContainer = document.querySelector('.organigrama-container');
-    const organigramaGrid = document.getElementById('organigrama-grid');
-    
-    if (!organigramaContainer || !organigramaGrid) {
-        showError('No se puede imprimir: organigrama no encontrado');
-        return;
-    }
-    
-    // Crear una copia del grid solo con asesores (sin tarjetas vacías)
-    const printGrid = organigramaGrid.cloneNode(true);
-    const emptyCards = printGrid.querySelectorAll('.empty-card');
-    emptyCards.forEach(card => {
-        card.style.visibility = 'hidden';
-        card.style.border = 'none';
-        card.style.background = 'transparent';
-        card.innerHTML = ''; // Limpiar contenido
-    });
-    
-    // HTML para la ventana de impresión
-    const printHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Organigrama SICA - ${new Date().toLocaleDateString()}</title>
-            <style>
-                @page {
-                    size: landscape;
-                    margin: 1cm;
-                }
-                
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    margin: 0;
-                    padding: 20px;
-                    background: white;
-                }
-                
-                .print-header {
-                    text-align: center;
-                    margin-bottom: 30px;
-                    border-bottom: 2px solid #0066cc;
-                    padding-bottom: 20px;
-                }
-                
-                .print-title {
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #003d7a;
-                    margin: 0;
-                }
-                
-                .print-subtitle {
-                    font-size: 14px;
-                    color: #666;
-                    margin: 5px 0 0 0;
-                }
-                
-                .organigrama-grid {
-                    display: grid;
-                    grid-template-columns: repeat(${organigramaData.cols}, 180px);
-                    grid-template-rows: repeat(${organigramaData.rows}, 200px);
-                    gap: 15px;
-                    justify-content: center;
-                    margin: 0 auto;
-                }
-                
-                .asesor-card {
-                    width: 180px;
-                    height: 200px;
-                    border: 1px solid #ddd;
-                    border-radius: 12px;
-                    padding: 15px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    text-align: center;
-                    background: white;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                }
-                
-                .asesor-card.empty-card {
-                    visibility: hidden;
-                    border: none;
-                    background: transparent;
-                    box-shadow: none;
-                }
-                
-                .asesor-foto {
-                    width: 70px;
-                    height: 70px;
-                    border-radius: 50%;
-                    object-fit: cover;
-                    border: 2px solid #0066cc;
-                    margin-bottom: 10px;
-                }
-                
-                .asesor-nombre {
-                    font-weight: 600;
-                    color: #003d7a;
-                    font-size: 12px;
-                    margin-bottom: 0;
-                    line-height: 1.2;
-                }
-                
-                .asesor-info {
-                    display: none;
-                }
-                
-                .print-footer {
-                    margin-top: 30px;
-                    text-align: center;
-                    font-size: 10px;
-                    color: #999;
-                    border-top: 1px solid #eee;
-                    padding-top: 15px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="print-header">
-                <h1 class="print-title">Organigrama SICA</h1>
-                <p class="print-subtitle">Estructura organizacional del sistema - ${new Date().toLocaleDateString()}</p>
-            </div>
-            
-            <div class="organigrama-grid">
-                ${printGrid.innerHTML}
-            </div>
-            
-            <div class="print-footer">
-                Generado el ${new Date().toLocaleString()} - Sistema SICA
-            </div>
-        </body>
-        </html>
-    `;
-    
-    // Escribir el contenido en la nueva ventana
-    printWindow.document.write(printHTML);
-    printWindow.document.close();
-    
-    // Esperar a que se cargue y luego imprimir
-    printWindow.onload = function() {
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
-    };
-}
-
 function showLoading(show, message = "Cargando...") {
     const loadingEl = document.getElementById('loading-indicator');
     const mainContent = document.querySelector('.organigrama-container');
@@ -801,7 +563,6 @@ function showError(message) {
     );
 }
 
-// Utilidad de debounce
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -821,6 +582,5 @@ window.removeRow = removeRow;
 window.removeColumn = removeColumn;
 window.saveChanges = saveChanges;
 window.resetOrganigrama = resetOrganigrama;
-window.printOrganigrama = printOrganigrama;
 window.assignAsesor = assignAsesor;
 window.removeAsesor = removeAsesor;
