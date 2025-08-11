@@ -11,6 +11,9 @@ class PaseLista {
         this.exitCount = 0;
         this.isProcessing = false;
         
+        // 🚨 NUEVO: Inicializar configuración
+        this.initializeConfiguration();
+        
         this.init();
     }
 
@@ -20,6 +23,55 @@ class PaseLista {
         this.updateStats();
         
         console.log('📋 Sistema de Pase de Lista inicializado');
+    }
+
+    // 🚨 NUEVO: Inicializar configuración si no existe
+    async initializeConfiguration() {
+        try {
+            const configDoc = await this.db.collection('configuracion').doc('general').get();
+            if (!configDoc.exists) {
+                await this.db.collection('configuracion').doc('general').set({
+                    tipoBloque: 'default',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ Documento de configuración inicializado');
+            }
+        } catch (error) {
+            console.error('Error inicializando configuración:', error);
+        }
+    }
+
+    // 🚨 NUEVO: Obtener tipoBloque desde configuración
+    async getTipoBloque() {
+        try {
+            const configDoc = await this.db.collection('configuracion').doc('general').get();
+            if (configDoc.exists) {
+                const configData = configDoc.data();
+                return configData.tipoBloque || 'default'; // Valor por defecto si no existe
+            } else {
+                console.warn('Documento de configuración no encontrado, usando valor por defecto');
+                return 'default';
+            }
+        } catch (error) {
+            console.error('Error obteniendo tipoBloque de configuración:', error);
+            return 'default';
+        }
+    }
+
+    // 🚨 NUEVO: Método para actualizar tipoBloque en configuración
+    async updateTipoBloque(nuevoTipoBloque) {
+        try {
+            await this.db.collection('configuracion').doc('general').update({
+                tipoBloque: nuevoTipoBloque,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log('✅ TipoBloque actualizado en configuración:', nuevoTipoBloque);
+            return true;
+        } catch (error) {
+            console.error('Error actualizando tipoBloque:', error);
+            return false;
+        }
     }
 
     setupEventListeners() {
@@ -801,6 +853,7 @@ async completeExistingRecord(docRef, docData, tipo, metodo, confidence = null) {
     return updatedData;
 }
 
+// 🚨 MODIFICADO: Método moveToWeeklyAttendance con tipoBloque
 async moveToWeeklyAttendance(registroData, originalDocRef) {
     try {
         // Calcular horas trabajadas usando las horas redondeadas
@@ -814,6 +867,9 @@ async moveToWeeklyAttendance(registroData, originalDocRef) {
         if (registroData.entrada.metodo !== registroData.salida.metodo) {
             metodoFinal = 'mixed';
         }
+
+        // 🚨 NUEVO: Obtener tipoBloque desde configuración
+        const tipoBloque = await this.getTipoBloque();
         
         // Preparar los datos para asistenciasemana
         const weeklyRecord = {
@@ -825,7 +881,8 @@ async moveToWeeklyAttendance(registroData, originalDocRef) {
             metodo: metodoFinal,
             entrada: registroData.entrada,
             salida: registroData.salida,
-            horasTrabajadas: horasTrabajadas
+            horasTrabajadas: horasTrabajadas,
+            tipoBloque: tipoBloque // 🚨 NUEVO CAMPO agregado
         };
 
         // Agregar a asistenciasemana
@@ -834,14 +891,13 @@ async moveToWeeklyAttendance(registroData, originalDocRef) {
         // Eliminar de registroasistencia
         await originalDocRef.delete();
         
-        console.log('✅ Registro movido a asistenciasemana:', registroData.numeroCuenta, 'Horas:', horasTrabajadas);
+        console.log('✅ Registro movido a asistenciasemana:', registroData.numeroCuenta, 'Horas:', horasTrabajadas, 'TipoBloque:', tipoBloque);
         
     } catch (error) {
         console.error('Error moviendo registro a asistenciasemana:', error);
         throw error;
     }
 }
-
 
     shakeInput(input) {
         input.classList.add('error-shake');
@@ -926,6 +982,20 @@ if (!document.querySelector('#spinner-animation-styles')) {
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+        .camera-info-message {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .camera-info-message i {
+            color: #0d6efd;
         }
     `;
     document.head.appendChild(style);

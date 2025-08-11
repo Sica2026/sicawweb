@@ -250,9 +250,6 @@ async function completePendiente(id) {
               
         showNotification('Tarea completada exitosamente', 'success');
         
-        // Registrar actividad
-        await logActivity('Tarea completada', `Se completó la tarea: ${id}`);
-        
     } catch (error) {
         console.error('❌ Error completando pendiente:', error);
         showNotification('Error al completar la tarea', 'error');
@@ -357,23 +354,21 @@ async function saveTarea() {
         
         // Preparar datos
         const tareaData = {
-        titulo: title,
-        contenido: content,
-        asignacion: assignee,
-        fecha_final: firebase.firestore.Timestamp.fromDate(new Date(deadline)),
-        importancia: document.getElementById('tareaImportancia').value // ✅ AGREGAR
+            titulo: title,
+            contenido: content,
+            asignacion: assignee,
+            fecha_final: firebase.firestore.Timestamp.fromDate(new Date(deadline)),
+            importancia: document.getElementById('tareaImportancia').value
         };
         
         if (editId) {
             // Actualizar tarea existente
             await db.collection('pendientes').doc(editId).update(tareaData);
             showNotification('Tarea actualizada exitosamente', 'success');
-            await logActivity('Tarea actualizada', `Se actualizó la tarea: ${title}`);
         } else {
             // Crear nueva tarea
             await db.collection('pendientes').add(tareaData);
             showNotification('Tarea creada exitosamente', 'success');
-            await logActivity('Tarea creada', `Se creó la tarea: ${title}`);
         }
         
         // Cerrar modal
@@ -414,28 +409,9 @@ async function generateReport() {
             showNotification('Reporte generado exitosamente', 'success');
         }, 2000);
         
-        await logActivity('Reporte generado', 'Se generó un reporte del sistema');
-        
     } catch (error) {
         console.error('❌ Error generando reporte:', error);
         showNotification('Error al generar el reporte', 'error');
-    }
-}
-
-async function logActivity(title, description) {
-    try {
-        if (!db) return;
-        
-        await db.collection('admin_activity').add({
-            title: title,
-            description: description,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            user: auth.currentUser?.email || 'unknown',
-            type: 'admin_action'
-        });
-        
-    } catch (error) {
-        console.warn('⚠️ Error registrando actividad:', error);
     }
 }
 
