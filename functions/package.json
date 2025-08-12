@@ -6,7 +6,8 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "lint": "eslint ."
   },
   "engines": {
     "node": "18"
@@ -17,6 +18,7 @@
     "firebase-functions": "^4.3.1"
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
     "firebase-functions-test": "^3.1.0"
   },
   "private": true

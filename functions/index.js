@@ -9,6 +9,12 @@ const admin = require('firebase-admin');
 // Inicializar Firebase Admin
 admin.initializeApp();
 
+// Configurar Firestore para ignorar valores undefined
+const db = admin.firestore();
+db.settings({
+  ignoreUndefinedProperties: true
+});
+
 // Función principal que se ejecuta diariamente a las 10 PM
 exports.procesarAsistenciasDiarias = functions
   .region('us-central1') // Puedes cambiar la región si necesitas
@@ -32,7 +38,6 @@ exports.procesarAsistenciasDiarias = functions
  * Función principal de procesamiento
  */
 async function procesarAsistencias() {
-  const db = admin.firestore();
   const hoy = new Date();
   const fechaHoy = hoy.toISOString().split('T')[0]; // YYYY-MM-DD
   const diaHoy = obtenerNombreDia(hoy);
@@ -143,7 +148,7 @@ async function obtenerHorariosDelDia(db, tipoBloque, dia) {
  */
 async function procesarHorarioIndividual(db, horario, fecha) {
   try {
-    console.log(`👤 Procesando: ${horario.nombreAsesor} (${horario.numeroCuenta})`);
+    console.log(`👤 Procesando: ${horario.nombreAsesor || 'Sin nombre'} (${horario.numeroCuenta || 'Sin cuenta'})`);
     
     // Buscar asistencia correspondiente
     const asistencia = await buscarAsistencia(db, horario, fecha);
@@ -157,7 +162,7 @@ async function procesarHorarioIndividual(db, horario, fecha) {
     }
     
   } catch (error) {
-    console.error(`❌ Error procesando horario ${horario.numeroCuenta}:`, error);
+    console.error(`❌ Error procesando horario ${horario.numeroCuenta || 'Sin cuenta'}:`, error);
     throw error;
   }
 }
@@ -207,7 +212,7 @@ function procesarAsistenciaPresente(horario, asistencia, fecha) {
   const observaciones = [];
   
   // Analizar entrada
-  if (entradaReal) {
+  if (entradaReal && horaInicio) {
     const tardanza = calcularDiferenciaMinutos(entradaReal, horaInicio);
     if (tardanza > 0) {
       observaciones.push(`Llegó ${tardanza} minutos tarde`);
@@ -215,7 +220,7 @@ function procesarAsistenciaPresente(horario, asistencia, fecha) {
   }
   
   // Analizar salida
-  if (salidaReal) {
+  if (salidaReal && horaFinal) {
     const salidaTemprana = calcularDiferenciaMinutos(horaFinal, salidaReal);
     if (salidaTemprana > 0) {
       observaciones.push(`Salió ${salidaTemprana} minutos antes`);
@@ -226,18 +231,30 @@ function procesarAsistenciaPresente(horario, asistencia, fecha) {
     observaciones.push('Puntual');
   }
   
-  const reporte = {
-    nombreAsesor: horario.nombreAsesor,
-    numeroCuenta: horario.numeroCuenta,
-    fecha: fecha,
-    entrada: entradaReal || null,
-    salida: salidaReal || null,
-    tiempoTrabajado: asistencia.horasTrabajadas || calcularTiempoTrabajado(entradaReal, salidaReal),
-    observaciones: observaciones.join(', '),
-    tipoBloque: horario.tipoBloque,
-    estado: 'presente',
-    timestamp: admin.firestore.FieldValue.serverTimestamp()
-  };
+  // Crear reporte limpio sin campos undefined
+  const reporte = {};
+  
+  // Solo agregar campos que no sean undefined
+  if (horario.nombreAsesor || asistencia.nombreAsesor) {
+    reporte.nombreAsesor = horario.nombreAsesor || asistencia.nombreAsesor || 'Sin nombre';
+  } else {
+    reporte.nombreAsesor = 'Sin nombre';
+  }
+  
+  if (horario.numeroCuenta) {
+    reporte.numeroCuenta = horario.numeroCuenta;
+  } else {
+    reporte.numeroCuenta = 'Sin cuenta';
+  }
+  
+  reporte.fecha = fecha;
+  reporte.entrada = entradaReal || null;
+  reporte.salida = salidaReal || null;
+  reporte.tiempoTrabajado = asistencia.horasTrabajadas || calcularTiempoTrabajado(entradaReal, salidaReal) || '0h 0m';
+  reporte.observaciones = observaciones.join(', ');
+  reporte.tipoBloque = horario.tipoBloque || 'Sin tipo';
+  reporte.estado = 'presente';
+  reporte.timestamp = admin.firestore.FieldValue.serverTimestamp();
   
   return {
     reporte: reporte,
@@ -251,18 +268,19 @@ function procesarAsistenciaPresente(horario, asistencia, fecha) {
 function procesarAsistenciaAusente(horario, fecha) {
   const horasEsperadas = calcularHorasEsperadas(horario.horaInicio, horario.horaFinal);
   
-  const reporte = {
-    nombreAsesor: horario.nombreAsesor,
-    numeroCuenta: horario.numeroCuenta,
-    fecha: fecha,
-    entrada: null,
-    salida: null,
-    tiempoTrabajado: `-${horasEsperadas}`,
-    observaciones: `Faltó en su horario de ${horario.horaInicio}-${horario.horaFinal}`,
-    tipoBloque: horario.tipoBloque,
-    estado: 'ausente',
-    timestamp: admin.firestore.FieldValue.serverTimestamp()
-  };
+  // Crear reporte limpio sin campos undefined
+  const reporte = {};
+  
+  reporte.nombreAsesor = horario.nombreAsesor || 'Sin nombre';
+  reporte.numeroCuenta = horario.numeroCuenta || 'Sin cuenta';
+  reporte.fecha = fecha;
+  reporte.entrada = null;
+  reporte.salida = null;
+  reporte.tiempoTrabajado = `-${horasEsperadas || '0h 0m'}`;
+  reporte.observaciones = `Faltó en su horario de ${horario.horaInicio || 'N/A'}-${horario.horaFinal || 'N/A'}`;
+  reporte.tipoBloque = horario.tipoBloque || 'Sin tipo';
+  reporte.estado = 'ausente';
+  reporte.timestamp = admin.firestore.FieldValue.serverTimestamp();
   
   return {
     reporte: reporte,
@@ -271,15 +289,23 @@ function procesarAsistenciaAusente(horario, fecha) {
 }
 
 /**
- * Guardar reportes en Firestore
+ * Guardar reportes en Firestore (con filtrado de undefined)
  */
 async function guardarReportes(db, reportes) {
   try {
     const batch = db.batch();
     
     reportes.forEach(reporte => {
+      // Filtrar campos undefined como medida extra de seguridad
+      const reporteLimpio = {};
+      Object.keys(reporte).forEach(key => {
+        if (reporte[key] !== undefined && reporte[key] !== null) {
+          reporteLimpio[key] = reporte[key];
+        }
+      });
+      
       const docRef = db.collection('reportesasesores').doc();
-      batch.set(docRef, reporte);
+      batch.set(docRef, reporteLimpio);
     });
     
     await batch.commit();
@@ -306,11 +332,19 @@ async function moverAsistenciasProcesadas(db, asistencias) {
     asistencias.forEach(asistencia => {
       const docRef = db.collection('asistenciasrevisadas').doc();
       const { id, ...dataSinId } = asistencia;
-      batch.set(docRef, {
-        ...dataSinId,
-        fechaProcesamiento: admin.firestore.FieldValue.serverTimestamp(),
-        documentoOriginal: id
+      
+      // Crear datos limpios sin undefined
+      const datosLimpios = {};
+      Object.keys(dataSinId).forEach(key => {
+        if (dataSinId[key] !== undefined) {
+          datosLimpios[key] = dataSinId[key];
+        }
       });
+      
+      datosLimpios.fechaProcesamiento = admin.firestore.FieldValue.serverTimestamp();
+      datosLimpios.documentoOriginal = id;
+      
+      batch.set(docRef, datosLimpios);
     });
     
     await batch.commit();
@@ -347,6 +381,7 @@ function obtenerNombreDia(fecha) {
  * Calcular diferencia en minutos entre dos horas
  */
 function calcularDiferenciaMinutos(hora1, hora2) {
+  if (!hora1 || !hora2) return 0;
   const minutos1 = horaAMinutos(hora1);
   const minutos2 = horaAMinutos(hora2);
   return minutos1 - minutos2;
@@ -383,9 +418,13 @@ function calcularTiempoTrabajado(entrada, salida) {
  * Calcular horas esperadas de trabajo
  */
 function calcularHorasEsperadas(horaInicio, horaFinal) {
+  if (!horaInicio || !horaFinal) return '0h 0m';
+  
   const minutosInicio = horaAMinutos(horaInicio);
   const minutosFinal = horaAMinutos(horaFinal);
   const diferenciaMinutos = minutosFinal - minutosInicio;
+  
+  if (diferenciaMinutos <= 0) return '0h 0m';
   
   const horas = Math.floor(diferenciaMinutos / 60);
   const minutos = diferenciaMinutos % 60;
@@ -394,11 +433,11 @@ function calcularHorasEsperadas(horaInicio, horaFinal) {
 }
 
 // =============================================
-// FUNCIÓN DE PRUEBA (OPCIONAL)
+// FUNCIONES DE PRUEBA Y EJECUCIÓN MANUAL
 // =============================================
 
 /**
- * Función para probar manualmente (opcional)
+ * Función para probar manualmente (callable)
  * Se puede llamar desde la consola de Firebase
  */
 exports.procesarAsistenciasManual = functions.https.onCall(async (data, context) => {
@@ -416,5 +455,122 @@ exports.procesarAsistenciasManual = functions.https.onCall(async (data, context)
       success: false,
       error: error.message
     };
+  }
+});
+
+/**
+ * Función para probar manualmente via HTTP
+ * Accesible desde navegador web
+ */
+exports.probarProcesamiento = functions.https.onRequest(async (req, res) => {
+  console.log('🧪 Iniciando prueba manual via HTTP...');
+  
+  // Configurar CORS para permitir acceso desde navegador
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  try {
+    const resultado = await procesarAsistencias();
+    
+    res.status(200).json({
+      success: true,
+      mensaje: 'Procesamiento completado exitosamente',
+      timestamp: new Date().toISOString(),
+      resultado: resultado
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en prueba HTTP:', error);
+    
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error en procesamiento',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Función para obtener estadísticas sin procesar
+ * Útil para verificar datos antes del procesamiento
+ */
+exports.obtenerEstadisticas = functions.https.onRequest(async (req, res) => {
+  console.log('📊 Obteniendo estadísticas...');
+  
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  try {
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().split('T')[0];
+    const diaHoy = obtenerNombreDia(hoy);
+    
+    // Obtener configuración
+    const tipoBloqueoActivo = await obtenerConfiguracionActiva(db);
+    
+    // Obtener horarios
+    const horarios = await obtenerHorariosDelDia(db, tipoBloqueoActivo, diaHoy);
+    
+    // Obtener asistencias del día
+    const fechaCompleta = new Date(fechaHoy + 'T00:00:00.000Z');
+    const fechaSiguiente = new Date(fechaCompleta);
+    fechaSiguiente.setDate(fechaSiguiente.getDate() + 1);
+    
+    const asistenciasSnapshot = await db
+      .collection('asistenciasemana')
+      .where('tipoBloque', '==', tipoBloqueoActivo)
+      .where('fechaCompleta', '>=', fechaCompleta)
+      .where('fechaCompleta', '<', fechaSiguiente)
+      .get();
+    
+    const estadisticas = {
+      fecha: fechaHoy,
+      dia: diaHoy,
+      tipoBloque: tipoBloqueoActivo,
+      totalHorarios: horarios.length,
+      totalAsistencias: asistenciasSnapshot.size,
+      horarios: horarios.map(h => ({
+        numeroCuenta: h.numeroCuenta,
+        nombreAsesor: h.nombreAsesor,
+        horario: `${h.horaInicio}-${h.horaFinal}`
+      })),
+      asistencias: []
+    };
+    
+    asistenciasSnapshot.forEach(doc => {
+      const data = doc.data();
+      estadisticas.asistencias.push({
+        numeroCuenta: data.numeroCuenta,
+        nombreAsesor: data.nombreAsesor,
+        entrada: data.entrada?.horaRedondeada,
+        salida: data.salida?.horaRedondeada
+      });
+    });
+    
+    res.status(200).json({
+      success: true,
+      estadisticas: estadisticas
+    });
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo estadísticas:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
