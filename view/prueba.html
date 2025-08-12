@@ -473,78 +473,112 @@
                                         observaciones: [],
                                         tiempoTardanza: 0,
                                         tiempoSalidaTemprana: 0,
-                                        horasTrabajadas: 0
+                                        horasTrabajadas: 0,
+                                        tipoBloqueComparado: null // Nuevo campo
                                     };
 
                                     if (asistenciaDelDia.length > 0) {
-                                        let mejorCoincidencia = null;
-                                        let menorDiferencia = Infinity;
+                                        // Buscar asistencias que coincidan con el tipoBloque del horario
+                                        const asistenciasCompatibles = asistenciaDelDia.filter(asistencia => 
+                                            asistencia.tipoBloque === tipoBloque
+                                        );
 
-                                        for (const asistencia of asistenciaDelDia) {
-                                            if (asistencia.entrada && asistencia.entrada.horaOriginal) {
-                                                const horaEntrada = asistencia.entrada.horaOriginal;
-                                                const diferencia = Math.abs(
-                                                    this.calcularDiferenciaTiempo(horaEntrada, horario.horaInicio)
-                                                );
-                                                
-                                                if (diferencia < menorDiferencia) {
-                                                    menorDiferencia = diferencia;
-                                                    mejorCoincidencia = asistencia;
-                                                }
-                                            }
-                                        }
+                                        if (asistenciasCompatibles.length > 0) {
+                                            let mejorCoincidencia = null;
+                                            let menorDiferencia = Infinity;
 
-                                        if (mejorCoincidencia) {
-                                            const asistencia = mejorCoincidencia;
-                                            reporteItem.estado = 'PRESENTE';
-                                            
-                                            reporteItem.asistenciaReal = {
-                                                entrada: asistencia.entrada?.horaOriginal || null,
-                                                salida: asistencia.salida?.horaOriginal || null,
-                                                horasTrabajadas: asistencia.horasTrabajadas || '0h 0m'
-                                            };
-
-                                            if (asistencia.entrada?.horaOriginal) {
-                                                const tardanza = this.calcularDiferenciaTiempo(
-                                                    asistencia.entrada.horaOriginal,
-                                                    horario.horaInicio
-                                                );
-                                                
-                                                if (tardanza > 0) {
-                                                    reporteItem.tiempoTardanza = tardanza;
-                                                    reporteItem.observaciones.push(
-                                                        `Llegó ${tardanza} minutos tarde`
+                                            for (const asistencia of asistenciasCompatibles) {
+                                                if (asistencia.entrada && asistencia.entrada.horaOriginal) {
+                                                    const horaEntrada = asistencia.entrada.horaOriginal;
+                                                    const diferencia = Math.abs(
+                                                        this.calcularDiferenciaTiempo(horaEntrada, horario.horaInicio)
                                                     );
+                                                    
+                                                    if (diferencia < menorDiferencia) {
+                                                        menorDiferencia = diferencia;
+                                                        mejorCoincidencia = asistencia;
+                                                    }
                                                 }
                                             }
 
-                                            if (asistencia.salida?.horaOriginal) {
-                                                const salidaTemprana = this.calcularDiferenciaTiempo(
-                                                    horario.horaFinal,
-                                                    asistencia.salida.horaOriginal
-                                                );
+                                            if (mejorCoincidencia) {
+                                                const asistencia = mejorCoincidencia;
+                                                reporteItem.estado = 'PRESENTE';
+                                                reporteItem.tipoBloqueComparado = asistencia.tipoBloque;
                                                 
-                                                if (salidaTemprana > 0) {
-                                                    reporteItem.tiempoSalidaTemprana = salidaTemprana;
-                                                    reporteItem.observaciones.push(
-                                                        `Salió ${salidaTemprana} minutos antes`
-                                                    );
-                                                }
-                                            }
+                                                reporteItem.asistenciaReal = {
+                                                    entrada: asistencia.entrada?.horaOriginal || null,
+                                                    salida: asistencia.salida?.horaOriginal || null,
+                                                    horasTrabajadas: asistencia.horasTrabajadas || '0h 0m'
+                                                };
 
-                                            if (asistencia.horasTrabajadas) {
-                                                const match = asistencia.horasTrabajadas.match(/(\d+)h\s*(\d+)m/);
-                                                if (match) {
-                                                    const horas = parseInt(match[1]);
-                                                    const minutos = parseInt(match[2]);
-                                                    reporteItem.horasTrabajadas = horas * 60 + minutos;
+                                                if (asistencia.entrada?.horaOriginal) {
+                                                    const tardanza = this.calcularDiferenciaTiempo(
+                                                        asistencia.entrada.horaOriginal,
+                                                        horario.horaInicio
+                                                    );
+                                                    
+                                                    if (tardanza > 0) {
+                                                        reporteItem.tiempoTardanza = tardanza;
+                                                        reporteItem.observaciones.push(
+                                                            `Llegó ${tardanza} minutos tarde`
+                                                        );
+                                                    }
                                                 }
+
+                                                if (asistencia.salida?.horaOriginal) {
+                                                    const salidaTemprana = this.calcularDiferenciaTiempo(
+                                                        horario.horaFinal,
+                                                        asistencia.salida.horaOriginal
+                                                    );
+                                                    
+                                                    if (salidaTemprana > 0) {
+                                                        reporteItem.tiempoSalidaTemprana = salidaTemprana;
+                                                        reporteItem.observaciones.push(
+                                                            `Salió ${salidaTemprana} minutos antes`
+                                                        );
+                                                    }
+                                                }
+
+                                                if (asistencia.horasTrabajadas) {
+                                                    const match = asistencia.horasTrabajadas.match(/(\d+)h\s*(\d+)m/);
+                                                    if (match) {
+                                                        const horas = parseInt(match[1]);
+                                                        const minutos = parseInt(match[2]);
+                                                        reporteItem.horasTrabajadas = horas * 60 + minutos;
+                                                    }
+                                                }
+                                            } else {
+                                                // Hay asistencias pero ninguna coincide con el tipoBloque
+                                                reporteItem.observaciones.push(
+                                                    `No hay asistencia para el tipo de bloque: ${tipoBloque}`
+                                                );
                                             }
+                                        } else {
+                                            // No hay asistencias compatibles con el tipoBloque
+                                            reporteItem.observaciones.push(
+                                                `No registró asistencia para el tipo de bloque: ${tipoBloque}`
+                                            );
                                         }
                                     }
 
                                     if (reporteItem.estado === 'AUSENTE') {
-                                        reporteItem.observaciones.push('No registró asistencia');
+                                        if (asistenciaDelDia.length > 0) {
+                                            // Verificar si hay asistencias de otros tipos de bloque
+                                            const otrosTipos = asistenciaDelDia
+                                                .filter(a => a.tipoBloque && a.tipoBloque !== tipoBloque)
+                                                .map(a => a.tipoBloque);
+                                            
+                                            if (otrosTipos.length > 0) {
+                                                reporteItem.observaciones.push(
+                                                    `Registró asistencia con otros tipos de bloque: ${[...new Set(otrosTipos)].join(', ')}`
+                                                );
+                                            } else {
+                                                reporteItem.observaciones.push('No registró asistencia');
+                                            }
+                                        } else {
+                                            reporteItem.observaciones.push('No registró asistencia');
+                                        }
                                     }
 
                                     reporte.push(reporteItem);
@@ -704,8 +738,14 @@
                             </div>
                             <div class="detail-item">
                                 <i class="fas fa-tag"></i>
-                                <span>Tipo: ${item.tipoBloque}</span>
+                                <span>Horario tipo: ${item.tipoBloque}</span>
                             </div>
+                            ${item.tipoBloqueComparado ? `
+                                <div class="detail-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Asistencia tipo: ${item.tipoBloqueComparado}</span>
+                                </div>
+                            ` : ''}
                             ${item.asistenciaReal ? `
                                 <div class="detail-item">
                                     <i class="fas fa-sign-in-alt"></i>
@@ -741,7 +781,7 @@
                 return;
             }
 
-            const headers = ['Nombre', 'Número Cuenta', 'Fecha', 'Día', 'Estado', 'Horario Oficial', 'Entrada Real', 'Salida Real', 'Tardanza (min)', 'Tipo Bloque', 'Observaciones'];
+            const headers = ['Nombre', 'Número Cuenta', 'Fecha', 'Día', 'Estado', 'Horario Tipo', 'Asistencia Tipo', 'Horario Oficial', 'Entrada Real', 'Salida Real', 'Tardanza (min)', 'Observaciones'];
             
             const csvContent = [
                 headers.join(','),
@@ -751,11 +791,12 @@
                     item.fecha,
                     item.dia,
                     item.estado,
+                    item.tipoBloque,
+                    item.tipoBloqueComparado || 'N/A',
                     `${item.horarioOficial.inicio}-${item.horarioOficial.fin}`,
                     item.asistenciaReal?.entrada || 'N/A',
                     item.asistenciaReal?.salida || 'N/A',
                     item.tiempoTardanza,
-                    item.tipoBloque,
                     `"${item.observaciones.join('; ')}"`
                 ].join(','))
             ].join('\n');
