@@ -25,36 +25,66 @@ class PaseLista {
         console.log('📋 Sistema de Pase de Lista inicializado');
     }
 
-    // 🚨 NUEVO: Inicializar configuración si no existe
+    // 🚨 CORREGIDO: Inicializar configuración mejorada
     async initializeConfiguration() {
         try {
-            const configDoc = await this.db.collection('configuracion').doc('general').get();
-            if (!configDoc.exists) {
-                await this.db.collection('configuracion').doc('general').set({
+            const configSnapshot = await this.db.collection('configuracion').get();
+            
+            if (configSnapshot.empty) {
+                // Solo crear si la colección está completamente vacía
+                await this.db.collection('configuracion').add({
                     tipoBloque: 'default',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 console.log('✅ Documento de configuración inicializado');
+            } else {
+                // Verificar si al menos un documento tiene tipoBloque
+                let tieneTipoBloque = false;
+                configSnapshot.docs.forEach(doc => {
+                    if (doc.data().tipoBloque) {
+                        tieneTipoBloque = true;
+                    }
+                });
+                
+                if (!tieneTipoBloque) {
+                    console.warn('⚠️ No se encontró campo tipoBloque en los documentos existentes');
+                } else {
+                    console.log('✅ Configuración existente encontrada');
+                }
             }
         } catch (error) {
-            console.error('Error inicializando configuración:', error);
+            console.error('❌ Error inicializando configuración:', error);
         }
     }
 
-    // 🚨 NUEVO: Obtener tipoBloque desde configuración
-    async getTipoBloque() {
+    // 🚨 NUEVO: Método híbrido para obtener tipoBloque (RECOMENDADO)
+    async getTipoBloqueHibrido() {
         try {
-            const configDoc = await this.db.collection('configuracion').doc('general').get();
-            if (configDoc.exists) {
-                const configData = configDoc.data();
-                return configData.tipoBloque || 'default'; // Valor por defecto si no existe
-            } else {
-                console.warn('Documento de configuración no encontrado, usando valor por defecto');
-                return 'default';
+            // Primero intentar con el ID específico que viste en la imagen
+            const specificDoc = await this.db.collection('configuracion').doc('qkLlvrqIPsI7HEPKIhyh').get();
+            if (specificDoc.exists && specificDoc.data().tipoBloque) {
+                console.log('✅ TipoBloque encontrado en documento específico:', specificDoc.data().tipoBloque);
+                return specificDoc.data().tipoBloque;
             }
+            
+            // Si no funciona, buscar en todos los documentos
+            const configSnapshot = await this.db.collection('configuracion').get();
+            if (!configSnapshot.empty) {
+                for (const doc of configSnapshot.docs) {
+                    const configData = doc.data();
+                    if (configData.tipoBloque) {
+                        console.log('✅ TipoBloque encontrado en búsqueda general:', configData.tipoBloque, 'documento:', doc.id);
+                        return configData.tipoBloque;
+                    }
+                }
+            }
+            
+            console.warn('⚠️ No se encontró tipoBloque en ningún lugar');
+            return 'default';
+            
         } catch (error) {
-            console.error('Error obteniendo tipoBloque de configuración:', error);
+            console.error('❌ Error en getTipoBloqueHibrido:', error);
             return 'default';
         }
     }
@@ -62,14 +92,36 @@ class PaseLista {
     // 🚨 NUEVO: Método para actualizar tipoBloque en configuración
     async updateTipoBloque(nuevoTipoBloque) {
         try {
-            await this.db.collection('configuracion').doc('general').update({
-                tipoBloque: nuevoTipoBloque,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            console.log('✅ TipoBloque actualizado en configuración:', nuevoTipoBloque);
-            return true;
+            // Intentar actualizar el documento específico primero
+            const specificDoc = await this.db.collection('configuracion').doc('qkLlvrqIPsI7HEPKIhyh').get();
+            if (specificDoc.exists) {
+                await this.db.collection('configuracion').doc('qkLlvrqIPsI7HEPKIhyh').update({
+                    tipoBloque: nuevoTipoBloque,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ TipoBloque actualizado en documento específico:', nuevoTipoBloque);
+                return true;
+            }
+            
+            // Si no existe el documento específico, buscar cualquier documento con tipoBloque
+            const configSnapshot = await this.db.collection('configuracion').get();
+            if (!configSnapshot.empty) {
+                for (const doc of configSnapshot.docs) {
+                    if (doc.data().tipoBloque !== undefined) {
+                        await doc.ref.update({
+                            tipoBloque: nuevoTipoBloque,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        console.log('✅ TipoBloque actualizado en documento:', doc.id, nuevoTipoBloque);
+                        return true;
+                    }
+                }
+            }
+            
+            console.warn('⚠️ No se encontró documento para actualizar');
+            return false;
         } catch (error) {
-            console.error('Error actualizando tipoBloque:', error);
+            console.error('❌ Error actualizando tipoBloque:', error);
             return false;
         }
     }
@@ -853,7 +905,7 @@ async completeExistingRecord(docRef, docData, tipo, metodo, confidence = null) {
     return updatedData;
 }
 
-// 🚨 MODIFICADO: Método moveToWeeklyAttendance con tipoBloque
+// 🚨 MODIFICADO: Método moveToWeeklyAttendance con tipoBloque híbrido
 async moveToWeeklyAttendance(registroData, originalDocRef) {
     try {
         // Calcular horas trabajadas usando las horas redondeadas
@@ -868,8 +920,8 @@ async moveToWeeklyAttendance(registroData, originalDocRef) {
             metodoFinal = 'mixed';
         }
 
-        // 🚨 NUEVO: Obtener tipoBloque desde configuración
-        const tipoBloque = await this.getTipoBloque();
+        // 🚨 NUEVO: Obtener tipoBloque usando método híbrido
+        const tipoBloque = await this.getTipoBloqueHibrido();
         
         // Preparar los datos para asistenciasemana
         const weeklyRecord = {
