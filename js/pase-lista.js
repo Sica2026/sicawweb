@@ -10,6 +10,7 @@ class PaseLista {
         this.entryCount = 0;
         this.exitCount = 0;
         this.isProcessing = false;
+        this.salaValidator = new SalaValidator();
         
         // 🚨 NUEVO: Inicializar configuración
         this.initializeConfiguration();
@@ -214,6 +215,18 @@ async handleManualEntry() {
     
     try {
         this.setButtonLoading(registerBtn, true);
+
+        // 🚨 NUEVO: Validar sala antes de procesar
+        console.log('🔍 Validando sala asignada...');
+        const salaValidation = await this.salaValidator.validateSalaAsignada(numeroCuenta);
+        
+        if (!salaValidation.valido) {
+            console.warn('❌ Sala incorrecta:', salaValidation);
+            this.salaValidator.mostrarErrorSala(salaValidation);
+            return; // Detener procesamiento
+        }
+        
+        console.log('✅ Validación de sala exitosa:', salaValidation.mensaje);
 
         // Buscar asesor
         const asesorQuery = await this.db.collection('asesores')
