@@ -306,6 +306,7 @@ async handleManualEntry() {
     }
 }
 
+
 async showUpcomingRegistrationType(numeroCuenta) {
     try {
         const tipo = await this.determineEntryOrExit(numeroCuenta);
@@ -412,6 +413,19 @@ async handleFacialRecognition(recognitionResult) {
     try {
         const numeroCuenta = recognitionResult.numeroCuenta;
         
+        // 🚨 NUEVO: Validar sala antes de procesar reconocimiento facial
+        console.log('🔍 Validando sala para reconocimiento facial...');
+        const salaValidation = await this.salaValidator.validateSalaAsignada(numeroCuenta);
+        
+        if (!salaValidation.valido) {
+            console.warn('❌ Sala incorrecta en reconocimiento facial:', salaValidation);
+            this.salaValidator.mostrarErrorSala(salaValidation);
+            this.disableCameraAfterRegistration();
+            return; // Detener procesamiento
+        }
+        
+        console.log('✅ Validación de sala exitosa para facial:', salaValidation.mensaje);
+        
         // Buscar asesor
         const asesorQuery = await this.db.collection('asesores')
             .where('numeroCuenta', '==', numeroCuenta)
@@ -461,7 +475,7 @@ async handleFacialRecognition(recognitionResult) {
             }
         }
 
-        // 🚨 NUEVA FUNCIONALIDAD: Desactivar cámara inmediatamente tras registro exitoso
+        // Desactivar cámara inmediatamente tras registro exitoso
         this.disableCameraAfterRegistration();
 
         // Mostrar éxito
@@ -495,7 +509,29 @@ async handleFacialRecognition(recognitionResult) {
         // Reducir el tiempo de bloqueo ya que la cámara se desactivará
         setTimeout(() => {
             this.isProcessing = false;
-        }, 1000); // Reducido de 3000ms a 1000ms
+        }, 1000);
+    }
+}
+
+async debugSalaValidation(numeroCuenta) {
+    if (!this.salaValidator) {
+        console.error('SalaValidator no inicializado');
+        return;
+    }
+    
+    return await this.salaValidator.debugValidation(numeroCuenta);
+}
+
+async testSalaValidation() {
+    console.log('🧪 TESTING SALA VALIDATION');
+    
+    // Test con diferentes números de cuenta
+    const testNumbers = ['322327964', '314302498', '317197914'];
+    
+    for (const numeroCuenta of testNumbers) {
+        console.log(`\n--- Testing ${numeroCuenta} ---`);
+        const result = await this.debugSalaValidation(numeroCuenta);
+        console.log('Result:', result);
     }
 }
 
@@ -1009,16 +1045,22 @@ async moveToWeeklyAttendance(registroData, originalDocRef) {
     }
 
     destroy() {
-        // Clean up camera stream
-        if (this.currentStream) {
-            this.currentStream.getTracks().forEach(track => track.stop());
-        }
-
-        // Stop facial recognition
-        if (window.FacialRecognition) {
-            window.FacialRecognition.stopRecognition();
-        }
+    // Clean up camera stream
+    if (this.currentStream) {
+        this.currentStream.getTracks().forEach(track => track.stop());
     }
+
+    // Stop facial recognition
+    if (window.FacialRecognition) {
+        window.FacialRecognition.stopRecognition();
+    }
+    
+    // 🚨 NUEVO: Limpiar SalaValidator si es necesario
+    if (this.salaValidator) {
+        // SalaValidator no necesita cleanup especial por ahora
+        this.salaValidator = null;
+    }
+}
 }
 
 // Initialize when DOM is ready

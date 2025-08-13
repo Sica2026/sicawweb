@@ -264,6 +264,273 @@
             </div>
         </div>
     </div>
+<!-- Agregar esto al HTML principal, después de los screens existentes -->
+
+<!-- Validation Screen -->
+<div id="validationScreen" class="validation-screen">
+    <div class="validation-content">
+        <div class="validation-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+        </div>
+        <h2 class="validation-title">Validando información...</h2>
+        <div class="validation-steps">
+            <div class="validation-step" id="step-ip">
+                <i class="bi bi-wifi step-icon"></i>
+                <span class="step-text">Detectando ubicación</span>
+                <div class="step-status" id="status-ip">
+                    <i class="bi bi-clock step-pending"></i>
+                </div>
+            </div>
+            <div class="validation-step" id="step-config">
+                <i class="bi bi-gear step-icon"></i>
+                <span class="step-text">Obteniendo configuración</span>
+                <div class="step-status" id="status-config">
+                    <i class="bi bi-clock step-pending"></i>
+                </div>
+            </div>
+            <div class="validation-step" id="step-schedule">
+                <i class="bi bi-calendar-check step-icon"></i>
+                <span class="step-text">Verificando horario</span>
+                <div class="step-status" id="status-schedule">
+                    <i class="bi bi-clock step-pending"></i>
+                </div>
+            </div>
+            <div class="validation-step" id="step-sala">
+                <i class="bi bi-building step-icon"></i>
+                <span class="step-text">Validando sala asignada</span>
+                <div class="step-status" id="status-sala">
+                    <i class="bi bi-clock step-pending"></i>
+                </div>
+            </div>
+        </div>
+        <div class="validation-info">
+            <p class="validation-message" id="validationMessage">Verificando que estés en la sala correcta...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ======================================
+   VALIDATION SCREEN STYLES
+   ====================================== */
+
+.validation-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+}
+
+.validation-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Spinner Animation */
+.validation-spinner {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 2rem;
+}
+
+.spinner-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+}
+
+.spinner-ring:nth-child(2) {
+    width: 90%;
+    height: 90%;
+    top: 5%;
+    left: 5%;
+    border-top-color: #764ba2;
+    animation-duration: 2s;
+    animation-direction: reverse;
+}
+
+.spinner-ring:nth-child(3) {
+    width: 80%;
+    height: 80%;
+    top: 10%;
+    left: 10%;
+    border-top-color: #48cae4;
+    animation-duration: 2.5s;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.validation-title {
+    color: #2d3748;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Validation Steps */
+.validation-steps {
+    text-align: left;
+    margin: 2rem 0;
+}
+
+.validation-step {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+}
+
+.validation-step.active {
+    background: rgba(102, 126, 234, 0.1);
+    padding-left: 1rem;
+    transform: translateX(5px);
+}
+
+.validation-step.completed {
+    background: rgba(34, 197, 94, 0.1);
+    padding-left: 1rem;
+}
+
+.validation-step.error {
+    background: rgba(239, 68, 68, 0.1);
+    padding-left: 1rem;
+}
+
+.step-icon {
+    font-size: 1.2rem;
+    color: #667eea;
+    margin-right: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.step-text {
+    flex: 1;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.step-status {
+    width: 20px;
+    text-align: center;
+}
+
+.step-pending {
+    color: #a0aec0;
+    animation: pulse 1.5s infinite;
+}
+
+.step-loading {
+    color: #667eea;
+    animation: spin 1s linear infinite;
+}
+
+.step-success {
+    color: #22c55e;
+}
+
+.step-error {
+    color: #ef4444;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.validation-info {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.validation-message {
+    color: #4a5568;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .validation-content {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+    }
+    
+    .validation-title {
+        font-size: 1.5rem;
+    }
+    
+    .validation-spinner {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* Animation de entrada */
+.validation-screen.show {
+    animation: slideInUp 0.5s ease-out;
+}
+
+.validation-screen.hide {
+    animation: slideOutDown 0.5s ease-in;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+}
+</style>
+    
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
@@ -282,6 +549,8 @@
     <script src="../js/navigation.js"></script>
     <!-- 🚨 NUEVO: Validador de Sala y Ubicación -->
     <script src="../js/sala-validator.js"></script>
+    <script src="../js/validation-manager.js"></script>
+
     <!-- Face Recognition Library (Real Implementation) -->
     <script src="../js/face-recognition-real.js"></script>
     <!-- Page Specific JS -->
