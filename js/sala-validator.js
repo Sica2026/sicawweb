@@ -115,7 +115,7 @@ class SalaValidator {
             }
             
         } catch (error) {
-            console.error('❌ Error en validación de sala:', error);
+            console.error('❌ Error en validación básica:', error);
             return {
                 valido: true, // En caso de error, permitir el acceso
                 mensaje: 'Error en validación - acceso permitido',
@@ -338,7 +338,7 @@ class SalaValidator {
     }
 
     // ======================================
-    // BUSCAR HORARIO ASIGNADO
+    // BUSCAR HORARIO ASIGNADO - MEJORADO PARA MÚLTIPLES HORARIOS
     // ======================================
     async buscarHorarioAsignado(numeroCuenta, tipoBloque) {
         try {
@@ -357,7 +357,7 @@ class SalaValidator {
                 horaActual
             });
             
-            // Buscar horarios que coincidan con los criterios
+            // Buscar TODOS los horarios que coincidan con los criterios básicos
             const horariosSnapshot = await this.db.collection('horarios')
                 .where('numeroCuenta', '==', numeroCuenta)
                 .where('tipoBloque', '==', tipoBloque)
@@ -368,7 +368,9 @@ class SalaValidator {
                 return null;
             }
             
-            // Filtrar por día y horario
+            // Filtrar por día y encontrar horarios activos
+            const horariosValidos = [];
+            
             for (const doc of horariosSnapshot.docs) {
                 const horario = doc.data();
                 
@@ -385,23 +387,101 @@ class SalaValidator {
                     continue;
                 }
                 
-                // Verificar si la hora actual está en el rango
-                if (this.estaEnRangoHorario(horaActual, horario.horaInicio, horario.horaFinal)) {
-                    console.log('✅ Horario encontrado:', horario);
-                    return {
-                        ...horario,
-                        documentId: doc.id
-                    };
-                }
+                // Agregar información del documento y verificar si está activo
+                const horarioCompleto = {
+                    ...horario,
+                    documentId: doc.id,
+                    estaActivo: this.estaEnRangoHorario(horaActual, horario.horaInicio, horario.horaFinal)
+                };
+                
+                horariosValidos.push(horarioCompleto);
+                
+                console.log(`📋 Horario encontrado:`, {
+                    sala: horario.sala,
+                    rango: `${horario.horaInicio}-${horario.horaFinal}`,
+                    activo: horarioCompleto.estaActivo
+                });
             }
             
-            console.log('📝 No se encontró horario activo para la hora actual');
+            if (horariosValidos.length === 0) {
+                console.log('📝 No se encontraron horarios válidos para el día actual');
+                return null;
+            }
+            
+            // 🚨 NUEVO: Buscar el horario ACTIVO en este momento
+            const horarioActivo = horariosValidos.find(h => h.estaActivo);
+            
+            if (horarioActivo) {
+                console.log('✅ Horario ACTIVO encontrado:', {
+                    sala: horarioActivo.sala,
+                    rango: `${horarioActivo.horaInicio}-${horarioActivo.horaFinal}`,
+                    documento: horarioActivo.documentId
+                });
+                return horarioActivo;
+            }
+            
+            // 🚨 NUEVO: Si ningún horario está activo, buscar el más próximo
+            console.log('⚠️ Ningún horario está activo en este momento');
+            console.log('🔍 Buscando horario más próximo...');
+            
+            const horarioProximo = this.encontrarHorarioMasProximo(horariosValidos, horaActual);
+            
+            if (horarioProximo) {
+                console.log('📍 Horario más próximo encontrado:', {
+                    sala: horarioProximo.sala,
+                    rango: `${horarioProximo.horaInicio}-${horarioProximo.horaFinal}`,
+                    distancia: horarioProximo.distanciaMinutos + ' minutos'
+                });
+                return horarioProximo;
+            }
+            
+            console.log('📝 No se pudo determinar horario apropiado');
             return null;
             
         } catch (error) {
             console.error('❌ Error buscando horario asignado:', error);
             return null;
         }
+    }
+
+    // ======================================
+    // NUEVO: ENCONTRAR HORARIO MÁS PRÓXIMO
+    // ======================================
+    encontrarHorarioMasProximo(horarios, horaActual) {
+        if (!horarios || horarios.length === 0) return null;
+        
+        const minutosActuales = this.horaAMinutos(horaActual);
+        let mejorHorario = null;
+        let menorDistancia = Infinity;
+        
+        for (const horario of horarios) {
+            const minutosInicio = this.horaAMinutos(horario.horaInicio);
+            const minutosFinal = this.horaAMinutos(horario.horaFinal);
+            
+            let distancia;
+            
+            // Calcular distancia al inicio del bloque
+            if (minutosActuales < minutosInicio) {
+                // Antes del bloque
+                distancia = minutosInicio - minutosActuales;
+            } else if (minutosActuales > minutosFinal) {
+                // Después del bloque
+                distancia = minutosActuales - minutosFinal;
+            } else {
+                // Dentro del bloque (esto no debería pasar aquí, pero por seguridad)
+                distancia = 0;
+            }
+            
+            if (distancia < menorDistancia) {
+                menorDistancia = distancia;
+                mejorHorario = {
+                    ...horario,
+                    distanciaMinutos: distancia
+                };
+            }
+        }
+        
+        return mejorHorario;
     }
 
     // ======================================
@@ -631,6 +711,10 @@ class SalaValidator {
             }, 3000);
         });
     }
+
+    // ======================================
+    // MÉTODO DE UTILIDAD PARA DEBUGGING
+    // ======================================
     async debugValidation(numeroCuenta) {
         console.log('🔧 DEBUGGING SALA VALIDATION');
         console.log('================================');
@@ -642,14 +726,89 @@ class SalaValidator {
         const tipoBloque = await this.getTipoBloque();
         console.log('Tipo Bloque:', tipoBloque);
         
-        const horario = await this.buscarHorarioAsignado(numeroCuenta, tipoBloque);
-        console.log('Horario Encontrado:', horario);
+        // 🚨 NUEVO: Debug de múltiples horarios
+        await this.debugMultipleSchedules(numeroCuenta, tipoBloque);
         
-        const validation = await this.validateSalaAsignada(numeroCuenta);
+        const horario = await this.buscarHorarioAsignado(numeroCuenta, tipoBloque);
+        console.log('Horario Seleccionado:', horario);
+        
+        const validation = await this.validateSalaAsignada(numeroCuenta, false); // Sin pantalla para debug
         console.log('Resultado Validación:', validation);
         
         console.log('================================');
         return validation;
+    }
+
+    // ======================================
+    // NUEVO: DEBUG DE MÚLTIPLES HORARIOS
+    // ======================================
+    async debugMultipleSchedules(numeroCuenta, tipoBloque) {
+        try {
+            console.log('\n🕐 ANÁLISIS DE HORARIOS MÚLTIPLES');
+            console.log('----------------------------------');
+            
+            const hoy = new Date();
+            const diaActual = this.diasSemana[hoy.getDay()];
+            const horaActual = hoy.toLocaleTimeString('es-MX', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            console.log(`📅 Día: ${diaActual} | Hora: ${horaActual}`);
+            
+            // Obtener TODOS los horarios del asesor para este día
+            const horariosSnapshot = await this.db.collection('horarios')
+                .where('numeroCuenta', '==', numeroCuenta)
+                .where('tipoBloque', '==', tipoBloque)
+                .get();
+            
+            if (horariosSnapshot.empty) {
+                console.log('❌ No se encontraron horarios');
+                return;
+            }
+            
+            const horariosDelDia = [];
+            
+            horariosSnapshot.forEach(doc => {
+                const horario = doc.data();
+                
+                // Verificar si tiene este día
+                if (horario.dias && horario.dias.some(dia => 
+                    dia.toLowerCase() === diaActual.toLowerCase()
+                )) {
+                    const estaActivo = this.estaEnRangoHorario(horaActual, horario.horaInicio, horario.horaFinal);
+                    
+                    horariosDelDia.push({
+                        sala: horario.sala,
+                        inicio: horario.horaInicio,
+                        final: horario.horaFinal,
+                        horas: horario.horas,
+                        activo: estaActivo,
+                        id: doc.id
+                    });
+                }
+            });
+            
+            console.log(`📋 Horarios encontrados para ${diaActual}:`);
+            horariosDelDia.forEach((h, index) => {
+                const status = h.activo ? '🟢 ACTIVO' : '⚪ Inactivo';
+                console.log(`   ${index + 1}. ${h.sala} | ${h.inicio}-${h.final} | ${h.horas}h | ${status}`);
+            });
+            
+            const activos = horariosDelDia.filter(h => h.activo);
+            console.log(`\n🎯 Horarios activos ahora: ${activos.length}`);
+            if (activos.length > 0) {
+                activos.forEach(h => {
+                    console.log(`   ✅ ${h.sala} (${h.inicio}-${h.final})`);
+                });
+            }
+            
+            console.log('----------------------------------\n');
+            
+        } catch (error) {
+            console.error('❌ Error en debug de horarios múltiples:', error);
+        }
     }
 }
 
