@@ -1,932 +1,1252 @@
-// ===== CONFIGURACIÓN DE HORARIOS =====
-const timeSlots = [
-    '07:00 - 07:30',
-    '07:30 - 08:00',
-    '08:00 - 08:30',
-    '08:30 - 09:00',
-    '09:00 - 09:30',
-    '09:30 - 10:00',
-    '10:00 - 10:30',
-    '10:30 - 11:00',
-    '11:00 - 11:30',
-    '11:30 - 12:00',
-    '12:00 - 12:30',
-    '12:30 - 13:00',
-    '13:00 - 13:30',
-    '13:30 - 14:00',
-    '14:00 - 14:30',
-    '14:30 - 15:00',
-    '15:00 - 15:30',
-    '15:30 - 16:00',
-    '16:00 - 16:30',
-    '16:30 - 17:00',
-    '17:00 - 17:30',
-    '17:30 - 18:00',
-    '18:00 - 18:30',
-    '18:30 - 19:00',
-    '19:00 - 19:30',
-    '19:30 - 20:00',
-    '20:00 - 20:30',
-    '20:30 - 21:00'
-];
-
-const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
-
-// ===== ESTADO DEL HORARIO =====
+// Variables globales
 let selectedCells = new Set();
-let currentColor = '#90EE90';
-let selectionMode = 'range';
-let rangeStart = null;
-let rangeEnd = null;
-let courses = [];
-let lastAsesor = '';
-let lastAdministrador = '';
-let lastCurso = '';
+let scheduleData = {};
+let currentCourseId = null;
+let savedData = {};
+let isSelecting = false;
+let startCell = null;
+let asesoresData = {}; // Almacenar datos de asesores
 
-// ===== INICIALIZACIÓN =====
-document.addEventListener('DOMContentLoaded', function() {
-    generateScheduleTable();
-    setupEventListeners();
-    setupDarkModeToggle(); // Agregar funcionalidad de modo oscuro
-    updateCurrentTime();
-    setInterval(updateCurrentTime, 1000);
-});
+// Modal instance para Bootstrap
+let courseModalInstance = null;
 
-// ===== FUNCIONALIDAD DE MODO OSCURO =====
-function setupDarkModeToggle() {
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    
-    if (!darkModeToggle) {
-        console.error('No se encontró el elemento darkModeToggle');
-        return;
-    }
-    
-    const darkModeIcon = darkModeToggle.querySelector('i');
-    
-    if (!darkModeIcon) {
-        console.error('No se encontró el icono dentro del darkModeToggle');
-        return;
-    }
-    
-    // Verificar si hay una preferencia guardada
-    const savedTheme = localStorage.getItem('sica-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        updateDarkModeIcon(savedTheme === 'dark');
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        updateDarkModeIcon(false);
-        localStorage.setItem('sica-theme', 'light');
-    }
-    
-    // Manejar click en el toggle
-    darkModeToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        toggleDarkMode();
-    });
-    
-    function toggleDarkMode() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('sica-theme', newTheme);
-        updateDarkModeIcon(newTheme === 'dark');
-        
-        // Agregar efecto de transición suave
-        document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
-        setTimeout(() => {
-            document.body.style.transition = '';
-        }, 300);
-        
-        console.log(`Tema cambiado a: ${newTheme}`);
-    }
-    
-    function updateDarkModeIcon(isDark) {
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        if (!darkModeToggle) return;
-        
-        const darkModeIcon = darkModeToggle.querySelector('i');
-        if (!darkModeIcon) return;
-        
-        // Buscar el texto del enlace
-        const linkElement = darkModeToggle;
-        const textNodes = Array.from(linkElement.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
-        
-        if (isDark) {
-            darkModeIcon.className = 'bi bi-sun me-2';
-            if (textNodes.length > 0) {
-                textNodes[textNodes.length - 1].textContent = 'Modo Claro';
-            } else {
-                linkElement.appendChild(document.createTextNode('Modo Claro'));
-            }
-        } else {
-            darkModeIcon.className = 'bi bi-moon me-2';
-            if (textNodes.length > 0) {
-                textNodes[textNodes.length - 1].textContent = 'Modo Oscuro';
-            } else {
-                linkElement.appendChild(document.createTextNode('Modo Oscuro'));
-            }
-        }
-    }
-}
-
-// ===== RELOJ EN TIEMPO REAL =====
-function updateCurrentTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    const timeElement = document.getElementById('currentTime');
-    if (timeElement) {
-        timeElement.textContent = timeString;
-    }
-}
-
-// ===== GENERACIÓN DE LA TABLA =====
-function generateScheduleTable() {
-    const scheduleBody = document.getElementById('schedule-body');
-    scheduleBody.innerHTML = '';
-
-    timeSlots.forEach((timeSlot, index) => {
-        const row = document.createElement('tr');
-        
-        const timeCell = document.createElement('td');
-        timeCell.textContent = timeSlot;
-        timeCell.classList.add('time-slot');
-        row.appendChild(timeCell);
-
-        days.forEach(day => {
-            const dayCell = document.createElement('td');
-            dayCell.dataset.day = day;
-            dayCell.dataset.time = index;
-            dayCell.addEventListener('click', toggleCell);
-            row.appendChild(dayCell);
-        });
-
-        scheduleBody.appendChild(row);
-    });
-}
-
-// ===== MANEJO DE SELECCIÓN DE CELDAS =====
-function toggleCell(event) {
-    const cell = event.target;
-    const cellId = `${cell.dataset.day}-${cell.dataset.time}`;
-    
-    if (cell.classList.contains('course-block')) {
-        showStatusMessage('Esta celda ya tiene un curso asignado', 'error');
-        return;
-    }
-
-    if (selectionMode === 'range') {
-        handleRangeSelection(cell, cellId);
-    } else {
-        handleSingleSelection(cell, cellId);
-    }
-}
-
-function handleRangeSelection(cell, cellId) {
-    if (!rangeStart) {
-        rangeStart = {
-            cell: cell,
-            day: cell.dataset.day,
-            time: parseInt(cell.dataset.time),
-            id: cellId
-        };
-        
-        document.querySelectorAll('.selected, .range-start, .range-end').forEach(c => {
-            if (!c.classList.contains('course-block')) {
-                c.classList.remove('selected', 'range-start', 'range-end');
-            }
-        });
-        selectedCells.clear();
-        
-        cell.classList.add('range-start');
-        cell.classList.add('selected');
-        selectedCells.add(cellId);
-        showStatusMessage('Ahora selecciona la celda final del rango en el mismo día', 'info');
-        
-    } else if (rangeStart.day === cell.dataset.day) {
-        const startTime = rangeStart.time;
-        const endTime = parseInt(cell.dataset.time);
-        
-        if (endTime >= startTime) {
-            rangeEnd = {
-                cell: cell,
-                day: cell.dataset.day,
-                time: endTime,
-                id: cellId
-            };
-            
-            document.querySelectorAll('.selected, .range-start, .range-end').forEach(c => {
-                if (!c.classList.contains('course-block')) {
-                    c.classList.remove('selected', 'range-start', 'range-end');
-                }
-            });
-            selectedCells.clear();
-            
-            for (let i = startTime; i <= endTime; i++) {
-                const rangeCellId = `${rangeStart.day}-${i}`;
-                const rangeCell = document.querySelector(`[data-day="${rangeStart.day}"][data-time="${i}"]`);
-                if (rangeCell && !rangeCell.classList.contains('course-block')) {
-                    selectedCells.add(rangeCellId);
-                    rangeCell.classList.add('selected');
-                }
-            }
-            
-            rangeStart.cell.classList.add('range-start');
-            if (endTime > startTime) {
-                cell.classList.add('range-end');
-            }
-            
-            const totalSlots = endTime - startTime + 1;
-            const totalMinutes = totalSlots * 30;
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            
-            let timeText;
-            if (hours > 0 && minutes > 0) {
-                timeText = `${hours}h ${minutes}min`;
-            } else if (hours > 0) {
-                timeText = `${hours}h`;
-            } else {
-                timeText = `${minutes}min`;
-            }
-            
-            const startTimeText = timeSlots[startTime].split(' - ')[0];
-            const endTimeText = timeSlots[endTime].split(' - ')[1];
-            showStatusMessage(`Rango seleccionado: ${startTimeText} a ${endTimeText} (${timeText})`, 'success');
-            
-        } else {
-            showStatusMessage('La hora final debe ser igual o posterior a la inicial', 'error');
-        }
-    } else {
-        document.querySelectorAll('.selected, .range-start, .range-end').forEach(c => {
-            if (!c.classList.contains('course-block')) {
-                c.classList.remove('selected', 'range-start', 'range-end');
-            }
-        });
-        selectedCells.clear();
-        
-        rangeStart = {
-            cell: cell,
-            day: cell.dataset.day,
-            time: parseInt(cell.dataset.time),
-            id: cellId
-        };
-        cell.classList.add('range-start');
-        cell.classList.add('selected');
-        selectedCells.add(cellId);
-        showStatusMessage('Selecciona la celda final del rango en el mismo día', 'info');
-    }
-}
-
-function handleSingleSelection(cell, cellId) {
-    if (selectedCells.has(cellId)) {
-        selectedCells.delete(cellId);
-        cell.classList.remove('selected');
-        cell.style.backgroundColor = '';
-    } else {
-        selectedCells.add(cellId);
-        cell.classList.add('selected');
-        cell.style.backgroundColor = currentColor;
-    }
-}
-
-// ===== CONFIGURACIÓN DE EVENT LISTENERS =====
-function setupEventListeners() {
-    const colorInput = document.getElementById('color');
-    colorInput.addEventListener('change', function() {
-        currentColor = this.value;
-        updateSelectedCellsColor();
-    });
-
-    const fechaInicio = document.getElementById('fecha-inicio');
-    const fechaFin = document.getElementById('fecha-fin');
-    
-    fechaInicio.addEventListener('change', updateDateRange);
-    fechaFin.addEventListener('change', updateDateRange);
-
-    const nombreCurso = document.getElementById('nombre-curso');
-    nombreCurso.addEventListener('change', function() {
-        const cursoPersonalizado = document.getElementById('curso-personalizado');
-        const edificioField = document.getElementById('edificio');
-        const salonField = document.getElementById('salon');
-        const edificioLabel = document.querySelector('label[for="edificio"]');
-        const salonLabel = document.querySelector('label[for="salon"]');
-        
-        if (this.value === 'Otro') {
-            cursoPersonalizado.style.display = 'block';
-        } else {
-            cursoPersonalizado.style.display = 'none';
-        }
-        
-        if (this.value === 'SICA') {
-            edificioField.disabled = true;
-            salonField.disabled = true;
-            edificioField.value = '';
-            salonField.value = '';
-            edificioField.placeholder = 'No aplica para SICA';
-            salonField.placeholder = 'No aplica para SICA';
-            edificioLabel.classList.add('disabled');
-            salonLabel.classList.add('disabled');
-        } else {
-            edificioField.disabled = false;
-            salonField.disabled = false;
-            edificioField.placeholder = 'Edificio';
-            salonField.placeholder = 'Salón';
-            edificioLabel.classList.remove('disabled');
-            salonLabel.classList.remove('disabled');
-        }
-        
-        updateSicaCounter();
-    });
-
-    const btnAgregar = document.getElementById('btn-agregar');
-    btnAgregar.addEventListener('click', addCourse);
-
-    const btnLimpiar = document.getElementById('btn-limpiar');
-    btnLimpiar.addEventListener('click', clearEntireSchedule);
-
-    const btnGenerar = document.getElementById('btn-generar');
-    btnGenerar.addEventListener('click', generatePDF);
-
-    const requiredFields = ['horario', 'nombre-curso', 'nombre-asesor', 'asesor', 'edificio', 'salon'];
-    requiredFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.addEventListener('input', validateForm);
-            field.addEventListener('change', validateForm);
-        }
-    });
-
-    const customField = document.getElementById('nombre-curso-custom');
-    customField.addEventListener('input', validateForm);
-
-    document.addEventListener('dblclick', function(e) {
-        if (e.target.classList.contains('course-block') || e.target.closest('.course-block')) {
-            const targetCell = e.target.classList.contains('course-block') ? e.target : e.target.closest('.course-block');
-            removeCourse(targetCell);
-        }
-    });
-}
-
-// ===== AGREGAR CURSO =====
-function addCourse() {
-    if (!validateForm()) {
-        return;
-    }
-
-    if (selectedCells.size === 0) {
-        showStatusMessage('Selecciona al menos una celda para el curso', 'error');
-        return;
-    }
-
-    let nombreCurso;
-    const tipoNombre = document.getElementById('nombre-curso').value;
-    if (tipoNombre === 'Otro') {
-        nombreCurso = document.getElementById('nombre-curso-custom').value.trim();
-        if (!nombreCurso) {
-            showStatusMessage('Ingresa el nombre personalizado del curso', 'error');
+// Cargar asesores desde Firebase
+async function loadAsesores() {
+    try {
+        if (!firebase.firestore) {
+            console.log('Firebase Firestore no está disponible');
             return;
         }
-    } else {
-        nombreCurso = tipoNombre;
-    }
 
-    const courseData = {
-        id: Date.now(),
-        nombre: nombreCurso,
-        edificio: nombreCurso === 'SICA' ? 'N/A' : document.getElementById('edificio').value,
-        salon: nombreCurso === 'SICA' ? 'N/A' : document.getElementById('salon').value,
-        nombreAsesor: document.getElementById('nombre-asesor').value,
-        administrador: document.getElementById('asesor').value,
-        color: currentColor,
-        cells: Array.from(selectedCells),
-        day: rangeStart ? rangeStart.day : Array.from(selectedCells)[0].split('-')[0],
-        startTime: rangeStart ? rangeStart.time : parseInt(Array.from(selectedCells)[0].split('-')[1]),
-        endTime: rangeEnd ? rangeEnd.time : parseInt(Array.from(selectedCells)[selectedCells.size - 1].split('-')[1]),
-        totalMinutes: selectedCells.size * 30,
-        hours: selectedCells.size * 30
-    };
-
-    lastAsesor = document.getElementById('nombre-asesor').value;
-    lastAdministrador = document.getElementById('asesor').value;
-    lastCurso = tipoNombre;
-
-    courses.push(courseData);
-    displayCourseInTable(courseData);
-
-    clearSelection();
-    document.getElementById('nombre-curso').value = lastCurso;
-    document.getElementById('nombre-curso-custom').value = '';
-    document.getElementById('nombre-asesor').value = lastAsesor;
-    document.getElementById('asesor').value = lastAdministrador;
-    document.getElementById('curso-personalizado').style.display = lastCurso === 'Otro' ? 'block' : 'none';
-
-    const edificioField = document.getElementById('edificio');
-    const salonField = document.getElementById('salon');
-    const edificioLabel = document.querySelector('label[for="edificio"]');
-    const salonLabel = document.querySelector('label[for="salon"]');
-    
-    edificioField.disabled = false;
-    salonField.disabled = false;
-    edificioField.placeholder = 'Edificio';
-    salonField.placeholder = 'Salón';
-    edificioLabel.classList.remove('disabled');
-    salonLabel.classList.remove('disabled');
-
-    const totalMinutes = courseData.totalMinutes;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    
-    let timeText;
-    if (hours > 0 && minutes > 0) {
-        timeText = `${hours}h ${minutes}min`;
-    } else if (hours > 0) {
-        timeText = `${hours}h`;
-    } else {
-        timeText = `${minutes}min`;
-    }
-    
-    showStatusMessage(`Curso "${courseData.nombre}" agregado exitosamente (${timeText})`, 'success');
-    
-    if (nombreCurso === 'SICA') {
-        updateSicaCounter();
-    }
-}
-
-// ===== MOSTRAR CURSO EN LA TABLA =====
-function displayCourseInTable(courseData) {
-    const sortedCells = courseData.cells.sort((a, b) => {
-        const timeA = parseInt(a.split('-')[1]);
-        const timeB = parseInt(b.split('-')[1]);
-        return timeA - timeB;
-    });
-    
-    const totalCells = sortedCells.length;
-    
-    sortedCells.forEach((cellId, index) => {
-        const [day, time] = cellId.split('-');
-        const cell = document.querySelector(`[data-day="${day}"][data-time="${time}"]`);
+        const db = firebase.firestore();
+        const asesoresSnapshot = await db.collection('asesores').get();
         
-        if (cell) {
-            cell.classList.remove('selected', 'range-start', 'range-end');
-            cell.classList.add('course-block');
-            cell.style.backgroundColor = courseData.color;
-            cell.dataset.courseId = courseData.id;
-            cell.dataset.cells = totalCells;
-            
-            if (totalCells === 1) {
-                cell.classList.add('course-single', 'course-main');
-            } else if (index === 0) {
-                cell.classList.add('course-start', 'course-main');
-            } else if (index === totalCells - 1) {
-                cell.classList.add('course-end');
-            } else {
-                cell.classList.add('course-middle');
-            }
-            
-            if (index === 0) {
-                const totalMinutes = courseData.totalMinutes;
-                const hours = Math.floor(totalMinutes / 60);
-                const minutes = totalMinutes % 60;
-                
-                let timeText;
-                if (hours > 0 && minutes > 0) {
-                    timeText = `${hours}h ${minutes}m`;
-                } else if (hours > 0) {
-                    timeText = `${hours}h`;
-                } else {
-                    timeText = `${minutes}m`;
-                }
-                
-                let displayInfo;
-                if (courseData.nombre === 'SICA') {
-                    displayInfo = courseData.nombreAsesor ? 
-                        `${courseData.nombreAsesor}<br>${timeText}` : 
-                        timeText;
-                } else {
-                    displayInfo = `${courseData.edificio} - ${courseData.salon}<br>${timeText}`;
-                }
-                
-                cell.innerHTML = `
-                    <div class="course-block-container">
-                        <div class="course-name">${courseData.nombre}</div>
-                        <div class="course-details">
-                            ${displayInfo}
-                        </div>
-                    </div>
-                `;
-                
-                const container = cell.querySelector('.course-block-container');
-                if (container) {
-                    container.style.height = `${totalCells * 100}%`;
-                    container.style.zIndex = '10';
-                }
-            } else {
-                cell.innerHTML = '';
-            }
-        }
-    });
-}
-
-// ===== ELIMINAR CURSO =====
-function removeCourse(cell) {
-    const courseId = parseInt(cell.dataset.courseId);
-    const courseIndex = courses.findIndex(course => course.id === courseId);
-    
-    if (courseIndex !== -1) {
-        const course = courses[courseIndex];
-        const wasSica = course.nombre === 'SICA';
+        const advisorSelect = document.getElementById('advisorName');
         
-        if (confirm(`¿Eliminar el curso "${course.nombre}"?`)) {
-            course.cells.forEach(cellId => {
-                const [day, time] = cellId.split('-');
-                const courseCell = document.querySelector(`[data-day="${day}"][data-time="${time}"]`);
-                if (courseCell) {
-                    courseCell.classList.remove('course-block', 'course-main', 'course-start', 'course-middle', 'course-end', 'course-single');
-                    courseCell.style.backgroundColor = '';
-                    courseCell.innerHTML = '';
-                    delete courseCell.dataset.courseId;
-                    delete courseCell.dataset.cells;
-                }
-            });
+        // Limpiar opciones existentes excepto la primera
+        advisorSelect.innerHTML = '<option value="">Selecciona un asesor...</option>';
+        
+        // Limpiar datos previos
+        asesoresData = {};
+        
+        asesoresSnapshot.forEach((doc) => {
+            const data = doc.data();
+            const nombreHorario = data.nombreHorario;
+            const administrador = data.administrador;
             
-            courses.splice(courseIndex, 1);
-            showStatusMessage(`Curso "${course.nombre}" eliminado`, 'info');
-            
-            if (wasSica) {
-                updateSicaCounter();
+            if (nombreHorario) {
+                // Almacenar datos del asesor
+                asesoresData[nombreHorario] = {
+                    administrador: administrador || 'Sin asignar',
+                    id: doc.id
+                };
+                
+                // Crear opción en el select
+                const option = document.createElement('option');
+                option.value = nombreHorario;
+                option.textContent = nombreHorario;
+                advisorSelect.appendChild(option);
             }
-        }
-    }
-}
-
-// ===== LIMPIAR TODO EL HORARIO =====
-function clearEntireSchedule() {
-    if (courses.length === 0) {
-        showStatusMessage('El horario ya está vacío', 'info');
-        return;
-    }
-    
-    if (confirm('¿Estás seguro de que quieres limpiar todo el horario? Esta acción no se puede deshacer.')) {
-        courses.forEach(course => {
-            course.cells.forEach(cellId => {
-                const [day, time] = cellId.split('-');
-                const courseCell = document.querySelector(`[data-day="${day}"][data-time="${time}"]`);
-                if (courseCell) {
-                    courseCell.classList.remove('course-block', 'course-main', 'course-start', 'course-middle', 'course-end', 'course-single');
-                    courseCell.style.backgroundColor = '';
-                    courseCell.innerHTML = '';
-                    delete courseCell.dataset.courseId;
-                    delete courseCell.dataset.cells;
-                }
-            });
         });
         
-        courses.length = 0;
-        clearSelection();
+        console.log('Asesores cargados:', Object.keys(asesoresData).length);
         
-        document.getElementById('nombre-curso').value = '';
-        document.getElementById('nombre-curso-custom').value = '';
-        document.getElementById('nombre-asesor').value = '';
-        document.getElementById('curso-personalizado').style.display = 'none';
+    } catch (error) {
+        console.error('Error cargando asesores:', error);
         
-        const edificioField = document.getElementById('edificio');
-        const salonField = document.getElementById('salon');
-        const edificioLabel = document.querySelector('label[for="edificio"]');
-        const salonLabel = document.querySelector('label[for="salon"]');
-        
-        edificioField.disabled = false;
-        salonField.disabled = false;
-        edificioField.value = '';
-        salonField.value = '';
-        edificioField.placeholder = 'Edificio';
-        salonField.placeholder = 'Salón';
-        edificioLabel.classList.remove('disabled');
-        salonLabel.classList.remove('disabled');
-        
-        showStatusMessage('Horario completamente limpiado', 'success');
-        updateSicaCounter();
-    }
-}
-
-// ===== VALIDACIÓN DE FORMULARIO =====
-function validateForm() {
-    const tipoNombre = document.getElementById('nombre-curso').value;
-    const horario = document.getElementById('horario').value;
-    const nombreAsesor = document.getElementById('nombre-asesor').value.trim();
-    const administrador = document.getElementById('asesor').value;
-    let nombreCurso;
-    
-    if (!horario) {
-        showStatusMessage('El horario es requerido', 'error');
-        return false;
-    }
-    
-    if (tipoNombre === 'Otro') {
-        nombreCurso = document.getElementById('nombre-curso-custom').value.trim();
-        if (!nombreCurso) {
-            showStatusMessage('Ingresa el nombre personalizado del curso', 'error');
-            return false;
-        }
-    } else if (!tipoNombre) {
-        showStatusMessage('Selecciona el nombre del curso', 'error');
-        return false;
-    }
-    
-    if (!nombreAsesor) {
-        showStatusMessage('El nombre del asesor es requerido', 'error');
-        return false;
-    }
-    
-    if (!administrador) {
-        showStatusMessage('El administrador es requerido', 'error');
-        return false;
-    }
-    
-    if (tipoNombre !== 'SICA') {
-        const edificio = document.getElementById('edificio').value.trim();
-        const salon = document.getElementById('salon').value.trim();
-        
-        if (!edificio) {
-            showStatusMessage('El edificio es requerido', 'error');
-            return false;
-        }
-        
-        if (!salon) {
-            showStatusMessage('El salón es requerido', 'error');
-            return false;
+        // Mostrar notificación de error si SICA está disponible
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Error al cargar asesores', 
+                'No se pudieron cargar los asesores desde Firebase', 
+                'error', 
+                'bi-exclamation-triangle'
+            );
         }
     }
-    
-    return true;
 }
 
-// ===== FUNCIONES AUXILIARES =====
-function updateSelectedCellsColor() {
-    const selectedElements = document.querySelectorAll('.selected');
-    selectedElements.forEach(cell => {
-        cell.style.backgroundColor = currentColor;
-    });
-}
-
-function updateDateRange() {
-    const fechaInicio = document.getElementById('fecha-inicio').value;
-    const fechaFin = document.getElementById('fecha-fin').value;
+// Manejar cambio de asesor para llenar administrador automáticamente
+function handleAdvisorChange() {
+    const advisorSelect = document.getElementById('advisorName');
+    const administratorInput = document.getElementById('administrator');
     
-    if (fechaInicio && fechaFin) {
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
-        
-        const formatoFecha = { 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
-        };
-        
-        const fechaInicioFormateada = inicio.toLocaleDateString('es-ES', formatoFecha);
-        const fechaFinFormateada = fin.toLocaleDateString('es-ES', formatoFecha);
-        
-        const dateRangeElement = document.querySelector('.date-range span');
-        dateRangeElement.textContent = `Del ${fechaInicioFormateada} al ${fechaFinFormateada}`;
-    }
-}
-
-function clearSelection() {
-    selectedCells.clear();
-    rangeStart = null;
-    rangeEnd = null;
+    const selectedAdvisor = advisorSelect.value;
     
-    const selectedElements = document.querySelectorAll('.selected, .range-start, .range-end');
-    selectedElements.forEach(cell => {
-        if (!cell.classList.contains('course-block')) {
-            cell.classList.remove('selected', 'range-start', 'range-end');
-            cell.style.backgroundColor = '';
-        }
-    });
-    
-    hideStatusMessage();
-}
-
-function updateSicaCounter() {
-    const sicaCourses = courses.filter(course => course.nombre === 'SICA');
-    const totalSicaMinutes = sicaCourses.reduce((total, course) => total + course.totalMinutes, 0);
-    
-    const hours = Math.floor(totalSicaMinutes / 60);
-    const minutes = totalSicaMinutes % 60;
-    
-    let timeText;
-    if (hours > 0 && minutes > 0) {
-        timeText = `${hours}h ${minutes}m`;
-    } else if (hours > 0) {
-        timeText = `${hours}h`;
-    } else if (minutes > 0) {
-        timeText = `${minutes}m`;
+    if (selectedAdvisor && asesoresData[selectedAdvisor]) {
+        administratorInput.value = asesoresData[selectedAdvisor].administrador;
     } else {
-        timeText = '0h 0m';
-    }
-    
-    const sicaHoursElement = document.getElementById('sica-hours');
-    if (sicaHoursElement) {
-        sicaHoursElement.textContent = timeText;
+        administratorInput.value = '';
     }
 }
+function getCurrentDateCDMX() {
+    const now = new Date();
+    // Convertir a zona horaria de CDMX (UTC-6)
+    const cdmxTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Mexico_City"}));
+    return cdmxTime.toISOString().split('T')[0];
+}
 
-// ===== GENERACIÓN DE PDF =====
-function generatePDF() {
-    if (courses.length === 0) {
-        showStatusMessage('No hay cursos para generar PDF. Agrega al menos un curso.', 'error');
+// Generar intervalos de tiempo de 30 minutos con formato inicio-fin
+function generateTimeSlots() {
+    const timeSlots = [];
+    for (let hour = 7; hour <= 20; hour++) {
+        // Primera media hora: X:00 - X:30
+        const startTime1 = `${hour.toString().padStart(2, '0')}:00`;
+        const endTime1 = `${hour.toString().padStart(2, '0')}:30`;
+        timeSlots.push(`${startTime1}-${endTime1}`);
+        
+        // Segunda media hora: X:30 - (X+1):00 (excepto la última)
+        if (hour < 20) {
+            const startTime2 = `${hour.toString().padStart(2, '0')}:30`;
+            const endTime2 = `${(hour + 1).toString().padStart(2, '0')}:00`;
+            timeSlots.push(`${startTime2}-${endTime2}`);
+        }
+    }
+    // Último intervalo: 20:30-21:00
+    timeSlots.push('20:30-21:00');
+    return timeSlots;
+}
+
+// Inicializar la tabla
+function initializeTable() {
+    const timeSlots = generateTimeSlots();
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const tbody = document.getElementById('scheduleBody');
+
+    timeSlots.forEach(timeRange => {
+        const row = document.createElement('tr');
+        
+        // Celda de tiempo con rango completo
+        const timeCell = document.createElement('td');
+        timeCell.className = 'time-cell';
+        timeCell.textContent = timeRange;
+        row.appendChild(timeCell);
+
+        // Celdas para cada día
+        days.forEach(day => {
+            const cell = document.createElement('td');
+            cell.className = 'schedule-cell';
+            cell.dataset.time = timeRange;
+            cell.dataset.day = day;
+            cell.dataset.cellId = `${day}-${timeRange}`;
+            
+            // Eventos para selección múltiple
+            cell.addEventListener('mousedown', (e) => handleMouseDown(e, cell));
+            cell.addEventListener('mouseenter', (e) => handleMouseEnter(e, cell));
+            cell.addEventListener('mouseup', () => handleMouseUp());
+            cell.addEventListener('click', (e) => handleCellClick(e, cell, timeRange, day));
+            
+            row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+    });
+
+    // Prevenir selección de texto durante el arrastre
+    document.addEventListener('selectstart', (e) => {
+        if (isSelecting) e.preventDefault();
+    });
+}
+
+// Manejar inicio de selección múltiple
+function handleMouseDown(e, cell) {
+    if (cell.classList.contains('occupied')) return;
+    
+    e.preventDefault();
+    isSelecting = true;
+    startCell = cell;
+    clearSelection();
+    selectCell(cell);
+}
+
+// Manejar arrastre para selección múltiple
+function handleMouseEnter(e, cell) {
+    if (!isSelecting || cell.classList.contains('occupied')) return;
+    
+    selectCell(cell);
+}
+
+// Manejar fin de selección múltiple
+function handleMouseUp() {
+    isSelecting = false;
+    startCell = null;
+}
+
+// Manejar clic en celda
+function handleCellClick(e, cell, time, day) {
+    if (isSelecting) return;
+    
+    // Si la celda ya tiene un curso, mostrar detalles
+    if (cell.classList.contains('occupied')) {
+        showCourseDetails(cell, time, day);
         return;
     }
     
-    showStatusMessage('Generando PDF...', 'info');
+    // Si no está seleccionada, seleccionarla
+    if (!cell.classList.contains('selected')) {
+        clearSelection();
+        selectCell(cell);
+    }
+}
+
+// Seleccionar celda individual
+function selectCell(cell) {
+    if (cell.classList.contains('occupied')) return;
     
-    const tipoHorario = document.getElementById('horario').value || 'No especificado';
-    const nombreAsesor = lastAsesor || 'No especificado';
-    const administrador = lastAdministrador || 'No especificado';
-    const fechaActual = new Date().toLocaleDateString('es-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
+    cell.classList.add('selected');
+    selectedCells.add(cell.dataset.cellId);
+    updateSelectionDisplay();
+}
+
+// Limpiar selección
+function clearSelection() {
+    selectedCells.clear();
+    document.querySelectorAll('.schedule-cell.selected').forEach(cell => {
+        cell.classList.remove('selected');
     });
+    updateSelectionDisplay();
+}
+
+// Actualizar display de selección con conteo de horas
+function updateSelectionDisplay() {
+    const count = selectedCells.size;
+    const hours = count * 0.5; // Cada celda = 30 minutos = 0.5 horas
     
-    const fechaInicio = document.getElementById('fecha-inicio').value;
-    const fechaFin = document.getElementById('fecha-fin').value;
-    let fechaValidacion = 'No especificado';
+    const countElement = document.getElementById('selectionCount');
+    const hoursElement = document.getElementById('selectionHours');
     
-    if (fechaInicio && fechaFin) {
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
-        const formatoFecha = { day: 'numeric', month: 'long', year: 'numeric' };
-        fechaValidacion = `Del ${inicio.toLocaleDateString('es-ES', formatoFecha)} al ${fin.toLocaleDateString('es-ES', formatoFecha)}`;
+    countElement.textContent = `${count} celda${count !== 1 ? 's' : ''} seleccionada${count !== 1 ? 's' : ''}`;
+    hoursElement.textContent = `(${hours} hora${hours !== 1 ? 's' : ''})`;
+}
+
+// Mostrar detalles del curso usando Bootstrap Modal
+function showCourseDetails(cell, time, day) {
+    const courseKey = `${day}-${time}`;
+    const course = scheduleData[courseKey];
+    
+    if (!course) return;
+
+    currentCourseId = courseKey;
+    
+    // Si es una celda combinada, mostrar información más detallada
+    let durationInfo = '';
+    if (cell.classList.contains('merged')) {
+        const rowSpan = cell.rowSpan || 1;
+        const durationHours = rowSpan * 0.5;
+        durationInfo = `<strong>Duración:</strong> ${durationHours} hora${durationHours !== 1 ? 's' : ''}<br>`;
     }
     
-    const sicaCourses = courses.filter(course => course.nombre === 'SICA');
-    const totalSicaMinutes = sicaCourses.reduce((total, course) => total + course.totalMinutes, 0);
-    const sicaHours = Math.floor(totalSicaMinutes / 60);
-    const sicaMinutes = totalSicaMinutes % 60;
+    const details = `
+        <div class="course-info">
+            <strong>Curso:</strong> ${course.name}<br>
+            <strong>Asesor:</strong> ${course.advisor}<br>
+            <strong>Administrador:</strong> ${course.administrator}<br>
+            <strong>Salón:</strong> ${course.classroom}<br>
+            <strong>Edificio:</strong> ${course.building}<br>
+            <strong>Fecha:</strong> ${course.date}<br>
+            ${durationInfo}
+            <strong>Color:</strong> <span style="display: inline-block; width: 20px; height: 20px; background: ${course.color}; border-radius: 3px; vertical-align: middle; border: 1px solid #ccc;"></span><br>
+            <strong>Horario:</strong> ${course.timeSlots.join(', ')}<br>
+            <strong>Días:</strong> ${course.days.join(', ')}
+        </div>
+    `;
     
-    let sicaTimeText;
-    if (sicaHours > 0 && sicaMinutes > 0) {
-        sicaTimeText = `${sicaHours}h ${sicaMinutes}m`;
-    } else if (sicaHours > 0) {
-        sicaTimeText = `${sicaHours}h`;
-    } else if (sicaMinutes > 0) {
-        sicaTimeText = `${sicaMinutes}m`;
+    document.getElementById('courseDetails').innerHTML = details;
+    
+    // Mostrar modal usando Bootstrap
+    if (!courseModalInstance) {
+        courseModalInstance = new bootstrap.Modal(document.getElementById('courseModal'));
+    }
+    courseModalInstance.show();
+}
+
+// Cerrar modal
+function closeModal() {
+    if (courseModalInstance) {
+        courseModalInstance.hide();
+    }
+    currentCourseId = null;
+}
+
+// Eliminar curso
+function deleteCourse() {
+    if (!currentCourseId) return;
+    
+    if (!confirm('¿Estás seguro de que quieres eliminar este curso?')) {
+        return;
+    }
+    
+    const course = scheduleData[currentCourseId];
+    if (course && course.cellIds) {
+        // Eliminar todas las celdas del curso
+        course.cellIds.forEach(cellId => {
+            delete scheduleData[cellId];
+        });
     } else {
-        sicaTimeText = '0h 0m';
+        // Buscar y eliminar todas las celdas del mismo curso
+        const parts = currentCourseId.split('-');
+        const day = parts[0];
+        const timeRange = parts.slice(1).join('-');
+        
+        const timeSlots = generateTimeSlots();
+        const currentIndex = timeSlots.indexOf(timeRange);
+        
+        if (currentIndex !== -1) {
+            // Eliminar hacia adelante y atrás
+            for (let i = 0; i < timeSlots.length; i++) {
+                const cellId = `${day}-${timeSlots[i]}`;
+                const cellCourse = scheduleData[cellId];
+                
+                if (cellCourse && 
+                    cellCourse.name === course.name && 
+                    cellCourse.advisor === course.advisor && 
+                    cellCourse.date === course.date) {
+                    delete scheduleData[cellId];
+                }
+            }
+        }
     }
     
-    const tableElement = document.querySelector('.schedule-table');
+    updateScheduleDisplay();
+    updateCounters();
+    closeModal();
     
-    html2canvas(tableElement, {
+    // Mostrar notificación usando sistema SICA
+    if (window.SICAComponents) {
+        window.SICAComponents.notify(
+            'Curso Eliminado', 
+            'El curso ha sido eliminado correctamente', 
+            'success', 
+            'bi-trash'
+        );
+    }
+}
+
+// Agregar curso
+function addCourse() {
+    if (selectedCells.size === 0) {
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Selección Requerida', 
+                'Por favor, selecciona al menos una celda en el horario', 
+                'warning', 
+                'bi-exclamation-triangle'
+            );
+        } else {
+            alert('Por favor, selecciona al menos una celda en el horario.');
+        }
+        return;
+    }
+
+    const courseName = document.getElementById('courseName').value.trim();
+    const advisorName = document.getElementById('advisorName').value; // Ahora es un select
+    const administrator = document.getElementById('administrator').value.trim();
+    const classroom = document.getElementById('classroom').value.trim();
+    const building = document.getElementById('building').value.trim();
+    const realizationDate = document.getElementById('realizationDate').value;
+    const courseColor = document.getElementById('courseColor').value;
+
+    // Validar campos obligatorios
+    if (!courseName || !advisorName || !administrator || !realizationDate) {
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Campos Requeridos', 
+                'Por favor, completa todos los campos obligatorios', 
+                'error', 
+                'bi-exclamation-circle'
+            );
+        } else {
+            alert('Por favor, completa todos los campos obligatorios.');
+        }
+        return;
+    }
+
+    // Para cursos SICA, salón y edificio no son necesarios
+    if (courseName.toUpperCase() !== 'SICA' && (!classroom || !building)) {
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Información Requerida', 
+                'Para cursos que no son SICA, el salón y edificio son obligatorios', 
+                'warning', 
+                'bi-info-circle'
+            );
+        } else {
+            alert('Para cursos que no son SICA, el salón y edificio son obligatorios.');
+        }
+        return;
+    }
+
+    // Verificar conflictos
+    const conflictCells = Array.from(selectedCells).filter(cellId => scheduleData[cellId]);
+    if (conflictCells.length > 0) {
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Conflicto de Horario', 
+                'Algunas celdas seleccionadas ya tienen cursos asignados', 
+                'error', 
+                'bi-exclamation-triangle'
+            );
+        } else {
+            alert('Algunas celdas seleccionadas ya tienen cursos asignados. Por favor, selecciona celdas vacías.');
+        }
+        return;
+    }
+
+    // Obtener información de las celdas seleccionadas
+    const cellsInfo = Array.from(selectedCells).map(cellId => {
+        const parts = cellId.split('-');
+        const day = parts[0];
+        const timeRange = parts.slice(1).join('-');
+        return { day, timeRange, cellId };
+    });
+
+    const days = [...new Set(cellsInfo.map(cell => cell.day))];
+    const timeSlots = [...new Set(cellsInfo.map(cell => cell.timeRange))].sort();
+
+    // Crear objeto de curso
+    const courseData = {
+        name: courseName,
+        advisor: advisorName,
+        administrator: administrator,
+        classroom: courseName.toUpperCase() === 'SICA' ? 'N/A' : classroom,
+        building: courseName.toUpperCase() === 'SICA' ? 'N/A' : building,
+        date: realizationDate,
+        color: courseColor,
+        days: days,
+        timeSlots: timeSlots,
+        cellIds: Array.from(selectedCells)
+    };
+
+    // Guardar curso en todas las celdas seleccionadas
+    selectedCells.forEach(cellId => {
+        scheduleData[cellId] = { ...courseData };
+    });
+
+    // Guardar datos si está marcado el checkbox
+    if (document.getElementById('saveData').checked) {
+        saveFormData();
+    }
+
+    updateScheduleDisplay();
+    updateCounters();
+    clearForm();
+    clearSelection();
+    
+    // Mostrar notificación de éxito
+    if (window.SICAComponents) {
+        window.SICAComponents.notify(
+            'Curso Agregado', 
+            `El curso "${courseName}" ha sido agregado correctamente`, 
+            'success', 
+            'bi-check-circle'
+        );
+    }
+}
+
+// Actualizar visualización del horario
+function updateScheduleDisplay() {
+    // Limpiar todas las celdas
+    document.querySelectorAll('.schedule-cell').forEach(cell => {
+        cell.className = 'schedule-cell';
+        cell.textContent = '';
+        cell.style.border = '';
+        cell.style.background = '';
+        cell.style.display = '';
+        cell.rowSpan = 1;
+    });
+
+    // Llenar todas las celdas normalmente
+    Object.keys(scheduleData).forEach(cellId => {
+        const course = scheduleData[cellId];
+        const cell = document.querySelector(`[data-cell-id="${cellId}"]`);
+        
+        if (cell) {
+            cell.classList.add('occupied');
+            if (course.name.toUpperCase() === 'SICA') {
+                cell.classList.add('sica');
+            }
+            
+            // Aplicar color personalizado
+            if (course.color) {
+                cell.style.background = course.color;
+            }
+            
+            cell.textContent = course.name;
+        }
+    });
+
+    // Combinar celdas consecutivas
+    mergeCells();
+}
+
+// Función para combinar celdas consecutivas del mismo curso
+function mergeCells() {
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const timeSlots = generateTimeSlots();
+    
+    days.forEach(day => {
+        let i = 0;
+        while (i < timeSlots.length) {
+            const currentTime = timeSlots[i];
+            const currentCellId = `${day}-${currentTime}`;
+            const currentCourse = scheduleData[currentCellId];
+            
+            if (currentCourse) {
+                // Buscar celdas consecutivas del mismo curso
+                let consecutiveCount = 1;
+                let j = i + 1;
+                
+                while (j < timeSlots.length) {
+                    const nextTime = timeSlots[j];
+                    const nextCellId = `${day}-${nextTime}`;
+                    const nextCourse = scheduleData[nextCellId];
+                    
+                    if (nextCourse && 
+                        nextCourse.name === currentCourse.name && 
+                        nextCourse.advisor === currentCourse.advisor && 
+                        nextCourse.date === currentCourse.date) {
+                        consecutiveCount++;
+                        j++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Si hay 2 o más celdas consecutivas, combinarlas
+                if (consecutiveCount >= 2) {
+                    const firstCell = document.querySelector(`[data-cell-id="${currentCellId}"]`);
+                    
+                    if (firstCell) {
+                        firstCell.rowSpan = consecutiveCount;
+                        firstCell.classList.add('merged');
+                        
+                        const startRange = currentTime;
+                        const endRange = timeSlots[i + consecutiveCount - 1];
+                        
+                        const startTime = startRange.split('-')[0];
+                        const endTime = endRange.split('-')[1];
+                        const durationHours = consecutiveCount * 0.5;
+                        
+                        const courseContent = `
+                            <div class="course-title">${currentCourse.name}</div>
+                            <div class="course-time">${startTime} - ${endTime}</div>
+                            <div class="course-duration">${durationHours} hora${durationHours !== 1 ? 's' : ''}</div>
+                            <div class="course-location">
+                                ${currentCourse.classroom !== 'N/A' ? `${currentCourse.building} - ${currentCourse.classroom}` : 'En validación'}
+                            </div>
+                        `;
+                        
+                        firstCell.innerHTML = courseContent;
+                        
+                        // Ocultar las celdas siguientes
+                        for (let k = 1; k < consecutiveCount; k++) {
+                            const cellToHide = document.querySelector(`[data-cell-id="${day}-${timeSlots[i + k]}"]`);
+                            if (cellToHide) {
+                                cellToHide.classList.add('hidden');
+                                cellToHide.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+                
+                i += consecutiveCount;
+            } else {
+                i++;
+            }
+        }
+    });
+}
+
+// Actualizar contadores
+function updateCounters() {
+    const uniqueCourses = new Set();
+    let sicaHours = 0;
+    
+    // Para cursos únicos
+    Object.values(scheduleData).forEach(course => {
+        const courseKey = `${course.name}-${course.advisor}-${course.date}`;
+        uniqueCourses.add(courseKey);
+    });
+
+    // Para horas SICA
+    Object.values(scheduleData).forEach(course => {
+        if (course.name.toUpperCase() === 'SICA') {
+            sicaHours += 0.5;
+        }
+    });
+
+    document.getElementById('totalCourses').textContent = uniqueCourses.size;
+    document.getElementById('sicaHours').textContent = sicaHours;
+}
+
+// Limpiar formulario
+function clearForm() {
+    if (!document.getElementById('saveData').checked) {
+        document.getElementById('courseName').value = '';
+        document.getElementById('advisorName').value = ''; // Reset select
+        document.getElementById('administrator').value = '';
+        document.getElementById('classroom').value = '';
+        document.getElementById('building').value = '';
+        document.getElementById('courseColor').value = '#4facfe';
+    } else {
+        document.getElementById('courseName').value = '';
+        document.getElementById('advisorName').value = ''; // Reset select
+        document.getElementById('administrator').value = '';
+    }
+    
+    document.getElementById('realizationDate').value = getCurrentDateCDMX();
+    clearSelection();
+    
+    document.getElementById('courseName').dispatchEvent(new Event('input'));
+}
+
+// Limpiar todos los datos
+function clearAllData() {
+    if (!confirm('¿Estás seguro de que quieres eliminar TODOS los cursos del horario? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    scheduleData = {};
+    savedData = {};
+    
+    // Limpiar formulario completo
+    document.getElementById('courseName').value = '';
+    document.getElementById('advisorName').value = ''; // Reset select
+    document.getElementById('administrator').value = '';
+    document.getElementById('classroom').value = '';
+    document.getElementById('building').value = '';
+    document.getElementById('courseColor').value = '#4facfe';
+    document.getElementById('realizationDate').value = getCurrentDateCDMX();
+    document.getElementById('saveData').checked = false;
+    
+    // Limpiar localStorage
+    try {
+        localStorage.removeItem('scheduleBuilderData');
+    } catch (e) {
+        console.log('No se pudo limpiar localStorage');
+    }
+    
+    updateScheduleDisplay();
+    updateCounters();
+    clearSelection();
+    document.getElementById('savedDataSection').style.display = 'none';
+    
+    if (window.SICAComponents) {
+        window.SICAComponents.notify(
+            'Datos Limpiados', 
+            'Horario limpiado completamente', 
+            'success', 
+            'bi-check-circle'
+        );
+    }
+}
+
+// Eliminar completamente la función updateCoursesList y highlightCourse
+
+// Manejar cambios en el nombre del curso para SICA
+function handleCourseNameChange() {
+    const courseName = document.getElementById('courseName');
+    const isSica = courseName.value.toUpperCase() === 'SICA';
+    const classroom = document.getElementById('classroom');
+    const building = document.getElementById('building');
+    
+    classroom.disabled = isSica;
+    building.disabled = isSica;
+    
+    if (isSica) {
+        classroom.value = 'N/A';
+        building.value = 'N/A';
+    } else {
+        if (classroom.value === 'N/A') classroom.value = '';
+        if (building.value === 'N/A') building.value = '';
+    }
+}
+
+// Guardar datos del formulario
+function saveFormData() {
+    const courseName = document.getElementById('courseName').value.trim();
+    
+    savedData = {
+        courseName: courseName,
+        advisorName: document.getElementById('advisorName').value.trim(),
+        administrator: document.getElementById('administrator').value.trim(),
+        classroom: courseName.toUpperCase() === 'SICA' ? '' : document.getElementById('classroom').value.trim(),
+        building: courseName.toUpperCase() === 'SICA' ? '' : document.getElementById('building').value.trim(),
+        realizationDate: document.getElementById('realizationDate').value,
+        courseColor: document.getElementById('courseColor').value
+    };
+    
+    try {
+        localStorage.setItem('scheduleBuilderData', JSON.stringify(savedData));
+    } catch (e) {
+        console.log('No se pudo guardar en localStorage');
+    }
+    
+    showSavedData();
+}
+
+// Cargar últimos datos guardados
+function loadLastData() {
+    if (Object.keys(savedData).length === 0) {
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Sin Datos', 
+                'No hay datos guardados previamente', 
+                'info', 
+                'bi-info-circle'
+            );
+        } else {
+            alert('No hay datos guardados previamente.');
+        }
+        return;
+    }
+    
+    document.getElementById('courseName').value = savedData.courseName || '';
+    document.getElementById('advisorName').value = savedData.advisorName || ''; // Select
+    document.getElementById('classroom').value = savedData.classroom || '';
+    document.getElementById('building').value = savedData.building || '';
+    document.getElementById('realizationDate').value = savedData.realizationDate || '';
+    document.getElementById('courseColor').value = savedData.courseColor || '#4facfe';
+    
+    // Llenar administrador automáticamente si hay asesor seleccionado
+    if (savedData.advisorName && asesoresData[savedData.advisorName]) {
+        document.getElementById('administrator').value = asesoresData[savedData.advisorName].administrador;
+    } else {
+        document.getElementById('administrator').value = savedData.administrator || '';
+    }
+    
+    updateColorPresets();
+    document.getElementById('courseName').dispatchEvent(new Event('input'));
+    
+    if (window.SICAComponents) {
+        window.SICAComponents.notify(
+            'Datos Cargados', 
+            'Últimos datos cargados correctamente', 
+            'success', 
+            'bi-upload'
+        );
+    }
+}
+
+// Mostrar datos guardados
+function showSavedData() {
+    if (Object.keys(savedData).length === 0) {
+        document.getElementById('savedDataSection').style.display = 'none';
+        return;
+    }
+    
+    const display = `
+        <div class="small">
+            <strong>Asesor:</strong> ${savedData.advisorName}<br>
+            <strong>Admin:</strong> ${savedData.administrator}<br>
+            ${savedData.classroom ? `<strong>Salón:</strong> ${savedData.classroom}<br>` : ''}
+            ${savedData.building ? `<strong>Edificio:</strong> ${savedData.building}<br>` : ''}
+            <strong>Color:</strong> <span style="display: inline-block; width: 15px; height: 15px; background: ${savedData.courseColor}; border-radius: 3px; vertical-align: middle; border: 1px solid #ccc;"></span>
+        </div>
+    `;
+    
+    document.getElementById('savedDataDisplay').innerHTML = display;
+    document.getElementById('savedDataSection').style.display = 'block';
+}
+
+// Cargar datos guardados al iniciar
+function loadSavedData() {
+    try {
+        const stored = localStorage.getItem('scheduleBuilderData');
+        if (stored) {
+            savedData = JSON.parse(stored);
+            showSavedData();
+        }
+    } catch (e) {
+        console.log('No se pudo cargar desde localStorage');
+    }
+}
+
+// Actualizar selector de colores
+function updateColorPresets() {
+    const currentColor = document.getElementById('courseColor').value;
+    document.querySelectorAll('.color-preset').forEach(preset => {
+        preset.classList.remove('selected');
+        if (preset.dataset.color === currentColor) {
+            preset.classList.add('selected');
+        }
+    });
+}
+
+// Descargar imagen del horario
+function downloadImage() {
+    showLoadingState('downloadImage');
+    
+    const stats = getDetailedStatsForPDF();
+    const currentDate = new Date().toISOString().split('T')[0];
+    const advisorName = stats.mainAdvisor.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    const fileName = `Horario_${advisorName}_${currentDate}`;
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.width = '210mm';
+    tempDiv.style.height = '297mm';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.fontSize = '12px';
+    
+    tempDiv.innerHTML = `
+        <div style="padding: 15px; height: 100%; display: flex; flex-direction: column;">
+            <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px; margin-bottom: 15px; text-align: center; font-family: monospace; font-size: 12px; flex-shrink: 0;">
+                <strong>CURSOS:</strong> ${stats.totalCourses} | 
+                <strong style="color: #dc3545;">HORAS SICA:</strong> <span style="color: #dc3545; font-weight: bold;">${stats.sicaHours} hrs</span> | 
+                <strong>ASESOR:</strong> ${stats.mainAdvisor} | 
+                <strong>FIRMA:</strong> _________________________________ | 
+                <strong>ADMIN:</strong> ${stats.mainAdministrator}
+            </div>
+            <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; flex: 1; display: flex; flex-direction: column;">
+                ${generateVerticalPDFTable()}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    html2canvas(tempDiv, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
-        width: tableElement.offsetWidth,
-        height: tableElement.offsetHeight
-    }).then(function(canvas) {
-        try {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            const pageWidth = 210;
-            const pageHeight = 297;
-            const margin = 15;
-            const contentWidth = pageWidth - (2 * margin);
-            
-            pdf.setLineWidth(0.5);
-            pdf.rect(margin - 5, margin - 5, contentWidth + 10, pageHeight - (2 * margin) + 10);
-            
-            let currentY = margin + 5;
-            
-            pdf.setFontSize(18);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(`HORARIO: ${tipoHorario.toUpperCase()}`, pageWidth / 2, currentY, { align: 'center' });
-            currentY += 15;
-            
-            pdf.setFontSize(10);
-            pdf.setFont(undefined, 'normal');
-            
-            const infoStartY = currentY;
-            
-            pdf.setFont(undefined, 'bold');
-            pdf.text('Nombre del Asesor:', margin, currentY);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(nombreAsesor, margin + 35, currentY);
-            currentY += 7;
-            
-            pdf.setFont(undefined, 'bold');
-            pdf.text('Administrador:', margin, currentY);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(administrador, margin + 35, currentY);
-            currentY += 7;
-            
-            pdf.setFont(undefined, 'bold');
-            pdf.text('Fecha de validación:', margin, currentY);
-            pdf.setFont(undefined, 'normal');
-            const fechaValidacionCorta = fechaValidacion.length > 45 ? 
-                fechaValidacion.substring(0, 42) + '...' : fechaValidacion;
-            pdf.text(fechaValidacionCorta, margin + 35, currentY);
-            
-            currentY = infoStartY;
-            const rightColumnX = pageWidth / 2 - 5;
-            
-            pdf.setFont(undefined, 'bold');
-            pdf.text('Fecha de realización:', rightColumnX, currentY);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(fechaActual, rightColumnX + 35, currentY);
-            currentY += 7;
-            
-            pdf.setFont(undefined, 'bold');
-            pdf.text('Horas de SICA:', rightColumnX, currentY);
-            pdf.setFont(undefined, 'bold');
-            pdf.setTextColor(217, 119, 6);
-            pdf.text(sicaTimeText, rightColumnX + 26, currentY);
-            
-            const sicaTextWidth = pdf.getTextWidth(sicaTimeText);
-            pdf.line(rightColumnX + 25, currentY + 1, rightColumnX + 25 + sicaTextWidth, currentY + 1);
-            
-            pdf.setTextColor(0, 0, 0);
-            
-            currentY += 15;
-            
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = contentWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            const remainingHeight = pageHeight - currentY - margin - 20;
-            let finalImgHeight = imgHeight;
-            let finalImgWidth = imgWidth;
-            
-            if (imgHeight > remainingHeight) {
-                finalImgHeight = remainingHeight;
-                finalImgWidth = (canvas.width * finalImgHeight) / canvas.height;
-            }
-            
-            const imgX = finalImgWidth < contentWidth ? 
-                (pageWidth - finalImgWidth) / 2 : margin;
-            
-            pdf.addImage(imgData, 'PNG', imgX, currentY, finalImgWidth, finalImgHeight);
-            
-            const firmaY = pageHeight - margin - 10;
-            pdf.setFontSize(12);
-            pdf.setFont(undefined, 'normal');
-            
-            const firmaLineStart = pageWidth / 2 - 30;
-            const firmaLineEnd = pageWidth / 2 + 30;
-            pdf.line(firmaLineStart, firmaY - 5, firmaLineEnd, firmaY - 5);
-            
-            pdf.text('Firma', pageWidth / 2, firmaY, { align: 'center' });
-            
-            const nombreLimpio = nombreAsesor.replace(/[^a-zA-Z0-9]/g, '_');
-            const tipoLimpio = tipoHorario.replace(/[^a-zA-Z0-9]/g, '_');
-            const fileName = `${nombreLimpio}_${tipoLimpio}.pdf`;
-            
-            pdf.save(fileName);
-            
-            showStatusMessage('PDF generado exitosamente', 'success');
-            
-        } catch (error) {
-            console.error('Error al generar PDF:', error);
-            showStatusMessage('Error al generar el PDF', 'error');
+        width: 794,
+        height: 1123
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `${fileName}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        document.body.removeChild(tempDiv);
+        
+        hideLoadingState('downloadImage');
+        
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Imagen Descargada', 
+                'La imagen del horario se ha descargado correctamente', 
+                'success', 
+                'bi-download'
+            );
         }
-    }).catch(function(error) {
-        console.error('Error al capturar la imagen:', error);
-        showStatusMessage('Error al capturar la tabla', 'error');
+        
+    }).catch(error => {
+        console.error('Error generando imagen:', error);
+        document.body.removeChild(tempDiv);
+        hideLoadingState('downloadImage');
+        
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Error', 
+                'Error al generar la imagen. Por favor, intenta de nuevo', 
+                'error', 
+                'bi-exclamation-triangle'
+            );
+        }
     });
 }
 
-// ===== MANEJO DE MENSAJES =====
-function showStatusMessage(message, type) {
-    const existingMessage = document.querySelector('.status-message');
-    if (existingMessage) {
-        existingMessage.remove();
+// Generar PDF
+function generatePDF() {
+    showLoadingState('generatePDF');
+    
+    const stats = getDetailedStatsForPDF();
+    const currentDate = new Date().toISOString().split('T')[0];
+    const advisorName = stats.mainAdvisor.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    const fileName = `Horario_${advisorName}_${currentDate}`;
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.width = '210mm';
+    tempDiv.style.height = '297mm';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.fontSize = '12px';
+    
+    tempDiv.innerHTML = `
+        <div style="padding: 15px; height: 100%; display: flex; flex-direction: column;">
+            <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px; margin-bottom: 15px; text-align: center; font-family: monospace; font-size: 12px; flex-shrink: 0;">
+                <strong>CURSOS:</strong> ${stats.totalCourses} | 
+                <strong style="color: #dc3545;">HORAS SICA:</strong> <span style="color: #dc3545; font-weight: bold;">${stats.sicaHours} hrs</span> | 
+                <strong>ASESOR:</strong> ${stats.mainAdvisor} | 
+                <strong>FIRMA:</strong> _________________________________ | 
+                <strong>ADMIN:</strong> ${stats.mainAdministrator}
+            </div>
+            <div style="border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; flex: 1; display: flex; flex-direction: column;">
+                ${generateVerticalPDFTable()}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: 1123
+    }).then(canvas => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${fileName}.pdf`);
+        
+        document.body.removeChild(tempDiv);
+        hideLoadingState('generatePDF');
+        
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'PDF Generado', 
+                'El PDF del horario se ha descargado correctamente', 
+                'success', 
+                'bi-file-earmark-pdf'
+            );
+        }
+        
+    }).catch(error => {
+        console.error('Error generando PDF:', error);
+        document.body.removeChild(tempDiv);
+        hideLoadingState('generatePDF');
+        
+        if (window.SICAComponents) {
+            window.SICAComponents.notify(
+                'Error', 
+                'Error al generar el PDF. Por favor, intenta de nuevo', 
+                'error', 
+                'bi-exclamation-triangle'
+            );
+        }
+    });
+}
+
+// Generar tabla vertical para PDF/Imagen
+function generateVerticalPDFTable() {
+    const timeSlots = generateTimeSlots();
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const rowHeight = '20px';
+    
+    let tableHTML = `
+        <table style="width: 100%; border-collapse: collapse; table-layout: fixed; height: 100%;">
+            <thead>
+                <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 40px;">
+                    <th style="color: white; padding: 8px 4px; text-align: center; font-weight: bold; width: 120px; border: 1px solid #dee2e6; font-size: 11px;">Horario</th>
+                    ${days.map(day => `<th style="color: white; padding: 8px 4px; text-align: center; font-weight: bold; border: 1px solid #dee2e6; font-size: 12px; width: calc((100% - 120px) / 5);">${day}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    const processedCells = new Set();
+    
+    timeSlots.forEach(timeRange => {
+        tableHTML += `<tr style="height: ${rowHeight};">`;
+        
+        tableHTML += `<td style="background: #f8f9fa; font-weight: bold; color: #495057; text-align: center; padding: 3px 2px; border: 1px solid #dee2e6; font-size: 9px; vertical-align: middle; height: ${rowHeight}; line-height: 1.1;">${timeRange}</td>`;
+        
+        days.forEach(day => {
+            const cellId = `${day}-${timeRange}`;
+            
+            if (processedCells.has(cellId)) {
+                return;
+            }
+            
+            const course = scheduleData[cellId];
+            
+            if (course) {
+                let consecutiveCount = 1;
+                let timeIndex = timeSlots.indexOf(timeRange);
+                
+                for (let i = timeIndex + 1; i < timeSlots.length; i++) {
+                    const nextTimeRange = timeSlots[i];
+                    const nextCellId = `${day}-${nextTimeRange}`;
+                    const nextCourse = scheduleData[nextCellId];
+                    
+                    if (nextCourse && 
+                        nextCourse.name === course.name && 
+                        nextCourse.advisor === course.advisor && 
+                        nextCourse.date === course.date) {
+                        consecutiveCount++;
+                        processedCells.add(nextCellId);
+                    } else {
+                        break;
+                    }
+                }
+                
+                const durationHours = consecutiveCount * 0.5;
+                const combinedHeight = `${parseInt(rowHeight) * consecutiveCount}px`;
+                
+                const startRange = timeRange;
+                const endRange = timeSlots[timeIndex + consecutiveCount - 1];
+                
+                const startTime = startRange.split('-')[0];
+                const endTime = endRange ? endRange.split('-')[1] : '21:00';
+                
+                let backgroundColor = course.color || '#4facfe';
+                if (course.name.toUpperCase() === 'SICA') {
+                    backgroundColor = '#ff6b6b';
+                }
+                
+                if (consecutiveCount > 1) {
+                    const titleSize = Math.min(16, 10 + consecutiveCount * 2);
+                    const textSize = Math.min(14, 8 + consecutiveCount * 2);
+                    const smallTextSize = Math.min(12, 7 + consecutiveCount * 2);
+                    
+                    tableHTML += `
+                        <td rowspan="${consecutiveCount}" style="
+                            background: ${backgroundColor}; 
+                            color: white; 
+                            text-align: center; 
+                            vertical-align: middle; 
+                            padding: 4px 2px; 
+                            border: 1px solid #dee2e6;
+                            font-size: 10px;
+                            line-height: 1.3;
+                            height: ${combinedHeight};
+                        ">
+                            <div style="font-weight: bold; font-size: ${titleSize}px; margin-bottom: 2px;">${course.name}</div>
+                            <div style="font-size: ${textSize}px; margin-bottom: 2px;">${startTime} - ${endTime}</div>
+                            <div style="font-size: ${textSize}px; font-weight: bold; margin-bottom: 2px;">${durationHours} hrs</div>
+                            <div style="font-size: ${smallTextSize}px;">
+                                ${course.classroom !== 'N/A' ? `${course.building} - ${course.classroom}` : 'En validación'}
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    tableHTML += `
+                        <td style="background: ${backgroundColor}; color: white; text-align: center; vertical-align: middle; padding: 3px 2px; border: 1px solid #dee2e6; font-size: 12px; font-weight: bold; height: ${rowHeight};">
+                            ${course.name}
+                        </td>
+                    `;
+                }
+                
+                processedCells.add(cellId);
+            } else {
+                tableHTML += `<td style="border: 1px solid #dee2e6; vertical-align: middle; height: ${rowHeight};"></td>`;
+            }
+        });
+        
+        tableHTML += '</tr>';
+    });
+    
+    tableHTML += '</tbody></table>';
+    return tableHTML;
+}
+
+// Obtener estadísticas detalladas para PDF
+function getDetailedStatsForPDF() {
+    const stats = {
+        totalCourses: 0,
+        sicaHours: 0,
+        mainAdvisor: 'No asignado',
+        mainAdministrator: 'No asignado'
+    };
+    
+    const uniqueCourses = new Set();
+    const advisors = new Map();
+    const administrators = new Map();
+    
+    Object.values(scheduleData).forEach(course => {
+        const courseKey = `${course.name}-${course.advisor}-${course.date}`;
+        if (!uniqueCourses.has(courseKey)) {
+            uniqueCourses.add(courseKey);
+            stats.totalCourses++;
+            
+            const advisorCount = advisors.get(course.advisor) || 0;
+            advisors.set(course.advisor, advisorCount + 1);
+            
+            const adminCount = administrators.get(course.administrator) || 0;
+            administrators.set(course.administrator, adminCount + 1);
+        }
+        
+        if (course.name.toUpperCase() === 'SICA') {
+            stats.sicaHours += 0.5;
+        }
+    });
+    
+    if (advisors.size > 0) {
+        const mostFrequentAdvisor = [...advisors.entries()].reduce((a, b) => a[1] > b[1] ? a : b);
+        stats.mainAdvisor = mostFrequentAdvisor[0];
     }
     
-    const statusDiv = document.createElement('div');
-    statusDiv.className = `status-message status-${type}`;
-    statusDiv.textContent = message;
+    if (administrators.size > 0) {
+        const mostFrequentAdmin = [...administrators.entries()].reduce((a, b) => a[1] > b[1] ? a : b);
+        stats.mainAdministrator = mostFrequentAdmin[0];
+    }
     
-    const buttonGroup = document.querySelector('.button-group');
-    buttonGroup.parentNode.insertBefore(statusDiv, buttonGroup.nextSibling);
-    
-    if (type === 'success' || type === 'info') {
-        setTimeout(() => {
-            if (statusDiv.parentNode) {
-                statusDiv.remove();
-            }
-        }, 5000);
+    return stats;
+}
+
+// Estados de carga para botones
+function showLoadingState(buttonType) {
+    const button = document.querySelector(`[onclick="${buttonType}()"]`);
+    if (button) {
+        button.classList.add('btn-loading');
+        button.disabled = true;
     }
 }
 
-function hideStatusMessage() {
-    const existingMessage = document.querySelector('.status-message');
-    if (existingMessage) {
-        existingMessage.remove();
+function hideLoadingState(buttonType) {
+    const button = document.querySelector(`[onclick="${buttonType}()"]`);
+    if (button) {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
     }
 }
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha actual de CDMX
+    document.getElementById('realizationDate').value = getCurrentDateCDMX();
+    
+    // Cargar asesores desde Firebase
+    loadAsesores();
+    
+    // Inicializar componentes
+    initializeTable();
+    updateCounters();
+    loadSavedData();
+    updateColorPresets();
+    
+    // Event listener para cambios en el nombre del curso
+    document.getElementById('courseName').addEventListener('input', handleCourseNameChange);
+    
+    // Event listener para cambio de asesor
+    document.getElementById('advisorName').addEventListener('change', handleAdvisorChange);
+    
+    // Event listener para selector de color
+    document.getElementById('courseColor').addEventListener('change', updateColorPresets);
+    
+    // Event listeners para colores predefinidos
+    document.querySelectorAll('.color-preset').forEach(preset => {
+        preset.addEventListener('click', function() {
+            const color = this.dataset.color;
+            document.getElementById('courseColor').value = color;
+            updateColorPresets();
+        });
+    });
+    
+    // Event listener para el checkbox de guardar datos
+    document.getElementById('saveData').addEventListener('change', function() {
+        if (this.checked) {
+            showSavedData();
+        } else {
+            document.getElementById('savedDataSection').style.display = 'none';
+        }
+    });
+    
+    // Prevenir menú contextual durante selección
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.classList.contains('schedule-cell') && isSelecting) {
+            e.preventDefault();
+        }
+    });
+    
+    // Event listener para modal de Bootstrap
+    document.getElementById('courseModal').addEventListener('hidden.bs.modal', function() {
+        currentCourseId = null;
+    });
+    
+    // Configurar página usando componentes SICA
+    if (window.SICAComponents) {
+        window.SICAComponents.setPageTitle("Armador de Horarios - SICA");
+    }
+});
+
+// Atajos de teclado
+document.addEventListener('keydown', function(e) {
+    // ESC para limpiar selección y cerrar modal
+    if (e.key === 'Escape') {
+        clearSelection();
+        if (courseModalInstance) {
+            courseModalInstance.hide();
+        }
+    }
+    
+    // Ctrl+S para exportar PDF
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        generatePDF();
+    }
+    
+    // Delete para eliminar curso seleccionado
+    if (e.key === 'Delete' && currentCourseId) {
+        deleteCourse();
+    }
+    
+    // Ctrl+A para seleccionar todas las celdas vacías
+    if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        clearSelection();
+        document.querySelectorAll('.schedule-cell:not(.occupied)').forEach(cell => {
+            selectCell(cell);
+        });
+    }
+    
+    // Enter para agregar curso si se está en el formulario
+    if (e.key === 'Enter' && e.target.closest('#courseForm')) {
+        e.preventDefault();
+        addCourse();
+    }
+});
+
+// Prevenir zoom en móvil en inputs
+document.addEventListener('touchstart', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+        e.target.style.fontSize = '16px';
+    }
+});
+
+// Optimización para rendimiento en dispositivos móviles
+if ('ontouchstart' in window) {
+    // Deshabilitar hover effects en dispositivos táctiles
+    document.body.classList.add('touch-device');
+    
+    // Añadir estilo para dispositivos táctiles
+    const style = document.createElement('style');
+    style.textContent = `
+        .touch-device .schedule-cell:hover {
+            transform: none;
+            background: inherit;
+        }
+        .touch-device .course-item:hover {
+            transform: none;
+        }
+        .touch-device .color-preset:hover {
+            transform: none;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Función de utilidad para debugging
+function debugScheduleData() {
+    console.log('Schedule Data:', scheduleData);
+    console.log('Selected Cells:', selectedCells);
+    console.log('Saved Data:', savedData);
+}
+
+// Exportar funciones para uso externo si es necesario
+window.ScheduleBuilder = {
+    addCourse,
+    clearSelection,
+    clearAllData,
+    generatePDF,
+    downloadImage,
+    debugScheduleData
+};

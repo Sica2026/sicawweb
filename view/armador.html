@@ -1,225 +1,263 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SALA DE INFORMÁTICA DE CÓMPUTO PARA ALUMNOS - Armador de Horario</title>
+    <title id="page-title">Armador de Horarios - SICA</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- html2canvas y jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Custom CSS -->
-    <link href="../css/armador.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/armador.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header-section">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+<!-- Main Content Area -->
+    <main class="main-content" id="main-content">
         <div class="container-fluid">
-            <div class="row align-items-center py-3">
-                <div class="col-md-2 text-center">
-                    <div class="logo-container">
-                        <div class="logo-icon-container">
-                            <i class="bi bi-laptop logo-icon"></i>
-                        </div>
-                        <span class="logo-text">SICA</span>
+            <!-- Header Section -->
+            <div class="page-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="page-title">
+                            <i class="bi bi-calendar-week text-gold me-3"></i>
+                            Armador de Horarios Interactivo
+                        </h1>
+                        <p class="page-subtitle">Gestiona tus cursos de manera intuitiva y profesional</p>
                     </div>
-                </div>
-                <div class="col-md-8 text-center">
-                    <h1 class="main-title">SALA DE INFORMÁTICA DE CÓMPUTO PARA ALUMNOS</h1>
-                </div>
-                <div class="col-md-2 text-center">
-                    <div class="logo-container">
-                        <div class="logo-icon-container">
-                            <i class="bi bi-mortarboard logo-icon"></i>
-                        </div>
-                        <span class="logo-text">UNAM</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Navigation Menu -->
-    <nav class="navbar navbar-expand-lg custom-navbar">
-        <div class="container">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav mx-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-section="horario">
-                            <i class="bi bi-clock me-2"></i>Horario
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-section="lista">
-                            <i class="bi bi-list-check me-2"></i>Pase de Lista
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" id="darkModeToggle">
-                            <i class="bi bi-moon me-2"></i>Modo Oscuro
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-section="ingreso">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Ingresa
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content - Armador de Horario -->
-    <main class="main-content">
-        <div class="container-fluid">
-            <section class="mt-4">
-                <div class="armador-container">
-                    <div class="form-section">
-                        <h1><i class="bi bi-calendar-week me-2"></i>Armador de horario</h1>
-                        
-                        <div class="form-group">
-                            <label for="horario">Horario:</label>
-                            <select id="horario" name="horario">
-                                <option value="">Selecciona una opción</option>
-                                <option value="Matutino">Matutino</option>
-                                <option value="Vespertino">Vespertino</option>
-                                <option value="Nocturno">Nocturno</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="nombre-curso">Nombre del curso:</label>
-                            <select id="nombre-curso" name="nombre-curso">
-                                <option value="">Selecciona un curso</option>
-                                <option value="SICA">SICA</option>
-                                <option value="Matemáticas">Matemáticas</option>
-                                <option value="Español">Español</option>
-                                <option value="Ciencias">Ciencias</option>
-                                <option value="Historia">Historia</option>
-                                <option value="Inglés">Inglés</option>
-                                <option value="Otro">Otro...</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" id="curso-personalizado" style="display: none;">
-                            <label for="nombre-curso-custom">Nombre personalizado:</label>
-                            <input type="text" id="nombre-curso-custom" name="nombre-curso-custom" placeholder="Escribe el nombre del curso">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="edificio">Edificio:</label>
-                            <input type="text" id="edificio" name="edificio" placeholder="Edificio">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="salon">Salón:</label>
-                            <input type="text" id="salon" name="salon" placeholder="Salón">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="nombre-asesor">Nombre del asesor:</label>
-                            <input type="text" id="nombre-asesor" name="nombre-asesor" placeholder="Nombre completo del asesor">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="asesor">Administrador:</label>
-                            <select id="asesor" name="asesor">
-                                <option value="">Selecciona</option>
-                                <option value="Administrador 1">Administrador 1</option>
-                                <option value="Administrador 2">Administrador 2</option>
-                                <option value="Administrador 3">Administrador 3</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="fecha-inicio">Válido desde:</label>
-                            <input type="date" id="fecha-inicio" name="fecha-inicio" value="2025-07-10">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="fecha-fin">Válido hasta:</label>
-                            <input type="date" id="fecha-fin" name="fecha-fin" value="2025-07-17">
-                        </div>
-
-                        <div class="date-range">
-                            <span>Del 10 de julio de 2025 al 17 de julio de 2025</span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="color">Color:</label>
-                            <input type="color" id="color" name="color" value="#90EE90">
-                        </div>
-
-                        <div class="sica-counter" id="sica-counter-fixed">
-                            <div class="counter-info">
-                                <strong>Horas SICA:</strong>
-                                <span id="sica-hours">0h 0m</span>
+                    <div class="col-md-4 text-end">
+                        <div class="stats-quick">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Cursos:</span>
+                                <span class="stat-value" id="totalCourses">0</span>
+                            </div>
+                            <div class="stat-item sica-highlight">
+                                <span class="stat-label">Horas SICA:</span>
+                                <span class="stat-value" id="sicaHours">0</span>
                             </div>
                         </div>
-
-                        <div class="button-group">
-                            <button type="button" id="btn-agregar" class="btn-primary">
-                                <i class="bi bi-plus-circle me-2"></i>Agregar Curso
-                            </button>
-                            <button type="button" id="btn-limpiar" class="btn-secondary">
-                                <i class="bi bi-trash me-2"></i>Limpiar Horario
-                            </button>
-                            <button type="button" id="btn-generar" class="btn-print">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Generar PDF
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="schedule-section">
-                        <table class="schedule-table">
-                            <thead>
-                                <tr>
-                                    <th><i class="bi bi-clock me-1"></i>Horario</th>
-                                    <th><i class="bi bi-calendar me-1"></i>Lunes</th>
-                                    <th><i class="bi bi-calendar me-1"></i>Martes</th>
-                                    <th><i class="bi bi-calendar me-1"></i>Miércoles</th>
-                                    <th><i class="bi bi-calendar me-1"></i>Jueves</th>
-                                    <th><i class="bi bi-calendar me-1"></i>Viernes</th>
-                                </tr>
-                            </thead>
-                            <tbody id="schedule-body">
-                                <!-- Las filas se generarán dinámicamente con JavaScript -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
-            </section>
+            </div>
+
+            <div class="row g-4">
+                <!-- Schedule Section -->
+                <div class="col-lg-8">
+                    <div class="card-modern">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-grid-3x3-gap text-blue me-2"></i>
+                                Horario Semanal
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <!-- Selection Info -->
+                            <div class="selection-info">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="selection-display">
+                                        <span id="selectionCount" class="badge bg-info">0 celdas seleccionadas</span>
+                                        <span id="selectionHours" class="text-muted ms-2">(0 horas)</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sica-outline btn-sm" onclick="clearSelection()">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Limpiar Selección
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Schedule Table -->
+                            <div class="table-responsive">
+                                <table class="table table-sica mb-0" id="scheduleTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 140px;">Horario</th>
+                                            <th>Lunes</th>
+                                            <th>Martes</th>
+                                            <th>Miércoles</th>
+                                            <th>Jueves</th>
+                                            <th>Viernes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="scheduleBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Section -->
+                <div class="col-lg-4">
+                    <div class="card-modern sticky-top" style="top: 100px;">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-plus-circle text-gold me-2"></i>
+                                Agregar Curso
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="courseForm">
+                                <div class="mb-3">
+                                    <label for="courseName" class="form-label-sica">Nombre del Curso *</label>
+                                    <input type="text" class="form-control form-control-sica" id="courseName" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="advisorName" class="form-label-sica">Asesor *</label>
+                                    <select class="form-control form-control-sica" id="advisorName" required>
+                                        <option value="">Selecciona un asesor...</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="administrator" class="form-label-sica">Administrador *</label>
+                                    <input type="text" class="form-control form-control-sica" id="administrator" required readonly>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="classroom" class="form-label-sica">Salón *</label>
+                                    <input type="text" class="form-control form-control-sica" id="classroom" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="building" class="form-label-sica">Edificio *</label>
+                                    <input type="text" class="form-control form-control-sica" id="building" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="courseColor" class="form-label-sica">Color del Curso</label>
+                                    <div class="color-selector">
+                                        <input type="color" class="form-control form-control-color" id="courseColor" value="#4facfe">
+                                        <div class="color-presets">
+                                            <div class="color-preset" data-color="#4facfe" style="background: #4facfe;"></div>
+                                            <div class="color-preset" data-color="#ff6b6b" style="background: #ff6b6b;"></div>
+                                            <div class="color-preset" data-color="#2ecc71" style="background: #2ecc71;"></div>
+                                            <div class="color-preset" data-color="#f39c12" style="background: #f39c12;"></div>
+                                            <div class="color-preset" data-color="#9b59b6" style="background: #9b59b6;"></div>
+                                            <div class="color-preset" data-color="#e74c3c" style="background: #e74c3c;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="realizationDate" class="form-label-sica">Fecha válida *</label>
+                                    <input type="date" class="form-control form-control-sica" id="realizationDate" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="saveData">
+                                        <label class="form-check-label" for="saveData">
+                                            Guardar datos para próximo curso
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-sica" onclick="addCourse()">
+                                        <i class="bi bi-plus-lg me-1"></i>
+                                        Agregar Curso
+                                    </button>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sica-outline" onclick="clearForm()">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>
+                                            Limpiar
+                                        </button>
+                                        <button type="button" class="btn btn-sica-outline" onclick="loadLastData()">
+                                            <i class="bi bi-upload me-1"></i>
+                                            Cargar Últimos
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-success" onclick="generatePDF()">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>
+                                        Descargar PDF
+                                    </button>
+                                    <button type="button" class="btn btn-info" onclick="downloadImage()">
+                                        <i class="bi bi-image me-1"></i>
+                                        Descargar Imagen
+                                    </button>
+                                    <button type="button" class="btn btn-danger" onclick="clearAllData()">
+                                        <i class="bi bi-trash me-1"></i>
+                                        Limpiar Todo
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Saved Data Section -->
+                            <div class="saved-data-section mt-4" id="savedDataSection" style="display: none;">
+                                <div class="alert-sica alert-sica-info">
+                                    <h6><i class="bi bi-info-circle me-1"></i>Datos Guardados:</h6>
+                                    <div id="savedDataDisplay"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-4">
-                    <div class="current-time">
-                        <i class="bi bi-clock me-2"></i>
-                        <span id="currentTime">--:--:--</span>
-                    </div>
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Course Details Modal -->
+    <div class="modal fade" id="courseModal" tabindex="-1" aria-labelledby="courseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="courseModalLabel">
+                        <i class="bi bi-info-circle text-blue me-2"></i>
+                        Detalles del Curso
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="col-md-8 text-end">
-                    <p class="footer-text mb-0">
-                        Desarrollado por <strong>SICA</strong> - Facultad de Química, UNAM
-                    </p>
+                <div class="modal-body">
+                    <div id="courseDetails"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="deleteCourse()">
+                        <i class="bi bi-trash me-1"></i>
+                        Eliminar Curso
+                    </button>
+                    <button type="button" class="btn btn-sica-outline" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>
+                        Cerrar
+                    </button>
                 </div>
             </div>
         </div>
-    </footer>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS (incluye modo oscuro integrado) -->
-    <script src="../js/armador.js"></script>
+    <!-- PDF and Canvas Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/armador.js"></script>
 </body>
 </html>

@@ -370,77 +370,83 @@ class ModernNavigation {
     
     // ✅ FUNCIÓN CORREGIDA - Aquí estaba el problema principal
     handleAsesorAction(action, button) {
-        // Efecto visual en el botón seleccionado
-        this.addSelectionEffect(button);
-        
-        const actionMessages = {
-            'lista': {
-                title: 'Pase de Lista',
-                message: 'Accediendo al sistema de asistencia...',
-                icon: 'bi-list-check',
-                page: 'pase-lista.html'  // ✅ Cambié de route a page
-            },
-            'impresiones': {
-                title: 'Registro de Impresiones',
-                message: 'Abriendo módulo de impresiones...',
-                icon: 'bi-printer',
-                page: 'registro-impresiones.html'  // ✅ Cambié de route a page
-            },
-            'reportes': {
-                title: 'Reportes',
-                message: 'Generando reportes del sistema...',
-                icon: 'bi-file-earmark-text',
-                page: 'reportes-asesor.html'  // ✅ Cambié de route a page
-            },
-            'horario': {
-                title: 'Consulta de Horario',
-                message: 'Accediendo a consulta de horarios...',
-                icon: 'bi-clock',
-                page: 'consulta-horarios.html'  // ✅ Cambié de route a page
-            }
-        };
-        
-        const actionData = actionMessages[action];
-        
-        if (actionData) {
-            this.showModernNotification(
-                actionData.title,
-                actionData.message,
-                'info',
-                actionData.icon
-            );
-            
-            console.log(`⚙️ Ejecutando acción: ${action}`);
-            
-            // ✅ NAVEGACIÓN CORREGIDA - Detección de ubicación y navegación directa
-            setTimeout(() => {
-                const currentPath = window.location.pathname;
-                const isInViewFolder = currentPath.includes('/view/') || currentPath.includes('view/');
-                
-                let targetPage;
-                
-                if (isInViewFolder) {
-                    // Si ya estamos en la carpeta view/, usar ruta relativa
-                    targetPage = actionData.page;
-                } else {
-                    // Si estamos en la raíz, usar ruta completa
-                    targetPage = `view/${actionData.page}`;
-                }
-                
-                console.log(`📍 Navegando desde: ${currentPath}`);
-                console.log(`🎯 Navegando a: ${targetPage}`);
-                
-                // Navegar directamente
-                window.location.href = targetPage;
-                
-            }, 1000); // ✅ Reducí el tiempo de espera
+    // Efecto visual en el botón seleccionado
+    this.addSelectionEffect(button);
+    
+    const actionMessages = {
+        'lista': {
+            title: 'Pase de Lista',
+            message: 'Accediendo al sistema de asistencia...',
+            icon: 'bi-list-check',
+            page: 'pase-lista.html'
+        },
+        'impresiones': {
+            title: 'Registro de Impresiones',
+            message: 'Abriendo módulo de impresiones...',
+            icon: 'bi-printer',
+            page: 'registro-impresiones.html'
+        },
+        'reportes': {
+            title: 'Reportes',
+            message: 'Generando reportes del sistema...',
+            icon: 'bi-file-earmark-text',
+            page: 'reportes-asesor.html'
+        },
+        'horario': {
+            title: 'Consulta de Horario',
+            message: 'Accediendo a consulta de horarios...',
+            icon: 'bi-clock',
+            page: 'consulta-horarios.html'
+        },
+        'armador': {  // ← NUEVA ENTRADA
+            title: 'Armador de Horarios',
+            message: 'Accediendo al armador de horarios...',
+            icon: 'bi-gear-fill',
+            page: 'armador.html'
         }
+    };
+    
+    const actionData = actionMessages[action];
+    
+    if (actionData) {
+        this.showModernNotification(
+            actionData.title,
+            actionData.message,
+            'info',
+            actionData.icon
+        );
         
-        // Cerrar panel después de la selección
+        console.log(`⚙️ Ejecutando acción: ${action}`);
+        
+        // Navegación corregida - Detección de ubicación y navegación directa
         setTimeout(() => {
-            this.closeAllPanels();
-        }, 800); // ✅ Ajusté el tiempo para que sea consistente
+            const currentPath = window.location.pathname;
+            const isInViewFolder = currentPath.includes('/view/') || currentPath.includes('view/');
+            
+            let targetPage;
+            
+            if (isInViewFolder) {
+                // Si ya estamos en la carpeta view/, usar ruta relativa
+                targetPage = actionData.page;
+            } else {
+                // Si estamos en la raíz, usar ruta completa
+                targetPage = `view/${actionData.page}`;
+            }
+            
+            console.log(`📍 Navegando desde: ${currentPath}`);
+            console.log(`🎯 Navegando a: ${targetPage}`);
+            
+            // Navegar directamente
+            window.location.href = targetPage;
+            
+        }, 1000);
     }
+    
+    // Cerrar panel después de la selección
+    setTimeout(() => {
+        this.closeAllPanels();
+    }, 800);
+}
     
     addSelectionEffect(button) {
         // Efecto de selección visual

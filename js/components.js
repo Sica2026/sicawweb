@@ -174,39 +174,47 @@ class SICAComponents {
                             <div class="nav-panel asesor-panel user-mode" id="asesorPanel">
                                 <div class="panel-content">
                                     <div class="panel-options horizontal-layout">
-                                        <button class="option-btn" data-action="lista">
-                                            <div class="option-content">
-                                                <div class="option-icon">
-                                                    <i class="bi bi-list-check"></i>
-                                                </div>
-                                                <span>Pase de Lista</span>
-                                            </div>
-                                        </button>
-                                        <button class="option-btn" data-action="horario">
-                                            <div class="option-content">
-                                                <div class="option-icon">
-                                                    <i class="bi bi-clock"></i>
-                                                </div>
-                                                <span>Horario</span>
-                                            </div>
-                                        </button>
-                                        <button class="option-btn" data-action="impresiones">
-                                            <div class="option-content">
-                                                <div class="option-icon">
-                                                    <i class="bi bi-printer"></i>
-                                                </div>
-                                                <span>Impresiones</span>
-                                            </div>
-                                        </button>
-                                        <button class="option-btn" data-action="reportes">
-                                            <div class="option-content">
-                                                <div class="option-icon">
-                                                    <i class="bi bi-file-earmark-text"></i>
-                                                </div>
-                                                <span>Reportes</span>
-                                            </div>
-                                        </button>                                        
-                                    </div>
+    <button class="option-btn" data-action="lista">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-list-check"></i>
+            </div>
+            <span>Pase de Lista</span>
+        </div>
+    </button>
+    <button class="option-btn" data-action="horario">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-clock"></i>
+            </div>
+            <span>Horario</span>
+        </div>
+    </button>
+    <button class="option-btn" data-action="impresiones">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-printer"></i>
+            </div>
+            <span>Impresiones</span>
+        </div>
+    </button>
+    <button class="option-btn" data-action="armador">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+            <span>Armador</span>
+        </div>
+    </button>
+    <button class="option-btn" data-action="reportes">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <span>Reportes</span>
+        </div>
+    </button>                                        
+</div>
                                 </div>
                             </div>
 
