@@ -10,15 +10,59 @@ class SICAComponents {
     }
 
     init() {
+        // ✅ AGREGAR: Cargar favicon PRIMERO
+        this.loadFavicon();
+        
         this.loadComponents();
         this.setupClock();
         
-        // ✅ AGREGAR: Verificar estado de autenticación
+        // Verificar estado de autenticación
         setTimeout(() => {
             SICAComponents.checkAuthState();
         }, 1000);
         
         console.log('🧩 Componentes SICA cargados exitosamente');
+    }
+
+    // ✅ NUEVA FUNCIÓN: Cargar favicon dinámicamente
+// ✅ FUNCIÓN SIMPLIFICADA: Favicon solo para escritorio
+loadFavicon() {
+    try {
+        // Detectar si estamos en subdirectorio (view/) o en raíz
+        const currentPath = window.location.pathname;
+        const isInSubdirectory = currentPath.includes('/view/');
+        const basePath = isInSubdirectory ? '../' : './';
+
+        // Remover favicons existentes (por si acaso)
+        const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+        existingFavicons.forEach(favicon => favicon.remove());
+
+        // Solo favicon.ico - suficiente para escritorio
+        const faviconIco = document.createElement('link');
+        faviconIco.rel = 'icon';
+        faviconIco.type = 'image/x-icon';
+        faviconIco.href = `${basePath}favicon.ico`;
+        
+        // Manejo de errores opcional
+        faviconIco.onerror = () => {
+            console.warn('⚠️ favicon.ico no encontrado');
+        };
+        
+        document.head.appendChild(faviconIco);
+
+        console.log('🖥️ Favicon de escritorio cargado desde:', basePath + 'favicon.ico');
+
+    } catch (error) {
+        console.warn('⚠️ Error cargando favicon:', error);
+    }
+}
+
+    // ✅ FUNCIÓN ADICIONAL: Cambiar favicon dinámicamente (opcional)
+    static changeFavicon(iconPath) {
+        const favicon = document.querySelector('link[rel="icon"]');
+        if (favicon) {
+            favicon.href = iconPath;
+        }
     }
 
     loadComponents() {

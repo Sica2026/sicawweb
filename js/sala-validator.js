@@ -260,27 +260,92 @@ class SalaValidator {
         return null;
     }
 
-    // NUEVO: Detección por hostname/URL
+    // NUEVO: Detección por hostname/URL - MEJORADO PARA FIREBASE HOSTING
     getIPFromHostname() {
         try {
             const hostname = window.location.hostname;
             const href = window.location.href;
+            const pathname = window.location.pathname;
             
             console.log('🌐 Analizando hostname:', hostname);
             console.log('🌐 URL completa:', href);
+            console.log('🌐 Path:', pathname);
             
-            // Si el hostname es una IP directa
+            // 🚨 NUEVO: Si el hostname ES una IP directa, usarla
             if (this.ipToSala[hostname]) {
+                console.log('✅ Hostname es IP directa válida:', hostname);
                 return hostname;
+            }
+            
+            // 🚨 FIREBASE HOSTING: Detectar por parámetros URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const salaParam = urlParams.get('sala');
+            if (salaParam === '1' || salaParam === 'sica1') {
+                console.log('✅ Detectado SICA-1 por parámetro URL');
+                return '192.168.14.42';
+            }
+            if (salaParam === '2' || salaParam === 'sica2') {
+                console.log('✅ Detectado SICA-2 por parámetro URL');
+                return '192.168.16.161';
+            }
+            
+            // 🚨 FIREBASE HOSTING: Detectar por localStorage de la máquina
+            try {
+                const salaLocal = localStorage.getItem('sica_sala_local');
+                if (salaLocal === 'SICA-1') {
+                    console.log('✅ Detectado SICA-1 por localStorage');
+                    return '192.168.14.42';
+                }
+                if (salaLocal === 'SICA-2') {
+                    console.log('✅ Detectado SICA-2 por localStorage');
+                    return '192.168.16.161';
+                }
+            } catch (e) {
+                console.log('📱 localStorage no disponible');
+            }
+            
+            // 🚨 FIREBASE HOSTING: Detectar por hostname específico
+            if (hostname.includes('sica-e5c24.web.app')) {
+                // Para Firebase, intentar detectar por IP real de la máquina
+                console.log('🔥 Detectado Firebase Hosting, usando método alternativo');
+                
+                // Aquí podrías configurar una lógica específica
+                // Por ejemplo, si siempre acceden desde una URL específica por sala
+                if (href.includes('?sala=1') || href.includes('sica1')) {
+                    return '192.168.14.42';
+                }
+                if (href.includes('?sala=2') || href.includes('sica2')) {
+                    return '192.168.16.161';
+                }
+                
+                // Si no hay parámetros, intentar detectar por configuración previa
+                const lastSala = localStorage.getItem('sica_last_sala');
+                if (lastSala && this.ipToSala[lastSala]) {
+                    console.log('✅ Usando última sala configurada:', lastSala);
+                    return lastSala;
+                }
+            }
+            
+            // Detección por patrones específicos de SICA
+            if (href.includes('192.168.16.161')) {
+                console.log('✅ Detectada IP SICA-2 en URL');
+                return '192.168.16.161';
+            }
+            
+            if (href.includes('192.168.14.42')) {
+                console.log('✅ Detectada IP SICA-1 en URL');
+                return '192.168.14.42';
             }
             
             // Buscar patrones en la URL que indiquen la sala
             if (href.includes('sica1') || href.includes('sica-1')) {
-                return '192.168.14.42'; // SICA-1
+                console.log('✅ Detectado patrón SICA-1 en URL');
+                return '192.168.14.42';
             }
             
             if (href.includes('sica2') || href.includes('sica-2')) {
-                return '192.168.16.161'; // SICA-2
+                console.log('✅ Detectado patrón SICA-2 en URL');
+                return '192.168.16.161';
             }
             
             console.log('⚠️ No se pudo determinar IP por hostname');
@@ -526,6 +591,12 @@ class SalaValidator {
     // MOSTRAR ERROR DE SALA INCORRECTA
     // ======================================
     mostrarErrorSala(validationResult) {
+        // 🚨 DEBUGGING: Log del resultado para diagnosticar
+        console.log('🔍 DEBUGGING mostrarErrorSala:', validationResult);
+        console.log('- salaActual:', validationResult.salaActual);
+        console.log('- salaAsignada:', validationResult.salaAsignada);
+        console.log('- ipDetectada:', validationResult.ipDetectada);
+        
         let modalHTML;
         
         if (validationResult.ipDetectada && !validationResult.salaAsignada) {
@@ -566,6 +637,10 @@ class SalaValidator {
             `;
         } else {
             // Error de sala incorrecta normal
+            // 🚨 PROTECCIÓN contra undefined
+            const salaActual = validationResult.salaActual || 'Desconocida';
+            const salaAsignada = validationResult.salaAsignada || 'Desconocida';
+            
             modalHTML = `
                 <div class="modal fade" id="salaErrorModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
@@ -582,12 +657,18 @@ class SalaValidator {
                                 </div>
                                 <h6 class="mt-3 mb-3">No te toca este SICA</h6>
                                 <p class="sala-info">
-                                    <strong>Estás en:</strong> ${validationResult.salaActual}<br>
-                                    <strong>Te toca:</strong> ${validationResult.salaAsignada}
+                                    <strong>Estás en:</strong> ${salaActual}<br>
+                                    <strong>Te toca:</strong> ${salaAsignada}
                                 </p>
                                 <div class="alert alert-info">
                                     <i class="bi bi-info-circle-fill me-2"></i>
                                     Acude a tu sala asignada para pasar lista
+                                </div>
+                                <!-- 🚨 DEBUGGING INFO -->
+                                <div class="alert alert-secondary" style="font-size: 0.8rem;">
+                                    <strong>Debug Info:</strong><br>
+                                    IP: ${validationResult.ipDetectada || 'No detectada'}<br>
+                                    Número: ${validationResult.numeroCuenta || 'No proporcionado'}
                                 </div>
                             </div>
                             <div class="modal-footer justify-content-center">

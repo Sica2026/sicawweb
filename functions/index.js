@@ -15,27 +15,159 @@ db.settings({
   ignoreUndefinedProperties: true
 });
 
+// =============================================
+// FUNCIÓN AUTOMÁTICA DIARIA
+// =============================================
+
 // Función principal que se ejecuta diariamente a las 10 PM
 exports.procesarAsistenciasDiarias = functions
-  .region('us-central1') // Puedes cambiar la región si necesitas
+  .region('us-central1')
   .pubsub
   .schedule('0 22 * * *') // 10:00 PM todos los días
-  .timeZone('America/Mexico_City') // Zona horaria de México
+  .timeZone('America/Mexico_City')
   .onRun(async (context) => {
-    console.log('🚀 Iniciando procesamiento diario de asistencias...');
+    const inicioEjecucion = new Date();
+    console.log('🚀 Iniciando procesamiento diario de asistencias...', inicioEjecucion.toISOString());
     
     try {
+      // Registrar inicio de ejecución
+      await registrarEjecucion(db, 'inicio', inicioEjecucion);
+      
       const resultado = await procesarAsistencias();
+      
+      const finEjecucion = new Date();
+      const duracion = finEjecucion - inicioEjecucion;
+      
       console.log('✅ Procesamiento completado:', resultado);
+      console.log(`⏱️ Duración: ${duracion}ms`);
+      
+      // Registrar éxito de ejecución
+      await registrarEjecucion(db, 'exito', inicioEjecucion, {
+        duracion: duracion,
+        resultado: resultado
+      });
+      
       return resultado;
     } catch (error) {
       console.error('❌ Error en procesamiento:', error);
+      
+      // Registrar error de ejecución
+      await registrarEjecucion(db, 'error', inicioEjecucion, {
+        error: error.message
+      });
+      
       throw error;
     }
   });
 
+// =============================================
+// FUNCIÓN MANUAL PARA FECHA ESPECÍFICA
+// =============================================
+
 /**
- * Función principal de procesamiento
+ * Función para procesar asistencias de una fecha específica (MANUAL)
+ * 
+ * Parámetros:
+ * - fecha: YYYY-MM-DD (ej: "2025-08-14")
+ * - tipoBloque: opcional, si no se especifica usa la configuración activa
+ * - moverAsistencias: true/false, default true
+ */
+exports.procesarFechaEspecifica = functions.https.onRequest(async (req, res) => {
+  console.log('🛠️ Iniciando procesamiento manual de fecha específica...');
+  
+  // Configurar CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  try {
+    // Obtener parámetros de la request
+    const fecha = req.query.fecha || req.body?.fecha;
+    const tipoBloqueForzado = req.query.tipoBloque || req.body?.tipoBloque;
+    const moverAsistencias = req.query.moverAsistencias !== 'false'; // default true
+    
+    if (!fecha) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parámetro "fecha" es requerido. Formato: YYYY-MM-DD',
+        ejemplo: 'https://url/procesarFechaEspecifica?fecha=2025-08-14'
+      });
+    }
+    
+    // Validar formato de fecha
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha inválido. Use: YYYY-MM-DD',
+        fechaRecibida: fecha
+      });
+    }
+    
+    const inicioEjecucion = new Date();
+    console.log(`📅 Procesando fecha específica: ${fecha}`);
+    console.log(`⚙️ Tipo bloque forzado: ${tipoBloqueForzado || 'usar configuración'}`);
+    console.log(`🔄 Mover asistencias: ${moverAsistencias}`);
+    
+    // Registrar inicio de ejecución manual
+    await registrarEjecucionManual(db, 'inicio', inicioEjecucion, { fecha, tipoBloqueForzado });
+    
+    const resultado = await procesarAsistenciasFechaEspecifica(fecha, tipoBloqueForzado, moverAsistencias);
+    
+    const finEjecucion = new Date();
+    const duracion = finEjecucion - inicioEjecucion;
+    
+    console.log('✅ Procesamiento manual completado:', resultado);
+    
+    // Registrar éxito de ejecución manual
+    await registrarEjecucionManual(db, 'exito', inicioEjecucion, {
+      fecha,
+      duracion,
+      resultado,
+      tipoBloqueForzado,
+      moverAsistencias
+    });
+    
+    res.status(200).json({
+      success: true,
+      mensaje: `Procesamiento completado para ${fecha}`,
+      timestamp: new Date().toISOString(),
+      parametros: {
+        fecha,
+        tipoBloque: resultado.tipoBloque,
+        moverAsistencias
+      },
+      resultado: resultado
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en procesamiento manual:', error);
+    
+    // Registrar error de ejecución manual
+    await registrarEjecucionManual(db, 'error', new Date(), {
+      fecha: req.query.fecha || req.body?.fecha,
+      error: error.message
+    });
+    
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error en procesamiento manual',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// =============================================
+// FUNCIONES DE PROCESAMIENTO CORE
+// =============================================
+
+/**
+ * Función principal de procesamiento (AUTOMÁTICO)
  */
 async function procesarAsistencias() {
   const hoy = new Date();
@@ -87,6 +219,79 @@ async function procesarAsistencias() {
     
   } catch (error) {
     console.error('❌ Error en procesarAsistencias:', error);
+    throw error;
+  }
+}
+
+/**
+ * Función principal de procesamiento para fecha específica (MANUAL)
+ */
+async function procesarAsistenciasFechaEspecifica(fechaEspecifica, tipoBloqueForzado = null, moverAsistencias = true) {
+  const fechaObj = new Date(fechaEspecifica + 'T12:00:00.000Z'); // Usar mediodía para evitar problemas de zona horaria
+  const diaEspecifico = obtenerNombreDia(fechaObj);
+  
+  console.log(`📅 Procesando fecha: ${fechaEspecifica} (${diaEspecifico})`);
+  
+  try {
+    // 1. Obtener configuración activa o usar tipo forzado
+    let tipoBloqueoActivo;
+    if (tipoBloqueForzado) {
+      tipoBloqueoActivo = tipoBloqueForzado;
+      console.log(`⚙️ Usando tipo de bloque forzado: ${tipoBloqueoActivo}`);
+    } else {
+      tipoBloqueoActivo = await obtenerConfiguracionActiva(db);
+      console.log(`⚙️ Tipo de bloque desde configuración: ${tipoBloqueoActivo}`);
+    }
+    
+    // 2. Obtener horarios del día específico
+    const horarios = await obtenerHorariosDelDia(db, tipoBloqueoActivo, diaEspecifico);
+    console.log(`👥 Horarios encontrados para ${diaEspecifico}: ${horarios.length}`);
+    
+    // 3. Procesar cada horario
+    const reportes = [];
+    const asistenciasProcesadas = [];
+    
+    for (const horario of horarios) {
+      const resultado = await procesarHorarioIndividualFecha(db, horario, fechaEspecifica);
+      reportes.push(resultado.reporte);
+      
+      if (resultado.asistenciaProcesada && moverAsistencias) {
+        asistenciasProcesadas.push(resultado.asistenciaProcesada);
+      }
+    }
+    
+    // 4. Guardar reportes en batch
+    if (reportes.length > 0) {
+      await guardarReportesConSufijo(db, reportes, 'manual');
+      console.log(`💾 Guardados ${reportes.length} reportes con sufijo 'manual'`);
+    }
+    
+    // 5. Mover asistencias procesadas (si está habilitado)
+    if (moverAsistencias && asistenciasProcesadas.length > 0) {
+      await moverAsistenciasProcesadasConSufijo(db, asistenciasProcesadas, 'manual');
+      console.log(`🔄 Movidas ${asistenciasProcesadas.length} asistencias`);
+    } else if (!moverAsistencias) {
+      console.log(`📝 Mover asistencias deshabilitado, ${asistenciasProcesadas.length} asistencias no se movieron`);
+    }
+    
+    const resumen = {
+      fecha: fechaEspecifica,
+      dia: diaEspecifico,
+      tipoBloque: tipoBloqueoActivo,
+      totalHorarios: horarios.length,
+      presentes: reportes.filter(r => r.estado === 'presente').length,
+      ausentes: reportes.filter(r => r.estado === 'ausente').length,
+      tardanzas: reportes.filter(r => r.observaciones.includes('tarde')).length,
+      salidasTempranas: reportes.filter(r => r.observaciones.includes('antes')).length,
+      asistenciasMovidas: moverAsistencias ? asistenciasProcesadas.length : 0,
+      procesamientoManual: true
+    };
+    
+    console.log('📊 Resumen procesamiento manual:', resumen);
+    return resumen;
+    
+  } catch (error) {
+    console.error('❌ Error en procesarAsistenciasFechaEspecifica:', error);
     throw error;
   }
 }
@@ -144,7 +349,7 @@ async function obtenerHorariosDelDia(db, tipoBloque, dia) {
 }
 
 /**
- * Procesar un horario individual
+ * Procesar un horario individual (AUTOMÁTICO)
  */
 async function procesarHorarioIndividual(db, horario, fecha) {
   try {
@@ -168,7 +373,31 @@ async function procesarHorarioIndividual(db, horario, fecha) {
 }
 
 /**
- * Buscar asistencia correspondiente al horario
+ * Procesar un horario individual para fecha específica (MANUAL)
+ */
+async function procesarHorarioIndividualFecha(db, horario, fechaEspecifica) {
+  try {
+    console.log(`👤 Procesando para ${fechaEspecifica}: ${horario.nombreAsesor || 'Sin nombre'} (${horario.numeroCuenta || 'Sin cuenta'})`);
+    
+    // Buscar asistencia correspondiente en la fecha específica
+    const asistencia = await buscarAsistenciaFechaEspecifica(db, horario, fechaEspecifica);
+    
+    if (asistencia) {
+      // Hay asistencia - analizar cumplimiento
+      return procesarAsistenciaPresente(horario, asistencia, fechaEspecifica);
+    } else {
+      // No hay asistencia - marcar como falta
+      return procesarAsistenciaAusente(horario, fechaEspecifica);
+    }
+    
+  } catch (error) {
+    console.error(`❌ Error procesando horario ${horario.numeroCuenta || 'Sin cuenta'} para ${fechaEspecifica}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Buscar asistencia correspondiente al horario (AUTOMÁTICO)
  */
 async function buscarAsistencia(db, horario, fecha) {
   try {
@@ -196,6 +425,39 @@ async function buscarAsistencia(db, horario, fecha) {
     return null;
   } catch (error) {
     console.error('❌ Error buscando asistencia:', error);
+    throw error;
+  }
+}
+
+/**
+ * Buscar asistencia para fecha específica (MANUAL)
+ */
+async function buscarAsistenciaFechaEspecifica(db, horario, fechaEspecifica) {
+  try {
+    const fechaCompleta = new Date(fechaEspecifica + 'T00:00:00.000Z');
+    const fechaSiguiente = new Date(fechaCompleta);
+    fechaSiguiente.setDate(fechaSiguiente.getDate() + 1);
+    
+    const asistenciaSnapshot = await db
+      .collection('asistenciasemana')
+      .where('numeroCuenta', '==', horario.numeroCuenta)
+      .where('tipoBloque', '==', horario.tipoBloque)
+      .where('fechaCompleta', '>=', fechaCompleta)
+      .where('fechaCompleta', '<', fechaSiguiente)
+      .limit(1)
+      .get();
+    
+    if (!asistenciaSnapshot.empty) {
+      const doc = asistenciaSnapshot.docs[0];
+      return {
+        id: doc.id,
+        ...doc.data()
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error buscando asistencia para fecha específica:', error);
     throw error;
   }
 }
@@ -317,6 +579,38 @@ async function guardarReportes(db, reportes) {
 }
 
 /**
+ * Guardar reportes con sufijo para distinguir procesamiento manual
+ */
+async function guardarReportesConSufijo(db, reportes, sufijo) {
+  try {
+    const batch = db.batch();
+    
+    reportes.forEach(reporte => {
+      // Filtrar campos undefined
+      const reporteLimpio = {};
+      Object.keys(reporte).forEach(key => {
+        if (reporte[key] !== undefined && reporte[key] !== null) {
+          reporteLimpio[key] = reporte[key];
+        }
+      });
+      
+      // Agregar información de procesamiento manual
+      reporteLimpio.procesamientoTipo = sufijo;
+      reporteLimpio.timestampProcesamiento = admin.firestore.FieldValue.serverTimestamp();
+      
+      const docRef = db.collection('reportesasesores').doc();
+      batch.set(docRef, reporteLimpio);
+    });
+    
+    await batch.commit();
+    console.log(`💾 Guardados ${reportes.length} reportes (${sufijo})`);
+  } catch (error) {
+    console.error('❌ Error guardando reportes con sufijo:', error);
+    throw error;
+  }
+}
+
+/**
  * Mover asistencias procesadas a colección de revisadas
  */
 async function moverAsistenciasProcesadas(db, asistencias) {
@@ -362,6 +656,100 @@ async function moverAsistenciasProcesadas(db, asistencias) {
   } catch (error) {
     console.error('❌ Error moviendo asistencias:', error);
     throw error;
+  }
+}
+
+/**
+ * Mover asistencias con sufijo para distinguir procesamiento manual
+ */
+async function moverAsistenciasProcesadasConSufijo(db, asistencias, sufijo) {
+  try {
+    if (asistencias.length === 0) {
+      console.log('📝 No hay asistencias para mover');
+      return;
+    }
+    
+    const batch = db.batch();
+    
+    // Copiar a asistenciasrevisadas con información adicional
+    asistencias.forEach(asistencia => {
+      const docRef = db.collection('asistenciasrevisadas').doc();
+      const { id, ...dataSinId } = asistencia;
+      
+      // Crear datos limpios sin undefined
+      const datosLimpios = {};
+      Object.keys(dataSinId).forEach(key => {
+        if (dataSinId[key] !== undefined) {
+          datosLimpios[key] = dataSinId[key];
+        }
+      });
+      
+      datosLimpios.fechaProcesamiento = admin.firestore.FieldValue.serverTimestamp();
+      datosLimpios.documentoOriginal = id;
+      datosLimpios.procesamientoTipo = sufijo; // manual/automatico
+      
+      batch.set(docRef, datosLimpios);
+    });
+    
+    await batch.commit();
+    
+    // Eliminar de asistenciasemana
+    const deleteBatch = db.batch();
+    asistencias.forEach(asistencia => {
+      const docRef = db.collection('asistenciasemana').doc(asistencia.id);
+      deleteBatch.delete(docRef);
+    });
+    
+    await deleteBatch.commit();
+    
+    console.log(`🔄 Movidas ${asistencias.length} asistencias (${sufijo})`);
+  } catch (error) {
+    console.error('❌ Error moviendo asistencias con sufijo:', error);
+    throw error;
+  }
+}
+
+/**
+ * Registrar ejecución en Firestore para auditoría
+ */
+async function registrarEjecucion(db, estado, inicioEjecucion, datos = {}) {
+  try {
+    const registro = {
+      fecha: inicioEjecucion.toISOString().split('T')[0],
+      horaEjecucion: inicioEjecucion.toISOString(),
+      estado: estado, // 'inicio', 'exito', 'error'
+      tipoEjecucion: 'automatico',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      ...datos
+    };
+    
+    await db.collection('logs_ejecuciones').add(registro);
+    console.log(`📝 Registrada ejecución: ${estado}`);
+  } catch (error) {
+    console.error('❌ Error registrando ejecución:', error);
+    // No lanzar error para no interrumpir el procesamiento principal
+  }
+}
+
+/**
+ * Registrar ejecución manual en Firestore
+ */
+async function registrarEjecucionManual(db, estado, inicioEjecucion, datos = {}) {
+  try {
+    const registro = {
+      fecha: datos.fecha || inicioEjecucion.toISOString().split('T')[0],
+      horaEjecucion: inicioEjecucion.toISOString(),
+      estado: estado, // 'inicio', 'exito', 'error'
+      tipoEjecucion: 'manual',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      ...datos
+    };
+    
+    await db.collection('logs_ejecuciones').add(registro);
+    console.log(`📝 Registrada ejecución manual: ${estado} para ${datos.fecha || 'fecha no especificada'}`);
+  } catch (error) {
+    console.error('❌ Error registrando ejecución manual:', error);
+    // No lanzar error para no interrumpir el procesamiento principal
   }
 }
 
@@ -433,7 +821,7 @@ function calcularHorasEsperadas(horaInicio, horaFinal) {
 }
 
 // =============================================
-// FUNCIONES DE PRUEBA Y EJECUCIÓN MANUAL
+// FUNCIONES DE PRUEBA Y CONSULTA
 // =============================================
 
 /**
@@ -567,6 +955,68 @@ exports.obtenerEstadisticas = functions.https.onRequest(async (req, res) => {
     
   } catch (error) {
     console.error('❌ Error obteniendo estadísticas:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Función para consultar logs de ejecuciones
+ * Útil para verificar el historial de ejecuciones automáticas y manuales
+ */
+exports.consultarLogsEjecuciones = functions.https.onRequest(async (req, res) => {
+  console.log('📋 Consultando logs de ejecuciones...');
+  
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  try {
+    const limite = req.query.limite || 20;
+    
+    const logsSnapshot = await db
+      .collection('logs_ejecuciones')
+      .orderBy('timestamp', 'desc')
+      .limit(parseInt(limite))
+      .get();
+    
+    const logs = [];
+    logsSnapshot.forEach(doc => {
+      logs.push({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || doc.data().timestamp
+      });
+    });
+    
+    // Estadísticas
+    const estadisticas = {
+      totalEjecuciones: logs.length,
+      ultimaEjecucion: logs[0]?.horaEjecucion || 'Nunca',
+      exitosas: logs.filter(l => l.estado === 'exito').length,
+      errores: logs.filter(l => l.estado === 'error').length,
+      enProceso: logs.filter(l => l.estado === 'inicio').length,
+      automaticas: logs.filter(l => l.tipoEjecucion === 'automatico').length,
+      manuales: logs.filter(l => l.tipoEjecucion === 'manual').length
+    };
+    
+    res.status(200).json({
+      success: true,
+      estadisticas: estadisticas,
+      logs: logs,
+      nota: 'Logs ordenados del más reciente al más antiguo'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error consultando logs:', error);
     
     res.status(500).json({
       success: false,
