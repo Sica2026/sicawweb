@@ -1016,7 +1016,7 @@ exports.consultarLogsEjecuciones = functions.https.onRequest(async (req, res) =>
     });
     
   } catch (error) {
-    console.error('❌ Error consultando logs:', error);
+    console.error('❌ Error consaultando logs:', error);
     
     res.status(500).json({
       success: false,

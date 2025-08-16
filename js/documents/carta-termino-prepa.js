@@ -14,8 +14,8 @@ class CartaTerminoFQPDF {
             programa: "Sala de Informática y Cómputo para Alumnos (SICA)",
             horasReglamentarias: 480,
             responsables: {
-                coordinadora: "MVZ GRISELL MORENO MORALES",
-                cargoCoordinadora: "COORDINADORA DE ATENCIÓN A ALUMNOS",
+                coordinadora: "MTRA. ADANELY PÉREZ RODRÍGUEZ ",
+                cargoCoordinadora: "COORDINADORA GENERAL DE LOS ESTUDIOS TÉCNICOS ESPECIALIZADOS DE LA ESCUELA NACIONAL PREPARATORIA",
                 responsableArea: "LIC. ALBERTO PINEDA JIMÉNEZ",
                 cargoResponsable: "RESPONSABLE DEL ÁREA DE SERVICIO SOCIAL"
             }
