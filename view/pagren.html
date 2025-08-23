@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">PAGREN - Panel de Enlaces UNAM</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/pagren.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="page-title">
+                            <i class="bi bi-link-45deg me-3"></i>
+                            PAGREN
+                            <span class="subtitle">Panel de Gestión de Enlaces</span>
+                        </h1>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-unam-gold btn-add-link" id="addLinkBtn">
+                            <i class="bi bi-plus-lg me-2"></i>
+                            Agregar Enlace
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-section">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="search-container">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="searchInput" 
+                                   placeholder="Buscar enlaces por título, URL o categoría...">
+                            <button class="btn btn-clear" id="clearSearch">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select category-filter" id="categoryFilter">
+                            <option value="">Todas las categorías</option>
+                            <option value="Trabajo">Trabajo</option>
+                            <option value="Documentos">Documentos</option>
+                            <option value="Proveedores">Proveedores</option>
+                            <option value="SICA">SICA</option>
+                            <option value="Académico">Académico</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Centro de Informática">Centro de Informática</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="category-tabs">
+                <div class="tab-container">
+                    <button class="tab-btn active" data-category="all">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                        Todos
+                    </button>
+                    <button class="tab-btn" data-category="Trabajo">
+                        <i class="bi bi-briefcase"></i>
+                        Trabajo
+                    </button>
+                    <button class="tab-btn" data-category="Documentos">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Documentos
+                    </button>
+                    <button class="tab-btn" data-category="Proveedores">
+                        <i class="bi bi-truck"></i>
+                        Proveedores
+                    </button>
+                    <button class="tab-btn" data-category="SICA">
+                        <i class="bi bi-award"></i>
+                        SICA
+                    </button>
+                    <button class="tab-btn" data-category="Académico">
+                        <i class="bi bi-book"></i>
+                        Académico
+                    </button>
+                    <button class="tab-btn" data-category="Personal">
+                        <i class="bi bi-person"></i>
+                        Personal
+                    </button>
+                    <button class="tab-btn" data-category="Centro de Informática">
+                        <i class="bi bi-cpu"></i>
+                        Informática
+                    </button>
+                </div>
+            </div>
+
+            <!-- Links Grid -->
+            <div class="links-grid" id="linksGrid">
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                    </div>
+                    <p>Cargando enlaces...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="bi bi-link-45deg"></i>
+                    </div>
+                    <h3>No hay enlaces</h3>
+                    <p>Agrega tu primer enlace para comenzar</p>
+                    <button class="btn btn-unam-gold" onclick="document.getElementById('addLinkBtn').click()">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Agregar Enlace
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Panel -->
+            <div class="stats-panel">
+                <div class="row g-3">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-link-45deg"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalLinks">0</span>
+                                <span class="stat-label">Total Enlaces</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-tags"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalCategories">0</span>
+                                <span class="stat-label">Categorías</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="recentLinks">0</span>
+                                <span class="stat-label">Recientes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="bi bi-eye"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalViews">0</span>
+                                <span class="stat-label">Vistas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Link Modal -->
+    <div class="modal fade" id="linkModal" tabindex="-1" aria-labelledby="linkModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-unam">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="linkModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Agregar Enlace
+                    </h1>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="linkForm" novalidate>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="linkTitle" class="form-label">
+                                    <i class="bi bi-card-heading me-1"></i>
+                                    Título del Enlace
+                                </label>
+                                <input type="text" class="form-control form-control-unam" id="linkTitle" 
+                                       placeholder="Ej: Sistema de Evaluación SICA" required>
+                                <div class="invalid-feedback">
+                                    Por favor ingresa un título para el enlace.
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="linkUrl" class="form-label">
+                                    <i class="bi bi-link-45deg me-1"></i>
+                                    URL del Enlace
+                                </label>
+                                <input type="url" class="form-control form-control-unam" id="linkUrl" 
+                                       placeholder="https://ejemplo.com" required>
+                                <div class="invalid-feedback">
+                                    Por favor ingresa una URL válida.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="linkCategory" class="form-label">
+                                    <i class="bi bi-tag me-1"></i>
+                                    Categoría
+                                </label>
+                                <select class="form-select form-control-unam" id="linkCategory" required>
+                                    <option value="">Seleccionar categoría</option>
+                                    <option value="Trabajo">Trabajo</option>
+                                    <option value="Documentos">Documentos</option>
+                                    <option value="Proveedores">Proveedores</option>
+                                    <option value="SICA">SICA</option>
+                                    <option value="Académico">Académico</option>
+                                    <option value="Personal">Personal</option>
+                                    <option value="Centro de Informática">Centro de Informática</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor selecciona una categoría.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="linkIcon" class="form-label">
+                                    <i class="bi bi-emoji-smile me-1"></i>
+                                    Icono (Bootstrap Icons)
+                                </label>
+                                <input type="text" class="form-control form-control-unam" id="linkIcon" 
+                                       placeholder="bi-house-door" value="bi-link-45deg">
+                                <small class="form-text text-muted">
+                                    Visita <a href="https://icons.getbootstrap.com" target="_blank">Bootstrap Icons</a>
+                                </small>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="linkDescription" class="form-label">
+                                    <i class="bi bi-card-text me-1"></i>
+                                    Descripción / Notas (Opcional)
+                                </label>
+                                <textarea class="form-control form-control-unam" id="linkDescription" rows="3" 
+                                          placeholder="Descripción del enlace o notas adicionales..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-unam-gold" id="saveLinkBtn">
+                        <i class="bi bi-save me-2"></i>
+                        Guardar Enlace
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content modal-unam">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h1>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar este enlace?</p>
+                    <div class="delete-link-preview" id="deleteLinkPreview">
+                        <!-- Preview del enlace a eliminar -->
+                    </div>
+                    <p class="text-warning mt-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="bi bi-trash me-2"></i>
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/pagren.js"></script>
+</body>
+</html>

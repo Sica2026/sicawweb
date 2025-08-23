@@ -386,7 +386,12 @@ async function saveTarea() {
 
 function setupQuickActions() {
     const actions = {
-        'viewRegistros': () => showNotification('Función en desarrollo', 'info'),
+        'viewRegistros': () => {
+    showNotification('Abriendo Panel de Enlaces PAGREN...', 'info');
+    setTimeout(() => {
+        window.location.href = '../view/pagren.html'; // Subir un nivel y luego entrar a view
+    }, 500);
+},
         'manageUsers': () => showNotification('Función en desarrollo', 'info'),
         'systemSettings': () => showNotification('Función en desarrollo', 'info'),
         'generateReport': () => generateReport()
