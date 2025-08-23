@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Reportes de Asesores - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/reportes-asistencia.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="breadcrumb-nav">
+            <div class="container">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="#">Asesor</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Reportes</li>
+                </ol>
+            </div>
+        </nav>
+
+        <div class="container-fluid py-4">
+            <!-- Authentication Section -->
+            <div id="authSection" class="auth-section">
+                <div class="row justify-content-center">
+                    <div class="col-lg-6 col-md-8">
+                        <div class="auth-card">
+                            <div class="auth-header">
+                                <div class="auth-icon">
+                                    <i class="bi bi-shield-lock-fill"></i>
+                                </div>
+                                <h2>Acceso a Reportes</h2>
+                                <p>Ingresa tu número de cuenta para acceder a tus reportes</p>
+                            </div>
+                            
+                            <form id="authForm" class="auth-form">
+                                <div class="input-group">
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person-badge input-icon"></i>
+                                        <input 
+                                            type="text" 
+                                            id="numeroCuentaInput" 
+                                            class="form-control auth-input" 
+                                            placeholder="Número de cuenta"
+                                            maxlength="9"
+                                            pattern="[0-9]{9}"
+                                            required
+                                        >
+                                        <div class="input-focus-border"></div>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-auth" id="authBtn">
+                                    <span class="btn-text">Acceder a Reportes</span>
+                                    <span class="btn-loader">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reportsSection" class="reports-section" style="display: none;">
+                <!-- User Info Header -->
+                <div class="user-info-header">
+                    <div class="row align-items-center mb-4">
+                        <div class="col-lg-8">
+                            <div class="user-welcome">
+                                <h1 class="user-title">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    <span id="userName">Cargando...</span>
+                                </h1>
+                                <p class="user-subtitle">
+                                    Número de cuenta: <span id="userAccount" class="account-badge"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 text-end">
+                            <button class="btn btn-logout" id="logoutBtn">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Cambiar Usuario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid mb-4">
+                    <div class="stat-card hours-worked">
+                        <div class="stat-icon">
+                            <i class="bi bi-clock-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="horasTrabajadas">0h</div>
+                            <div class="stat-label">Horas Trabajadas</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card hours-required">
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-check-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="horasRequeridas">60h</div>
+                            <div class="stat-label">Horas Requeridas</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-target"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card progress-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="progresoPorcentaje">0%</div>
+                            <div class="stat-label">Progreso</div>
+                        </div>
+                        <div class="progress-ring">
+                            <svg class="progress-ring-svg" width="60" height="60">
+                                <circle class="progress-ring-circle-bg" cx="30" cy="30" r="25"></circle>
+                                <circle class="progress-ring-circle" cx="30" cy="30" r="25" id="progressCircle"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card days-worked">
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-event-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="diasTrabajados">0</div>
+                            <div class="stat-label">Días Trabajados</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters and Controls -->
+                <div class="controls-section">
+                    <div class="row align-items-center mb-4">
+                        <div class="col-lg-6">
+                            <div class="filter-group">
+                                <div class="filter-item">
+                                    <label class="filter-label">
+                                        <i class="bi bi-calendar-range me-2"></i>
+                                        Mes
+                                    </label>
+                                    <select class="form-select filter-select" id="mesFilter">
+                                        <option value="">Todos los meses</option>
+                                        <option value="2025-01">Enero 2025</option>
+                                        <option value="2025-02">Febrero 2025</option>
+                                        <option value="2025-03">Marzo 2025</option>
+                                        <option value="2025-04">Abril 2025</option>
+                                        <option value="2025-05">Mayo 2025</option>
+                                        <option value="2025-06">Junio 2025</option>
+                                        <option value="2025-07">Julio 2025</option>
+                                        <option value="2025-08">Agosto 2025</option>
+                                        <option value="2025-09">Septiembre 2025</option>
+                                        <option value="2025-10">Octubre 2025</option>
+                                        <option value="2025-11">Noviembre 2025</option>
+                                        <option value="2025-12">Diciembre 2025</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-item">
+                                    <label class="filter-label">
+                                        <i class="bi bi-funnel me-2"></i>
+                                        Estado
+                                    </label>
+                                    <select class="form-select filter-select" id="estadoFilter">
+                                        <option value="">Todos los estados</option>
+                                        <option value="presente">Presente</option>
+                                        <option value="ausente">Ausente</option>
+                                        <option value="tardanza">Tardanza</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6 text-end">
+                            <div class="action-buttons">
+                                <button class="btn btn-refresh" id="refreshBtn">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>
+                                    Actualizar
+                                </button>
+                                <button class="btn btn-export" id="exportBtn">
+                                    <i class="bi bi-download me-2"></i>
+                                    Exportar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Table -->
+                <div class="reports-table-container">
+                    <div class="table-header">
+                        <h3>
+                            <i class="bi bi-table me-2"></i>
+                            Historial de Reportes
+                        </h3>
+                        <div class="table-count">
+                            <span id="totalReportes">0</span> reportes encontrados
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table reports-table" id="reportsTable">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-sort="fecha">
+                                        <i class="bi bi-calendar3"></i>
+                                        Fecha
+                                        <i class="bi bi-arrow-up-down sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="entrada">
+                                        <i class="bi bi-clock"></i>
+                                        Entrada
+                                        <i class="bi bi-arrow-up-down sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="salida">
+                                        <i class="bi bi-clock"></i>
+                                        Salida
+                                        <i class="bi bi-arrow-up-down sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="tiempoTrabajado">
+                                        <i class="bi bi-stopwatch"></i>
+                                        Tiempo
+                                        <i class="bi bi-arrow-up-down sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-sort="estado">
+                                        <i class="bi bi-check-circle"></i>
+                                        Estado
+                                        <i class="bi bi-arrow-up-down sort-icon"></i>
+                                    </th>
+                                    <th>
+                                        <i class="bi bi-chat-text"></i>
+                                        Observaciones
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody">
+                                <!-- Los reportes se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <div class="empty-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <h3>No hay reportes</h3>
+                        <p>No se encontraron reportes para los filtros seleccionados.</p>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="loadingState" class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando reportes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/reportes-asistencia.js"></script>
+</body>
+</html>

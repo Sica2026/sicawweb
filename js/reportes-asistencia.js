@@ -1,1216 +1,786 @@
-/**
- * REPORTES DE ASISTENCIA - JavaScript
- * Sistema Integral de Control de Asistencias - UNAM
- * Diseño futurista con integración completa
- */
+/* =================================================================
+   REPORTES DE ASESORES - JAVASCRIPT
+   Sistema de visualización de reportes con autenticación
+   ================================================================= */
 
-// =============================================
-// CONFIGURACIÓN INICIAL Y VARIABLES GLOBALES
-// =============================================
-
-class ReportesAsistenciaApp {
+class ReportesManager {
     constructor() {
-        this.db = window.firebaseDB;
-        this.generador = null;
-        this.reporteActual = null;
-        this.currentView = 'card';
-        this.progressInterval = null;
+        this.currentUser = null;
+        this.reportes = [];
+        this.filteredReportes = [];
+        this.db = null;
+        this.sortConfig = { key: 'fecha', direction: 'desc' };
         
         this.init();
     }
 
     async init() {
         try {
-            // Configurar título de página si SICAComponents está disponible
-            if (typeof SICAComponents !== 'undefined' && typeof SICAComponents.setPageTitle === 'function') {
-                SICAComponents.setPageTitle('Reportes de Asistencia - SICA UNAM');
-            } else {
-                // Fallback: cambiar título manualmente
-                document.title = 'Reportes de Asistencia - SICA UNAM';
-            }
+            // Inicializar Firebase
+            this.db = firebase.firestore();
             
-            // Configurar breadcrumbs si está disponible
-            if (typeof SICAComponents !== 'undefined' && typeof SICAComponents.addBreadcrumbs === 'function') {
-                SICAComponents.addBreadcrumbs([
-                    { text: 'Inicio', link: '../index.html' },
-                    { text: 'Reportes', link: '#' },
-                    { text: 'Asistencias', active: true }
-                ]);
-            }
-
-            // Inicializar componentes
-            await this.setupComponents();
-            await this.loadTiposBloque();
+            // Configurar eventos
             this.setupEventListeners();
-            this.setDefaultDates();
             
-            // Inicializar generador de reportes
-            this.generador = new GeneradorReporteAsistencia(this.db);
+            // Verificar autenticación existente
+            this.checkExistingAuth();
             
-            // Mostrar notificación de bienvenida
-            this.showNotification('Sistema Listo', 'El generador de reportes está preparado para usarse', 'success', 'fas fa-check-circle');
-            
-            console.log('🎯 Reportes de Asistencia iniciado correctamente');
-            
+            console.log('✅ ReportesManager inicializado correctamente');
         } catch (error) {
-            console.error('❌ Error inicializando aplicación:', error);
-            this.showNotification('Error', 'Error al inicializar la aplicación: ' + error.message, 'error', 'fas fa-exclamation-triangle');
-        }
-    }
-
-    async setupComponents() {
-        try {
-            // Cargar componentes base si están disponibles
-            if (typeof SICAComponents !== 'undefined') {
-                // Verificar qué métodos están disponibles
-                if (typeof SICAComponents.loadAllComponents === 'function') {
-                    await SICAComponents.loadAllComponents();
-                } else {
-                    console.log('📝 SICAComponents disponible pero loadAllComponents no está definido');
-                    
-                    // Intentar cargar componentes individuales si existen
-                    if (typeof SICAComponents.loadHeader === 'function') {
-                        await SICAComponents.loadHeader();
-                    }
-                    if (typeof SICAComponents.loadNavbar === 'function') {
-                        await SICAComponents.loadNavbar();
-                    }
-                    if (typeof SICAComponents.loadFooter === 'function') {
-                        await SICAComponents.loadFooter();
-                    }
-                }
-            } else {
-                console.log('📝 SICAComponents no está disponible, continuando sin componentes base');
-            }
-        } catch (error) {
-            console.warn('⚠️ Error cargando componentes base, continuando sin ellos:', error);
-        }
-    }
-
-    async loadTiposBloque() {
-        try {
-            const configSnapshot = await this.db.collection('configuracion').get();
-            const select = document.getElementById('tipoBloque');
-            
-            // Limpiar opciones existentes (excepto "Todos los tipos")
-            while (select.children.length > 1) {
-                select.removeChild(select.lastChild);
-            }
-            
-            configSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.tipoBloque) {
-                    const option = document.createElement('option');
-                    option.value = data.tipoBloque;
-                    option.textContent = data.tipoBloque.charAt(0).toUpperCase() + data.tipoBloque.slice(1);
-                    select.appendChild(option);
-                }
-            });
-            
-        } catch (error) {
-            console.warn('⚠️ No se pudieron cargar los tipos de bloque:', error);
+            console.error('❌ Error inicializando ReportesManager:', error);
+            this.showNotification('Error', 'Error al inicializar el sistema', 'error');
         }
     }
 
     setupEventListeners() {
-        // Eventos del formulario
-        const btnGenerar = document.getElementById('btnGenerar');
-        const btnPreview = document.getElementById('btnPreview');
+        // Formulario de autenticación
+        const authForm = document.getElementById('authForm');
+        const numeroCuentaInput = document.getElementById('numeroCuentaInput');
+        const authBtn = document.getElementById('authBtn');
         
-        if (btnGenerar) {
-            btnGenerar.addEventListener('click', () => this.generarReporte());
+        if (authForm) {
+            authForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.authenticateUser();
+            });
+        }
+
+        // Input de número de cuenta con validación
+        if (numeroCuentaInput) {
+            numeroCuentaInput.addEventListener('input', (e) => {
+                // Solo números
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                
+                // Habilitar/deshabilitar botón
+                const isValid = e.target.value.length === 9;
+                authBtn.disabled = !isValid;
+                authBtn.classList.toggle('disabled', !isValid);
+            });
+
+            // Enter para enviar
+            numeroCuentaInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.target.value.length === 9) {
+                    this.authenticateUser();
+                }
+            });
+        }
+
+        // Botón de logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.logout();
+            });
+        }
+
+        // Filtros
+        const mesFilter = document.getElementById('mesFilter');
+        const estadoFilter = document.getElementById('estadoFilter');
+        
+        if (mesFilter) {
+            mesFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
         }
         
-        if (btnPreview) {
-            btnPreview.addEventListener('click', () => this.previewReporte());
+        if (estadoFilter) {
+            estadoFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        // Botones de acción
+        const refreshBtn = document.getElementById('refreshBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.loadReportes();
+            });
         }
         
-        // Eventos de exportación
-        const btnExportCSV = document.getElementById('btnExportCSV');
-        const btnExportExcel = document.getElementById('btnExportExcel');
-        const btnExportPDF = document.getElementById('btnExportPDF');
-        const btnShare = document.getElementById('btnShare');
-        
-        if (btnExportCSV) {
-            btnExportCSV.addEventListener('click', () => this.exportar('csv'));
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportReportes();
+            });
         }
-        
-        if (btnExportExcel) {
-            btnExportExcel.addEventListener('click', () => this.exportar('excel'));
-        }
-        
-        if (btnExportPDF) {
-            btnExportPDF.addEventListener('click', () => this.exportar('pdf'));
-        }
-        
-        if (btnShare) {
-            btnShare.addEventListener('click', () => this.compartirReporte());
-        }
-        
-        // Eventos de vista
-        const btnViewCard = document.getElementById('btnViewCard');
-        const btnViewTable = document.getElementById('btnViewTable');
-        
-        if (btnViewCard) {
-            btnViewCard.addEventListener('click', () => this.toggleView('card'));
-        }
-        
-        if (btnViewTable) {
-            btnViewTable.addEventListener('click', () => this.toggleView('table'));
-        }
-        
-        // Otros eventos
-        const btnReset = document.getElementById('btnReset');
-        const btnHelp = document.getElementById('btnHelp');
-        
-        if (btnReset) {
-            btnReset.addEventListener('click', () => this.resetFilters());
-        }
-        
-        if (btnHelp) {
-            btnHelp.addEventListener('click', () => this.toggleHelpPanel());
-        }
-        
-        // Validación en tiempo real
-        const fechaInicio = document.getElementById('fechaInicio');
-        const fechaFin = document.getElementById('fechaFin');
-        
-        if (fechaInicio) {
-            fechaInicio.addEventListener('change', () => this.validateDates());
-        }
-        
-        if (fechaFin) {
-            fechaFin.addEventListener('change', () => this.validateDates());
-        }
-        
-        // Atajos de teclado
-        document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+
+        // Sorting de tabla
+        const sortableHeaders = document.querySelectorAll('.sortable');
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const sortKey = header.dataset.sort;
+                this.sortReportes(sortKey);
+            });
+        });
     }
 
-    setDefaultDates() {
-        const hoy = new Date();
-        const haceUnaSemana = new Date();
-        haceUnaSemana.setDate(hoy.getDate() - 7);
-        
-        document.getElementById('fechaInicio').value = haceUnaSemana.toISOString().split('T')[0];
-        document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
+    checkExistingAuth() {
+        // Verificar si hay datos de usuario en localStorage
+        const savedUser = localStorage.getItem('reportes_user');
+        if (savedUser) {
+            try {
+                this.currentUser = JSON.parse(savedUser);
+                this.showReportsSection();
+                this.loadReportes();
+            } catch (error) {
+                console.error('Error al recuperar usuario guardado:', error);
+                localStorage.removeItem('reportes_user');
+            }
+        }
     }
 
-    validateDates() {
-        const fechaInicio = new Date(document.getElementById('fechaInicio').value);
-        const fechaFin = new Date(document.getElementById('fechaFin').value);
+    async authenticateUser() {
+        const numeroCuentaInput = document.getElementById('numeroCuentaInput');
+        const authBtn = document.getElementById('authBtn');
+        const numeroCuenta = numeroCuentaInput.value.trim();
+
+        if (numeroCuenta.length !== 9) {
+            this.showNotification('Error', 'El número de cuenta debe tener 9 dígitos', 'error');
+            return;
+        }
+
+        // Mostrar estado de carga
+        authBtn.classList.add('loading');
+        authBtn.disabled = true;
+
+        try {
+            // Verificar si existe el asesor en Firebase
+            const reportesSnapshot = await this.db.collection('reportesasesores')
+                .where('numeroCuenta', '==', numeroCuenta)
+                .limit(1)
+                .get();
+
+            if (reportesSnapshot.empty) {
+                throw new Error('No se encontraron reportes para este número de cuenta');
+            }
+
+            // Obtener nombre del primer reporte
+            const primerReporte = reportesSnapshot.docs[0].data();
+            const nombreAsesor = primerReporte.nombreAsesor || 'Asesor';
+
+            // Guardar usuario
+            this.currentUser = {
+                numeroCuenta,
+                nombreAsesor,
+                authenticatedAt: new Date().toISOString()
+            };
+
+            // Guardar en localStorage para persistencia
+            localStorage.setItem('reportes_user', JSON.stringify(this.currentUser));
+
+            // Mostrar sección de reportes
+            this.showReportsSection();
+            this.loadReportes();
+
+            this.showNotification(
+                '¡Bienvenido!', 
+                `Acceso autorizado para ${nombreAsesor}`, 
+                'success',
+                'bi-check-circle-fill'
+            );
+
+        } catch (error) {
+            console.error('Error en autenticación:', error);
+            this.showNotification(
+                'Error de acceso', 
+                error.message || 'No se pudo verificar el número de cuenta', 
+                'error',
+                'bi-exclamation-triangle-fill'
+            );
+        } finally {
+            authBtn.classList.remove('loading');
+            authBtn.disabled = false;
+        }
+    }
+
+    showReportsSection() {
+        const authSection = document.getElementById('authSection');
+        const reportsSection = document.getElementById('reportsSection');
         
-        if (fechaInicio > fechaFin) {
-            this.showNotification('Fechas Inválidas', 'La fecha de inicio debe ser anterior a la fecha de fin', 'warning', 'fas fa-exclamation-triangle');
-            return false;
+        // Actualizar información del usuario
+        const userName = document.getElementById('userName');
+        const userAccount = document.getElementById('userAccount');
+        
+        if (userName && this.currentUser) {
+            userName.textContent = this.currentUser.nombreAsesor;
         }
         
-        const diasDiferencia = (fechaFin - fechaInicio) / (1000 * 60 * 60 * 24);
-        if (diasDiferencia > 365) {
-            this.showNotification('Rango Muy Amplio', 'El rango de fechas no puede exceder 1 año', 'warning', 'fas fa-exclamation-triangle');
-            return false;
+        if (userAccount && this.currentUser) {
+            userAccount.textContent = this.currentUser.numeroCuenta;
+        }
+
+        // Animación de transición
+        if (authSection) {
+            authSection.style.opacity = '0';
+            authSection.style.transform = 'translateY(-20px)';
+            
+            setTimeout(() => {
+                authSection.style.display = 'none';
+                reportsSection.style.display = 'block';
+                reportsSection.classList.add('animate-fade-in');
+            }, 300);
+        }
+    }
+
+    async loadReportes() {
+        if (!this.currentUser) return;
+
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const reportsTableBody = document.getElementById('reportsTableBody');
+
+        // Mostrar loading
+        if (loadingState) loadingState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
+        if (reportsTableBody) reportsTableBody.innerHTML = '';
+
+        try {
+            // Consultar reportes de Firebase
+            const reportesSnapshot = await this.db.collection('reportesasesores')
+                .where('numeroCuenta', '==', this.currentUser.numeroCuenta)
+                .orderBy('fecha', 'desc')
+                .get();
+
+            this.reportes = reportesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Aplicar filtros iniciales
+            this.filteredReportes = [...this.reportes];
+            this.applyFilters();
+
+            // Actualizar estadísticas
+            this.updateStats();
+
+            // Renderizar tabla
+            this.renderTable();
+
+            // Ocultar loading
+            if (loadingState) loadingState.style.display = 'none';
+
+            console.log(`📊 Cargados ${this.reportes.length} reportes`);
+
+        } catch (error) {
+            console.error('Error cargando reportes:', error);
+            this.showNotification('Error', 'No se pudieron cargar los reportes', 'error');
+            
+            if (loadingState) loadingState.style.display = 'none';
+            if (emptyState) {
+                emptyState.style.display = 'block';
+                emptyState.querySelector('h3').textContent = 'Error al cargar';
+                emptyState.querySelector('p').textContent = 'No se pudieron cargar los reportes. Intenta de nuevo.';
+            }
+        }
+    }
+
+    updateStats() {
+        // Calcular estadísticas
+        const horasTrabajadas = this.calcularHorasTotales();
+        const horasRequeridas = 60; // Asumiendo 60 horas requeridas
+        const progreso = Math.min((horasTrabajadas / horasRequeridas) * 100, 100);
+        const diasTrabajados = this.reportes.filter(r => r.estado === 'presente').length;
+
+        // Actualizar UI
+        const horasTrabajadasEl = document.getElementById('horasTrabajadas');
+        const horasRequeridasEl = document.getElementById('horasRequeridas');
+        const progresoPorcentajeEl = document.getElementById('progresoPorcentaje');
+        const diasTrabajadosEl = document.getElementById('diasTrabajados');
+        const progressCircle = document.getElementById('progressCircle');
+
+        if (horasTrabajadasEl) {
+            this.animateValue(horasTrabajadasEl, 0, horasTrabajadas, 1000, 'h');
+        }
+
+        if (horasRequeridasEl) {
+            horasRequeridasEl.textContent = `${horasRequeridas}h`;
+        }
+
+        if (progresoPorcentajeEl) {
+            this.animateValue(progresoPorcentajeEl, 0, Math.round(progreso), 1500, '%');
+        }
+
+        if (diasTrabajadosEl) {
+            this.animateValue(diasTrabajadosEl, 0, diasTrabajados, 800);
+        }
+
+        // Animar círculo de progreso
+        if (progressCircle) {
+            const circumference = 2 * Math.PI * 25; // radio = 25
+            const offset = circumference - (progreso / 100) * circumference;
+            progressCircle.style.strokeDashoffset = offset;
+        }
+    }
+
+    calcularHorasTotales() {
+        let totalMinutos = 0;
+
+        this.reportes.forEach(reporte => {
+            if (reporte.tiempoTrabajado && reporte.estado === 'presente') {
+                const tiempo = this.parseTimeString(reporte.tiempoTrabajado);
+                totalMinutos += tiempo.horas * 60 + tiempo.minutos;
+            }
+        });
+
+        return Math.round(totalMinutos / 60 * 100) / 100; // Redondear a 2 decimales
+    }
+
+    parseTimeString(timeStr) {
+        // Parsear strings como "1h 30m", "2h", "45m"
+        const horasMatch = timeStr.match(/(\d+)h/);
+        const minutosMatch = timeStr.match(/(\d+)m/);
+        
+        return {
+            horas: horasMatch ? parseInt(horasMatch[1]) : 0,
+            minutos: minutosMatch ? parseInt(minutosMatch[1]) : 0
+        };
+    }
+
+    animateValue(element, start, end, duration, suffix = '') {
+        if (!element) return;
+
+        const range = end - start;
+        const startTime = performance.now();
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Función de easing
+            const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+            const current = start + (range * easeOutCubic);
+            
+            element.textContent = Math.round(current) + suffix;
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                element.textContent = end + suffix;
+            }
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    applyFilters() {
+        const mesFilter = document.getElementById('mesFilter');
+        const estadoFilter = document.getElementById('estadoFilter');
+        
+        let filtered = [...this.reportes];
+
+        // Filtro por mes
+        if (mesFilter && mesFilter.value) {
+            const [year, month] = mesFilter.value.split('-');
+            filtered = filtered.filter(reporte => {
+                // Parsear fecha correctamente para evitar problemas de zona horaria
+                const [reporteYear, reporteMonth, reporteDay] = reporte.fecha.split('-');
+                const fechaReporte = new Date(reporteYear, reporteMonth - 1, reporteDay);
+                return fechaReporte.getFullYear() == year && 
+                       (fechaReporte.getMonth() + 1) == parseInt(month);
+            });
+        }
+
+        // Filtro por estado
+        if (estadoFilter && estadoFilter.value) {
+            filtered = filtered.filter(reporte => 
+                reporte.estado === estadoFilter.value
+            );
+        }
+
+        this.filteredReportes = filtered;
+        this.renderTable();
+    }
+
+    sortReportes(key) {
+        // Actualizar configuración de sort
+        if (this.sortConfig.key === key) {
+            this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortConfig.key = key;
+            this.sortConfig.direction = 'asc';
+        }
+
+        // Ordenar datos
+        this.filteredReportes.sort((a, b) => {
+            let aVal = a[key];
+            let bVal = b[key];
+
+            // Manejar fechas - parsear correctamente para evitar problemas de zona horaria
+            if (key === 'fecha') {
+                const [aYear, aMonth, aDay] = aVal.split('-');
+                const [bYear, bMonth, bDay] = bVal.split('-');
+                aVal = new Date(aYear, aMonth - 1, aDay);
+                bVal = new Date(bYear, bMonth - 1, bDay);
+            }
+            
+            // Manejar tiempo trabajado
+            if (key === 'tiempoTrabajado') {
+                const aTime = this.parseTimeString(aVal);
+                const bTime = this.parseTimeString(bVal);
+                aVal = aTime.horas * 60 + aTime.minutos;
+                bVal = bTime.horas * 60 + bTime.minutos;
+            }
+
+            if (aVal < bVal) return this.sortConfig.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return this.sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Actualizar iconos de sort
+        this.updateSortIcons();
+        
+        // Re-renderizar tabla
+        this.renderTable();
+    }
+
+    updateSortIcons() {
+        const sortableHeaders = document.querySelectorAll('.sortable');
+        sortableHeaders.forEach(header => {
+            const icon = header.querySelector('.sort-icon');
+            if (header.dataset.sort === this.sortConfig.key) {
+                icon.className = this.sortConfig.direction === 'asc' 
+                    ? 'bi bi-arrow-up sort-icon'
+                    : 'bi bi-arrow-down sort-icon';
+                header.style.background = 'var(--report-gold)';
+                header.style.color = 'white';
+            } else {
+                icon.className = 'bi bi-arrow-up-down sort-icon';
+                header.style.background = '';
+                header.style.color = '';
+            }
+        });
+    }
+
+    renderTable() {
+        const reportsTableBody = document.getElementById('reportsTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const totalReportesEl = document.getElementById('totalReportes');
+
+        if (!reportsTableBody) return;
+
+        // Actualizar contador
+        if (totalReportesEl) {
+            totalReportesEl.textContent = this.filteredReportes.length;
+        }
+
+        // Verificar si hay datos
+        if (this.filteredReportes.length === 0) {
+            reportsTableBody.innerHTML = '';
+            if (emptyState) emptyState.style.display = 'block';
+            return;
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+
+        // Generar filas
+        const rows = this.filteredReportes.map((reporte, index) => {
+            // Parsear fecha correctamente para evitar problemas de zona horaria
+            const [year, month, day] = reporte.fecha.split('-');
+            const fecha = new Date(year, month - 1, day).toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+
+            const statusClass = `status-${reporte.estado}`;
+            const statusIcon = this.getStatusIcon(reporte.estado);
+
+            return `
+                <tr style="animation-delay: ${index * 0.1}s">
+                    <td class="date-cell">${fecha}</td>
+                    <td class="time-cell">${reporte.entrada || '--'}</td>
+                    <td class="time-cell">${reporte.salida || '--'}</td>
+                    <td class="duration-cell">${reporte.tiempoTrabajado || '--'}</td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            <i class="${statusIcon}"></i>
+                            ${reporte.estado}
+                        </span>
+                    </td>
+                    <td class="observations-cell" title="${reporte.observaciones || 'Sin observaciones'}">
+                        ${reporte.observaciones || 'Sin observaciones'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        reportsTableBody.innerHTML = rows;
+    }
+
+    getStatusIcon(estado) {
+        switch (estado) {
+            case 'presente': return 'bi-check-circle-fill';
+            case 'ausente': return 'bi-x-circle-fill';
+            case 'tardanza': return 'bi-exclamation-triangle-fill';
+            default: return 'bi-question-circle-fill';
+        }
+    }
+
+    exportReportes() {
+        if (this.filteredReportes.length === 0) {
+            this.showNotification('Sin datos', 'No hay reportes para exportar', 'warning');
+            return;
+        }
+
+        // Preparar datos para CSV
+        const headers = [
+            'Fecha',
+            'Entrada',
+            'Salida',
+            'Tiempo Trabajado',
+            'Estado',
+            'Observaciones'
+        ];
+
+        const csvData = this.filteredReportes.map(reporte => [
+            reporte.fecha,
+            reporte.entrada || '',
+            reporte.salida || '',
+            reporte.tiempoTrabajado || '',
+            reporte.estado,
+            reporte.observaciones || ''
+        ]);
+
+        // Generar CSV
+        const csvContent = [
+            headers.join(','),
+            ...csvData.map(row => 
+                row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
+            )
+        ].join('\n');
+
+        // Crear y descargar archivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `reportes_${this.currentUser.numeroCuenta}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showNotification(
+                'Exportación exitosa', 
+                'Los reportes se han exportado correctamente', 
+                'success',
+                'bi-download'
+            );
+        }
+    }
+
+    logout() {
+        // Limpiar datos
+        this.currentUser = null;
+        this.reportes = [];
+        this.filteredReportes = [];
+        localStorage.removeItem('reportes_user');
+
+        // Resetear formulario
+        const numeroCuentaInput = document.getElementById('numeroCuentaInput');
+        if (numeroCuentaInput) {
+            numeroCuentaInput.value = '';
+        }
+
+        // Mostrar sección de auth
+        const authSection = document.getElementById('authSection');
+        const reportsSection = document.getElementById('reportsSection');
+        
+        if (reportsSection) {
+            reportsSection.style.opacity = '0';
+            reportsSection.style.transform = 'translateY(-20px)';
+            
+            setTimeout(() => {
+                reportsSection.style.display = 'none';
+                authSection.style.display = 'block';
+                authSection.style.opacity = '1';
+                authSection.style.transform = 'translateY(0)';
+            }, 300);
+        }
+
+        this.showNotification('Sesión cerrada', 'Has cerrado sesión correctamente', 'info');
+    }
+
+    showNotification(title, message, type = 'info', icon = 'bi-info-circle') {
+        // Usar el sistema de notificaciones de navigation.js si está disponible
+        if (window.modernNav && typeof window.modernNav.showModernNotification === 'function') {
+            window.modernNav.showModernNotification(title, message, type, icon);
+        } else {
+            // Fallback a console
+            console.log(`${type.toUpperCase()}: ${title} - ${message}`);
+        }
+    }
+
+    // Método para establecer mes actual por defecto
+    setCurrentMonth() {
+        const mesFilter = document.getElementById('mesFilter');
+        if (mesFilter) {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            mesFilter.value = currentMonth;
+        }
+    }
+
+    // Método para estadísticas avanzadas
+    getAdvancedStats() {
+        const presenteDays = this.reportes.filter(r => r.estado === 'presente').length;
+        const ausenteDays = this.reportes.filter(r => r.estado === 'ausente').length;
+        const tardanzaDays = this.reportes.filter(r => r.estado === 'tardanza').length;
+        
+        const horasPromedioPorDia = this.reportes.length > 0 
+            ? this.calcularHorasTotales() / presenteDays
+            : 0;
+
+        return {
+            presenteDays,
+            ausenteDays,
+            tardanzaDays,
+            horasPromedioPorDia: Math.round(horasPromedioPorDia * 100) / 100,
+            totalDays: this.reportes.length,
+            asistenciaRate: Math.round((presenteDays / this.reportes.length) * 100)
+        };
+    }
+}
+
+// Utilidades adicionales
+class ReportesUtils {
+    static parseDate(dateStr) {
+        // Parsear fecha en formato "YYYY-MM-DD" correctamente
+        // Evita problemas de zona horaria usando Date constructor con parámetros separados
+        if (!dateStr) return null;
+        const [year, month, day] = dateStr.split('-');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+
+    static formatDate(dateStr) {
+        const date = this.parseDate(dateStr);
+        if (!date) return 'Fecha inválida';
+        
+        return date.toLocaleDateString('es-MX', {
+            weekday: 'short',
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    }
+
+    static formatTime(timeStr) {
+        if (!timeStr) return '--:--';
+        
+        // Asegurar formato HH:MM
+        const [hours, minutes] = timeStr.split(':');
+        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    }
+
+    static calculateTimeDifference(entrada, salida) {
+        if (!entrada || !salida) return null;
+        
+        const [entradaHours, entradaMinutes] = entrada.split(':').map(Number);
+        const [salidaHours, salidaMinutes] = salida.split(':').map(Number);
+        
+        const entradaTotal = entradaHours * 60 + entradaMinutes;
+        const salidaTotal = salidaHours * 60 + salidaMinutes;
+        
+        const diferencia = salidaTotal - entradaTotal;
+        const hours = Math.floor(diferencia / 60);
+        const minutes = diferencia % 60;
+        
+        return `${hours}h ${minutes}m`;
+    }
+
+    static exportToPDF(reportes, userInfo) {
+        // Esta función requeriría una librería como jsPDF
+        console.warn('Exportación a PDF no implementada. Usar CSV por ahora.');
+    }
+
+    static validateReportData(reporte) {
+        const required = ['fecha', 'numeroCuenta', 'nombreAsesor'];
+        const missing = required.filter(field => !reporte[field]);
+        
+        if (missing.length > 0) {
+            throw new Error(`Campos requeridos faltantes: ${missing.join(', ')}`);
         }
         
         return true;
     }
-
-    async generarReporte() {
-        if (!this.validateForm()) return;
-        
-        const formData = this.getFormData();
-        
-        try {
-            // Mostrar loading
-            this.showLoading(true);
-            
-            // Simular progreso
-            this.startProgressAnimation();
-            
-            // Generar reporte
-            const reporte = await this.generador.generarReporte(
-                formData.fechaInicio,
-                formData.fechaFin,
-                formData.numerosCuenta
-            );
-            
-            // Filtrar por tipo de bloque si se especifica
-            const reporteFiltrado = formData.tipoBloque 
-                ? reporte.filter(item => item.tipoBloque === formData.tipoBloque)
-                : reporte;
-            
-            this.reporteActual = reporteFiltrado;
-            
-            // Generar estadísticas
-            const estadisticas = this.generador.obtenerEstadisticas(reporteFiltrado);
-            
-            // Mostrar resultados
-            await this.mostrarResultados(reporteFiltrado, estadisticas);
-            
-            // Ocultar loading
-            this.showLoading(false);
-            
-            this.showNotification('Reporte Generado', `Se generaron ${reporteFiltrado.length} registros`, 'success', 'fas fa-chart-bar');
-            
-        } catch (error) {
-            console.error('❌ Error generando reporte:', error);
-            this.showLoading(false);
-            this.showNotification('Error', 'Error al generar el reporte: ' + error.message, 'error', 'fas fa-exclamation-triangle');
-        }
-    }
-
-    async previewReporte() {
-        if (!this.validateForm()) return;
-        
-        const formData = this.getFormData();
-        
-        // Limitar preview a 7 días máximo
-        const diasDiferencia = (formData.fechaFin - formData.fechaInicio) / (1000 * 60 * 60 * 24);
-        if (diasDiferencia > 7) {
-            const nuevaFechaFin = new Date(formData.fechaInicio);
-            nuevaFechaFin.setDate(nuevaFechaFin.getDate() + 7);
-            formData.fechaFin = nuevaFechaFin;
-            
-            this.showNotification('Vista Previa Limitada', 'La vista previa se limita a 7 días para mejor rendimiento', 'info', 'fas fa-info-circle');
-        }
-        
-        try {
-            this.showLoading(true, 'Generando vista previa...');
-            
-            const reporte = await this.generador.generarReporte(
-                formData.fechaInicio,
-                formData.fechaFin,
-                formData.numerosCuenta
-            );
-            
-            // Limitar a primeros 20 registros
-            const reportePreview = reporte.slice(0, 20);
-            const estadisticas = this.generador.obtenerEstadisticas(reportePreview);
-            
-            await this.mostrarResultados(reportePreview, estadisticas);
-            this.showLoading(false);
-            
-            if (reporte.length > 20) {
-                this.showNotification('Vista Previa', `Mostrando 20 de ${reporte.length} registros`, 'info', 'fas fa-eye');
-            }
-            
-        } catch (error) {
-            console.error('❌ Error en vista previa:', error);
-            this.showLoading(false);
-            this.showNotification('Error', 'Error al generar vista previa', 'error', 'fas fa-exclamation-triangle');
-        }
-    }
-
-    validateForm() {
-        const fechaInicio = document.getElementById('fechaInicio').value;
-        const fechaFin = document.getElementById('fechaFin').value;
-        
-        if (!fechaInicio || !fechaFin) {
-            this.showNotification('Campos Requeridos', 'Por favor selecciona las fechas de inicio y fin', 'warning', 'fas fa-exclamation-triangle');
-            return false;
-        }
-        
-        return this.validateDates();
-    }
-
-    getFormData() {
-        const fechaInicio = new Date(document.getElementById('fechaInicio').value);
-        const fechaFin = new Date(document.getElementById('fechaFin').value);
-        const numeroCuentaInput = document.getElementById('numeroCuenta').value;
-        const tipoBloque = document.getElementById('tipoBloque').value;
-        
-        const numerosCuenta = numeroCuentaInput 
-            ? numeroCuentaInput.split(',').map(n => n.trim()).filter(n => n)
-            : null;
-        
-        return {
-            fechaInicio,
-            fechaFin,
-            numerosCuenta,
-            tipoBloque: tipoBloque || null
-        };
-    }
-
-    showLoading(show, message = 'Generando reporte...') {
-        const loadingContainer = document.getElementById('loadingContainer');
-        const resultsContainer = document.getElementById('resultsContainer');
-        
-        if (show) {
-            loadingContainer.style.display = 'block';
-            resultsContainer.style.display = 'none';
-            loadingContainer.querySelector('p').textContent = message;
-        } else {
-            loadingContainer.style.display = 'none';
-            this.stopProgressAnimation();
-        }
-    }
-
-    startProgressAnimation() {
-        const progressBar = document.getElementById('progressBar');
-        let progress = 0;
-        
-        this.progressInterval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 90) progress = 90;
-            
-            progressBar.style.width = progress + '%';
-        }, 200);
-    }
-
-    stopProgressAnimation() {
-        if (this.progressInterval) {
-            clearInterval(this.progressInterval);
-            this.progressInterval = null;
-        }
-        
-        const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = '100%';
-        
-        setTimeout(() => {
-            progressBar.style.width = '0%';
-        }, 500);
-    }
-
-    async mostrarResultados(reporte, estadisticas) {
-        // Mostrar estadísticas
-        this.renderEstadisticas(estadisticas);
-        
-        // Mostrar reporte detallado
-        this.renderReporteDetalle(reporte);
-        
-        // Mostrar contenedor de resultados
-        document.getElementById('resultsContainer').style.display = 'block';
-        
-        // Scroll suave a resultados
-        document.getElementById('resultsContainer').scrollIntoView({ 
-            behavior: 'smooth',
-            block: 'start'
-        });
-        
-        // Agregar animaciones
-        this.addAnimations();
-    }
-
-    renderEstadisticas(estadisticas) {
-        const container = document.getElementById('statsContainer');
-        
-        const stats = [
-            {
-                icon: 'fas fa-clipboard-list',
-                number: estadisticas.totalRegistros,
-                label: 'Total Registros',
-                color: 'var(--unam-blue)'
-            },
-            {
-                icon: 'fas fa-user-check',
-                number: estadisticas.presentes,
-                label: 'Presentes',
-                color: '#2ed573'
-            },
-            {
-                icon: 'fas fa-user-times',
-                number: estadisticas.ausentes,
-                label: 'Ausentes',
-                color: '#ff4757'
-            },
-            {
-                icon: 'fas fa-clock',
-                number: estadisticas.tardanzas,
-                label: 'Tardanzas',
-                color: '#ffa502'
-            },
-            {
-                icon: 'fas fa-hourglass-half',
-                number: this.generador.minutosAHora(estadisticas.promedioHorasTrabajadas),
-                label: 'Promedio Horas',
-                color: 'var(--unam-gold)'
-            }
-        ];
-        
-        container.innerHTML = stats.map(stat => `
-            <div class="stat-card fade-in" style="animation-delay: ${Math.random() * 0.5}s">
-                <i class="${stat.icon}" style="color: ${stat.color}"></i>
-                <div class="stat-number">${stat.number}</div>
-                <div class="stat-label">${stat.label}</div>
-            </div>
-        `).join('');
-    }
-
-    renderReporteDetalle(reporte) {
-        const container = document.getElementById('reporteDetalle');
-        
-        container.innerHTML = reporte.map((item, index) => {
-            const claseItem = item.estado === 'AUSENTE' ? 'ausente' : 
-                             (item.tiempoTardanza > 0 ? 'tardanza' : 'presente');
-            
-            return `
-                <div class="report-item ${claseItem} slide-in" style="animation-delay: ${index * 0.1}s">
-                    <div class="report-header">
-                        <div class="report-title">
-                            <i class="fas fa-user me-2"></i>
-                            ${item.nombreAsesor} (${item.numeroCuenta})
-                        </div>
-                        <div class="status-badge status-${item.estado.toLowerCase()}">
-                            ${item.estado}
-                        </div>
-                    </div>
-                    <div class="report-details">
-                        <div class="detail-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>${item.fecha} - ${item.dia}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-clock"></i>
-                            <span>Horario: ${item.horarioOficial.inicio} - ${item.horarioOficial.fin}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-tag"></i>
-                            <span>Horario tipo: ${item.tipoBloque}</span>
-                        </div>
-                        ${item.tipoBloqueComparado ? `
-                            <div class="detail-item">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Asistencia tipo: ${item.tipoBloqueComparado}</span>
-                            </div>
-                        ` : ''}
-                        ${item.asistenciaReal ? `
-                            <div class="detail-item">
-                                <i class="fas fa-sign-in-alt"></i>
-                                <span>Entrada: ${item.asistenciaReal.entrada || 'No registrada'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>Salida: ${item.asistenciaReal.salida || 'No registrada'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <i class="fas fa-stopwatch"></i>
-                                <span>Trabajadas: ${this.generador.minutosAHora(item.horasTrabajadas)}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                    ${item.observaciones.length > 0 ? `
-                        <div class="observations">
-                            <ul>
-                                ${item.observaciones.map(obs => `<li>${obs}</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }).join('');
-        
-        // Renderizar tabla también
-        this.renderTabla(reporte);
-    }
-
-    renderTabla(reporte) {
-        const tbody = document.querySelector('#reporteTabla tbody');
-        
-        tbody.innerHTML = reporte.map(item => `
-            <tr>
-                <td><strong>${item.nombreAsesor}</strong></td>
-                <td>${item.numeroCuenta}</td>
-                <td>${item.fecha}<br><small class="text-muted">${item.dia}</small></td>
-                <td>
-                    <span class="status-badge status-${item.estado.toLowerCase()}">${item.estado}</span>
-                </td>
-                <td>
-                    <small>Tipo: ${item.tipoBloque}</small><br>
-                    ${item.horarioOficial.inicio} - ${item.horarioOficial.fin}
-                </td>
-                <td>
-                    ${item.asistenciaReal ? `
-                        <small>Tipo: ${item.tipoBloqueComparado || 'N/A'}</small><br>
-                        ${item.asistenciaReal.entrada || 'N/A'} - ${item.asistenciaReal.salida || 'N/A'}
-                    ` : 'Sin registro'}
-                </td>
-                <td>
-                    <small>${item.observaciones.join('<br>')}</small>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    toggleView(view) {
-        this.currentView = view;
-        
-        const cardView = document.getElementById('cardViewContainer');
-        const tableView = document.getElementById('tableViewContainer');
-        const btnCard = document.getElementById('btnViewCard');
-        const btnTable = document.getElementById('btnViewTable');
-        
-        if (view === 'card') {
-            cardView.style.display = 'block';
-            tableView.style.display = 'none';
-            btnCard.classList.add('active');
-            btnTable.classList.remove('active');
-        } else {
-            cardView.style.display = 'none';
-            tableView.style.display = 'block';
-            btnCard.classList.remove('active');
-            btnTable.classList.add('active');
-        }
-    }
-
-    addAnimations() {
-        // Agregar clases de animación a elementos
-        const elements = document.querySelectorAll('.fade-in, .slide-in');
-        elements.forEach((el, index) => {
-            el.style.animationDelay = (index * 0.1) + 's';
-        });
-    }
-
-    exportar(formato) {
-        if (!this.reporteActual) {
-            this.showNotification('Sin Datos', 'Primero genera un reporte para exportar', 'warning', 'fas fa-exclamation-triangle');
-            return;
-        }
-
-        switch (formato) {
-            case 'csv':
-                this.exportarCSV();
-                break;
-            case 'excel':
-                this.exportarExcel();
-                break;
-            case 'pdf':
-                this.exportarPDF();
-                break;
-            default:
-                this.showNotification('Error', 'Formato de exportación no válido', 'error', 'fas fa-exclamation-triangle');
-        }
-    }
-
-    exportarCSV() {
-        try {
-            const headers = [
-                'Nombre', 'Número Cuenta', 'Fecha', 'Día', 'Estado', 
-                'Horario Tipo', 'Asistencia Tipo', 'Horario Oficial', 
-                'Entrada Real', 'Salida Real', 'Tardanza (min)', 'Observaciones'
-            ];
-            
-            const csvContent = [
-                headers.join(','),
-                ...this.reporteActual.map(item => [
-                    `"${item.nombreAsesor}"`,
-                    item.numeroCuenta,
-                    item.fecha,
-                    item.dia,
-                    item.estado,
-                    item.tipoBloque,
-                    item.tipoBloqueComparado || 'N/A',
-                    `"${item.horarioOficial.inicio}-${item.horarioOficial.fin}"`,
-                    item.asistenciaReal?.entrada || 'N/A',
-                    item.asistenciaReal?.salida || 'N/A',
-                    item.tiempoTardanza,
-                    `"${item.observaciones.join('; ')}"`
-                ].join(','))
-            ].join('\n');
-
-            this.downloadFile(csvContent, 'text/csv', 'reporte_asistencia.csv');
-            this.showNotification('Exportado', 'Archivo CSV descargado exitosamente', 'success', 'fas fa-download');
-            
-        } catch (error) {
-            console.error('Error exportando CSV:', error);
-            this.showNotification('Error', 'Error al exportar CSV', 'error', 'fas fa-exclamation-triangle');
-        }
-    }
-
-    exportarExcel() {
-        // Simulación de exportación Excel (requeriría una librería como SheetJS)
-        this.showNotification('Próximamente', 'Exportación a Excel estará disponible pronto', 'info', 'fas fa-info-circle');
-    }
-
-    exportarPDF() {
-        // Simulación de exportación PDF (requeriría una librería como jsPDF)
-        this.showNotification('Próximamente', 'Exportación a PDF estará disponible pronto', 'info', 'fas fa-info-circle');
-    }
-
-    downloadFile(content, mimeType, filename) {
-        const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(url);
-    }
-
-    compartirReporte() {
-        if (!this.reporteActual) {
-            this.showNotification('Sin Datos', 'Primero genera un reporte para compartir', 'warning', 'fas fa-exclamation-triangle');
-            return;
-        }
-
-        if (navigator.share) {
-            navigator.share({
-                title: 'Reporte de Asistencia - SICA UNAM',
-                text: `Reporte generado con ${this.reporteActual.length} registros`,
-                url: window.location.href
-            }).then(() => {
-                this.showNotification('Compartido', 'Reporte compartido exitosamente', 'success', 'fas fa-share-alt');
-            }).catch(err => {
-                this.fallbackShare();
-            });
-        } else {
-            this.fallbackShare();
-        }
-    }
-
-    fallbackShare() {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url).then(() => {
-            this.showNotification('URL Copiada', 'La URL del reporte se copió al portapapeles', 'success', 'fas fa-copy');
-        }).catch(() => {
-            this.showNotification('Compartir', 'Puedes compartir esta URL: ' + url, 'info', 'fas fa-share-alt');
-        });
-    }
-
-    handleKeyboardShortcuts(e) {
-        // Alt + G: Generar reporte
-        if (e.altKey && e.key.toLowerCase() === 'g') {
-            e.preventDefault();
-            this.generarReporte();
-        }
-        
-        // Alt + P: Vista previa
-        if (e.altKey && e.key.toLowerCase() === 'p') {
-            e.preventDefault();
-            this.previewReporte();
-        }
-        
-        // Alt + V: Cambiar vista
-        if (e.altKey && e.key.toLowerCase() === 'v') {
-            e.preventDefault();
-            this.toggleView(this.currentView === 'card' ? 'table' : 'card');
-        }
-        
-        // Alt + E: Exportar CSV
-        if (e.altKey && e.key.toLowerCase() === 'e') {
-            e.preventDefault();
-            this.exportar('csv');
-        }
-        
-        // Escape: Cerrar panel de ayuda
-        if (e.key === 'Escape') {
-            const helpPanel = document.getElementById('helpPanel');
-            if (helpPanel && helpPanel.classList.contains('show')) {
-                bootstrap.Offcanvas.getInstance(helpPanel).hide();
-            }
-        }
-    }
-
-    showNotification(title, message, type = 'info', icon = 'fas fa-info-circle') {
-        // Usar el sistema de notificaciones de SICAComponents si está disponible
-        if (typeof SICAComponents !== 'undefined' && typeof SICAComponents.notify === 'function') {
-            SICAComponents.notify(title, message, type, icon);
-        } else if (typeof window.modernNav !== 'undefined' && typeof window.modernNav.showModernNotification === 'function') {
-            // Fallback a modernNav si está disponible
-            window.modernNav.showModernNotification(title, message, type, icon);
-        } else {
-            // Fallback final: crear notificación simple
-            this.showSimpleNotification(title, message, type);
-        }
-    }
-
-    showSimpleNotification(title, message, type) {
-        // Crear notificación simple sin dependencias
-        const notification = document.createElement('div');
-        notification.className = `alert alert-${this.getBootstrapClass(type)} alert-dismissible fade show position-fixed`;
-        notification.style.cssText = `
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        
-        notification.innerHTML = `
-            <strong>${title}</strong> ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Auto-remove después de 5 segundos
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
-    }
-
-    getBootstrapClass(type) {
-        const classMap = {
-            'success': 'success',
-            'error': 'danger',
-            'warning': 'warning',
-            'info': 'info'
-        };
-        return classMap[type] || 'info';
-    }
-
-    // Métodos de utilidad
-    resetFilters() {
-        document.getElementById('fechaInicio').value = '';
-        document.getElementById('fechaFin').value = '';
-        document.getElementById('numeroCuenta').value = '';
-        document.getElementById('tipoBloque').value = '';
-        
-        this.setDefaultDates();
-        this.showNotification('Filtros Reseteados', 'Se han restaurado los valores por defecto', 'info', 'fas fa-undo');
-    }
-
-    toggleHelpPanel() {
-        const helpPanel = document.getElementById('helpPanel');
-        if (helpPanel) {
-            const offcanvas = new bootstrap.Offcanvas(helpPanel);
-            offcanvas.show();
-        }
-    }
 }
 
-// =============================================
-// GENERADOR DE REPORTES DE ASISTENCIA
-// =============================================
-
-class GeneradorReporteAsistencia {
-    constructor(db) {
-        this.db = db;
-        this.reporteActual = null;
-    }
-
-    horaAMinutos(horaStr) {
-        if (!horaStr) return 0;
-        const [hora, minuto] = horaStr.split(':').map(Number);
-        return hora * 60 + minuto;
-    }
-
-    minutosAHora(minutos) {
-        const horas = Math.floor(minutos / 60);
-        const mins = minutos % 60;
-        return `${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-    }
-
-    obtenerNombreDia(fecha) {
-        const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-        return dias[fecha.getDay()];
-    }
-
-    calcularDiferenciaTiempo(horaReal, horaOficial) {
-        const minutosReal = this.horaAMinutos(horaReal);
-        const minutosOficial = this.horaAMinutos(horaOficial);
-        return minutosReal - minutosOficial;
-    }
-
-    async generarReporte(fechaInicio, fechaFin, numerosCuenta = null) {
-        try {
-            const reporte = [];
-
-            // 1. Obtener configuración
-            const configSnapshot = await this.db.collection('configuracion').get();
-            const configuraciones = {};
-            configSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.tipoBloque) {
-                    configuraciones[doc.id] = data;
-                }
-            });
-
-            // 2. Obtener horarios
-            let horariosQuery = this.db.collection('horarios');
-            if (numerosCuenta && numerosCuenta.length > 0) {
-                horariosQuery = horariosQuery.where('numeroCuenta', 'in', numerosCuenta);
-            }
-            
-            const horariosSnapshot = await horariosQuery.get();
-            const horarios = {};
-            
-            horariosSnapshot.forEach(doc => {
-                const data = doc.data();
-                const numeroCuenta = data.numeroCuenta;
-                
-                if (!horarios[numeroCuenta]) {
-                    horarios[numeroCuenta] = [];
-                }
-                horarios[numeroCuenta].push({
-                    id: doc.id,
-                    ...data
-                });
-            });
-
-            // 3. Obtener asistencias
-            let asistenciasQuery = this.db.collection('asistenciasemana')
-                .where('fechaCompleta', '>=', fechaInicio)
-                .where('fechaCompleta', '<=', fechaFin);
-                
-            if (numerosCuenta && numerosCuenta.length > 0) {
-                asistenciasQuery = asistenciasQuery.where('numeroCuenta', 'in', numerosCuenta);
-            }
-
-            const asistenciasSnapshot = await asistenciasQuery.get();
-            const asistencias = {};
-
-            asistenciasSnapshot.forEach(doc => {
-                const data = doc.data();
-                const numeroCuenta = data.numeroCuenta;
-                const fecha = data.fechaCompleta.toDate();
-                const fechaStr = fecha.toISOString().split('T')[0];
-                
-                if (!asistencias[numeroCuenta]) {
-                    asistencias[numeroCuenta] = {};
-                }
-                if (!asistencias[numeroCuenta][fechaStr]) {
-                    asistencias[numeroCuenta][fechaStr] = [];
-                }
-                asistencias[numeroCuenta][fechaStr].push({
-                    id: doc.id,
-                    ...data,
-                    fecha: fecha
-                });
-            });
-
-            // 4. Generar reporte comparando por tipoBloque
-            for (const numeroCuenta in horarios) {
-                const horariosPersona = horarios[numeroCuenta];
-                const asistenciasPersona = asistencias[numeroCuenta] || {};
-
-                const nombreAsesor = horariosPersona[0]?.nombreAsesor || 
-                                   Object.values(asistenciasPersona)[0]?.[0]?.nombreAsesor || 
-                                   'Nombre no encontrado';
-
-                let fechaActual = new Date(fechaInicio);
-                while (fechaActual <= fechaFin) {
-                    const fechaStr = fechaActual.toISOString().split('T')[0];
-                    const nombreDia = this.obtenerNombreDia(fechaActual);
-                    
-                    const horariosDelDia = horariosPersona.filter(horario => {
-                        return horario.dias && horario.dias.includes(nombreDia);
-                    });
-
-                    if (horariosDelDia.length > 0) {
-                        const asistenciaDelDia = asistenciasPersona[fechaStr] || [];
-
-                        for (const horario of horariosDelDia) {
-                            const tipoBloque = horario.tipoBloque;
-
-                            const reporteItem = {
-                                numeroCuenta: numeroCuenta,
-                                nombreAsesor: nombreAsesor,
-                                fecha: fechaActual.toLocaleDateString('es-ES'),
-                                dia: nombreDia.charAt(0).toUpperCase() + nombreDia.slice(1),
-                                tipoBloque: tipoBloque,
-                                horarioOficial: {
-                                    inicio: horario.horaInicio,
-                                    fin: horario.horaFinal,
-                                    horas: horario.horas
-                                },
-                                asistenciaReal: null,
-                                estado: 'AUSENTE',
-                                observaciones: [],
-                                tiempoTardanza: 0,
-                                tiempoSalidaTemprana: 0,
-                                horasTrabajadas: 0,
-                                tipoBloqueComparado: null
-                            };
-
-                            if (asistenciaDelDia.length > 0) {
-                                // Buscar asistencias que coincidan con el tipoBloque del horario
-                                const asistenciasCompatibles = asistenciaDelDia.filter(asistencia => 
-                                    asistencia.tipoBloque === tipoBloque
-                                );
-
-                                if (asistenciasCompatibles.length > 0) {
-                                    let mejorCoincidencia = null;
-                                    let menorDiferencia = Infinity;
-
-                                    for (const asistencia of asistenciasCompatibles) {
-                                        if (asistencia.entrada && asistencia.entrada.horaOriginal) {
-                                            const horaEntrada = asistencia.entrada.horaOriginal;
-                                            const diferencia = Math.abs(
-                                                this.calcularDiferenciaTiempo(horaEntrada, horario.horaInicio)
-                                            );
-                                            
-                                            if (diferencia < menorDiferencia) {
-                                                menorDiferencia = diferencia;
-                                                mejorCoincidencia = asistencia;
-                                            }
-                                        }
-                                    }
-
-                                    if (mejorCoincidencia) {
-                                        const asistencia = mejorCoincidencia;
-                                        reporteItem.estado = 'PRESENTE';
-                                        reporteItem.tipoBloqueComparado = asistencia.tipoBloque;
-                                        
-                                        reporteItem.asistenciaReal = {
-                                            entrada: asistencia.entrada?.horaOriginal || null,
-                                            salida: asistencia.salida?.horaOriginal || null,
-                                            horasTrabajadas: asistencia.horasTrabajadas || '0h 0m'
-                                        };
-
-                                        if (asistencia.entrada?.horaOriginal) {
-                                            const tardanza = this.calcularDiferenciaTiempo(
-                                                asistencia.entrada.horaOriginal,
-                                                horario.horaInicio
-                                            );
-                                            
-                                            if (tardanza > 0) {
-                                                reporteItem.tiempoTardanza = tardanza;
-                                                reporteItem.observaciones.push(
-                                                    `Llegó ${tardanza} minutos tarde`
-                                                );
-                                            }
-                                        }
-
-                                        if (asistencia.salida?.horaOriginal) {
-                                            const salidaTemprana = this.calcularDiferenciaTiempo(
-                                                horario.horaFinal,
-                                                asistencia.salida.horaOriginal
-                                            );
-                                            
-                                            if (salidaTemprana > 0) {
-                                                reporteItem.tiempoSalidaTemprana = salidaTemprana;
-                                                reporteItem.observaciones.push(
-                                                    `Salió ${salidaTemprana} minutos antes`
-                                                );
-                                            }
-                                        }
-
-                                        if (asistencia.horasTrabajadas) {
-                                            const match = asistencia.horasTrabajadas.match(/(\d+)h\s*(\d+)m/);
-                                            if (match) {
-                                                const horas = parseInt(match[1]);
-                                                const minutos = parseInt(match[2]);
-                                                reporteItem.horasTrabajadas = horas * 60 + minutos;
-                                            }
-                                        }
-                                    } else {
-                                        reporteItem.observaciones.push(
-                                            `No hay asistencia para el tipo de bloque: ${tipoBloque}`
-                                        );
-                                    }
-                                } else {
-                                    reporteItem.observaciones.push(
-                                        `No registró asistencia para el tipo de bloque: ${tipoBloque}`
-                                    );
-                                }
-                            }
-
-                            if (reporteItem.estado === 'AUSENTE') {
-                                if (asistenciaDelDia.length > 0) {
-                                    const otrosTipos = asistenciaDelDia
-                                        .filter(a => a.tipoBloque && a.tipoBloque !== tipoBloque)
-                                        .map(a => a.tipoBloque);
-                                    
-                                    if (otrosTipos.length > 0) {
-                                        reporteItem.observaciones.push(
-                                            `Registró asistencia con otros tipos de bloque: ${[...new Set(otrosTipos)].join(', ')}`
-                                        );
-                                    } else {
-                                        reporteItem.observaciones.push('No registró asistencia');
-                                    }
-                                } else {
-                                    reporteItem.observaciones.push('No registró asistencia');
-                                }
-                            }
-
-                            reporte.push(reporteItem);
-                        }
-                    }
-
-                    fechaActual.setDate(fechaActual.getDate() + 1);
-                }
-            }
-
-            this.reporteActual = reporte;
-            return reporte;
-
-        } catch (error) {
-            console.error('Error generando reporte:', error);
-            throw error;
-        }
-    }
-
-    obtenerEstadisticas(reporte) {
-        const stats = {
-            totalRegistros: reporte.length,
-            presentes: 0,
-            ausentes: 0,
-            tardanzas: 0,
-            salidasTempranas: 0,
-            tiempoTotalTardanza: 0,
-            tiempoTotalSalidaTemprana: 0,
-            promedioHorasTrabajadas: 0
-        };
-
-        let totalMinutosTrabajados = 0;
-
-        reporte.forEach(item => {
-            if (item.estado === 'PRESENTE') {
-                stats.presentes++;
-                totalMinutosTrabajados += item.horasTrabajadas;
-            } else {
-                stats.ausentes++;
-            }
-
-            if (item.tiempoTardanza > 0) {
-                stats.tardanzas++;
-                stats.tiempoTotalTardanza += item.tiempoTardanza;
-            }
-
-            if (item.tiempoSalidaTemprana > 0) {
-                stats.salidasTempranas++;
-                stats.tiempoTotalSalidaTemprana += item.tiempoSalidaTemprana;
-            }
-        });
-
-        if (stats.presentes > 0) {
-            stats.promedioHorasTrabajadas = Math.round(totalMinutosTrabajados / stats.presentes);
-        }
-
-        return stats;
-    }
-}
-
-// =============================================
-// FUNCIONES GLOBALES Y EVENTOS
-// =============================================
-
-// Funciones globales para compatibilidad con HTML onclick
-window.generarReporte = () => {
-    if (reportesApp) {
-        reportesApp.generarReporte();
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.previewReporte = () => {
-    if (reportesApp) {
-        reportesApp.previewReporte();
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.exportarCSV = () => {
-    if (reportesApp) {
-        reportesApp.exportar('csv');
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.exportarExcel = () => {
-    if (reportesApp) {
-        reportesApp.exportar('excel');
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.exportarPDF = () => {
-    if (reportesApp) {
-        reportesApp.exportar('pdf');
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.compartirReporte = () => {
-    if (reportesApp) {
-        reportesApp.compartirReporte();
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.toggleView = (view) => {
-    if (reportesApp) {
-        reportesApp.toggleView(view);
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.resetFilters = () => {
-    if (reportesApp) {
-        reportesApp.resetFilters();
-    } else {
-        console.error('La aplicación no está inicializada');
-    }
-};
-
-window.toggleHelpPanel = () => {
-    const helpPanel = new bootstrap.Offcanvas(document.getElementById('helpPanel'));
-    helpPanel.show();
-};
-
-// Instancia global de la aplicación
-let reportesApp;
-
-// Inicialización cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔄 Inicializando aplicación de reportes...');
-    
-    // Función para inicializar la aplicación
-    function initApp() {
-        try {
-            reportesApp = new ReportesAsistenciaApp();
-            console.log('✅ Aplicación inicializada correctamente');
-        } catch (error) {
-            console.error('❌ Error al inicializar aplicación:', error);
-            // Mostrar error al usuario
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'alert alert-danger position-fixed';
-            errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            errorDiv.innerHTML = `
-                <strong>Error de Inicialización</strong><br>
-                ${error.message}<br>
-                <small>Verifica que Firebase esté configurado correctamente.</small>
-            `;
-            document.body.appendChild(errorDiv);
-        }
-    }
-    
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
     // Esperar a que Firebase esté listo
-    if (window.firebaseDB) {
-        console.log('🔥 Firebase ya está listo');
-        initApp();
+    if (typeof firebase !== 'undefined') {
+        window.reportesManager = new ReportesManager();
+        console.log('🚀 Sistema de Reportes inicializado');
     } else {
-        console.log('⏳ Esperando Firebase...');
-        let attempts = 0;
-        const maxAttempts = 50; // 5 segundos máximo
+        console.error('❌ Firebase no disponible');
         
-        const checkFirebase = setInterval(() => {
-            attempts++;
-            
-            if (window.firebaseDB) {
-                console.log('🔥 Firebase listo después de', attempts, 'intentos');
-                clearInterval(checkFirebase);
-                initApp();
-            } else if (attempts >= maxAttempts) {
-                console.error('❌ Firebase no se pudo cargar después de', maxAttempts, 'intentos');
-                clearInterval(checkFirebase);
-                
-                // Mostrar error específico de Firebase
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'alert alert-warning position-fixed';
-                errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-                errorDiv.innerHTML = `
-                    <strong>Firebase no disponible</strong><br>
-                    Verifica que firebase-config.js esté cargado correctamente.
-                `;
-                document.body.appendChild(errorDiv);
+        // Retry después de un momento
+        setTimeout(() => {
+            if (typeof firebase !== 'undefined') {
+                window.reportesManager = new ReportesManager();
+                console.log('🚀 Sistema de Reportes inicializado (retry)');
+            } else {
+                alert('Error: No se pudo conectar con la base de datos. Por favor, recarga la página.');
             }
-        }, 100);
+        }, 2000);
     }
 });
 
-console.log('📊 Módulo de Reportes de Asistencia cargado');
+// Cleanup al cerrar la página
+window.addEventListener('beforeunload', () => {
+    if (window.reportesManager) {
+        console.log('🧹 Limpiando recursos del sistema de reportes');
+    }
+});
+
+// Exportar para uso global
+window.ReportesManager = ReportesManager;
+window.ReportesUtils = ReportesUtils;
+
+// Atajos de teclado
+document.addEventListener('keydown', (e) => {
+    // Ctrl+R para refresh (si no es F5)
+    if (e.ctrlKey && e.key === 'r' && !e.shiftKey) {
+        e.preventDefault();
+        if (window.reportesManager && window.reportesManager.currentUser) {
+            window.reportesManager.loadReportes();
+        }
+    }
+    
+    // Ctrl+E para export
+    if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        if (window.reportesManager && window.reportesManager.currentUser) {
+            window.reportesManager.exportReportes();
+        }
+    }
+    
+    // Escape para logout
+    if (e.key === 'Escape' && window.reportesManager && window.reportesManager.currentUser) {
+        const confirmLogout = confirm('¿Deseas cerrar sesión?');
+        if (confirmLogout) {
+            window.reportesManager.logout();
+        }
+    }
+});
+
+// Configuración para modo desarrollo
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('🔧 Modo desarrollo activado para Reportes');
+    
+    // Funciones de debug
+    window.debugReportes = {
+        showCurrentUser: () => {
+            console.log('Usuario actual:', window.reportesManager?.currentUser);
+        },
+        showReportes: () => {
+            console.log('Reportes cargados:', window.reportesManager?.reportes);
+        },
+        testNotification: () => {
+            window.reportesManager?.showNotification('Test', 'Notificación de prueba', 'info');
+        }
+    };
+}

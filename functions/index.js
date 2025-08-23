@@ -169,28 +169,64 @@ exports.procesarFechaEspecifica = functions.https.onRequest(async (req, res) => 
 /**
  * Función principal de procesamiento (AUTOMÁTICO)
  */
+/**
+ * Función principal de procesamiento (AUTOMÁTICO) - CORREGIDA PARA ZONA HORARIA
+ */
 async function procesarAsistencias() {
-  const hoy = new Date();
-  const fechaHoy = hoy.toISOString().split('T')[0]; // YYYY-MM-DD
-  const diaHoy = obtenerNombreDia(hoy);
+  console.log('Iniciando procesarAsistencias - versión corregida para zona horaria');
   
-  console.log(`📅 Procesando fecha: ${fechaHoy} (${diaHoy})`);
+  // CORREGIDO: Usar zona horaria de México explícitamente
+  const ahoraUTC = new Date();
+  console.log('Hora actual UTC:', ahoraUTC.toISOString());
+  
+  // Convertir a hora de México (UTC-6)
+  const horaEfectivaMexico = new Date(ahoraUTC.toLocaleString("en-US", {timeZone: "America/Mexico_City"}));
+  console.log('Hora efectiva México:', horaEfectivaMexico.toString());
+  
+  // Si la función se ejecuta muy temprano (antes de las 6 AM), procesar el día anterior
+  // Esto evita problemas cuando la función se ejecuta a las 10 PM y ya es el día siguiente en UTC
+  let fechaProcesamiento = new Date(horaEfectivaMexico);
+  if (horaEfectivaMexico.getHours() < 6) {
+    console.log('Detectada ejecución temprana, procesando día anterior');
+    fechaProcesamiento.setDate(fechaProcesamiento.getDate() - 1);
+  }
+  
+  const fechaHoy = fechaProcesamiento.toISOString().split('T')[0]; // YYYY-MM-DD
+  const diaHoy = obtenerNombreDia(fechaProcesamiento);
+  
+  console.log(`Procesando fecha corregida: ${fechaHoy} (${diaHoy})`);
+  console.log(`Fecha de procesamiento: ${fechaProcesamiento.toISOString()}`);
   
   try {
     // 1. Obtener configuración activa
     const tipoBloqueoActivo = await obtenerConfiguracionActiva(db);
-    console.log(`⚙️ Tipo de bloque activo: ${tipoBloqueoActivo}`);
+    console.log(`Tipo de bloque activo: ${tipoBloqueoActivo}`);
     
     // 2. Obtener horarios del día y tipo activo
     const horarios = await obtenerHorariosDelDia(db, tipoBloqueoActivo, diaHoy);
-    console.log(`👥 Horarios encontrados: ${horarios.length}`);
+    console.log(`Horarios encontrados: ${horarios.length}`);
+    
+    if (horarios.length === 0) {
+      console.log(`No se encontraron horarios para ${diaHoy} con tipo ${tipoBloqueoActivo}`);
+      return {
+        fecha: fechaHoy,
+        tipoBloque: tipoBloqueoActivo,
+        totalHorarios: 0,
+        presentes: 0,
+        ausentes: 0,
+        tardanzas: 0,
+        salidasTempranas: 0,
+        mensaje: `No hay horarios programados para ${diaHoy}`
+      };
+    }
     
     // 3. Procesar cada horario
     const reportes = [];
     const asistenciasProcesadas = [];
     
     for (const horario of horarios) {
-      const resultado = await procesarHorarioIndividual(db, horario, fechaHoy);
+      console.log(`Procesando horario: ${horario.numeroCuenta} - ${horario.nombreAsesor}`);
+      const resultado = await procesarHorarioIndividualCorregido(db, horario, fechaHoy);
       reportes.push(resultado.reporte);
       
       if (resultado.asistenciaProcesada) {
@@ -198,27 +234,151 @@ async function procesarAsistencias() {
       }
     }
     
+    console.log(`Procesados ${reportes.length} reportes, ${asistenciasProcesadas.length} asistencias encontradas`);
+    
     // 4. Guardar reportes en batch
-    await guardarReportes(db, reportes);
+    if (reportes.length > 0) {
+      await guardarReportes(db, reportes);
+      console.log(`Guardados ${reportes.length} reportes`);
+    }
     
     // 5. Mover asistencias procesadas
-    await moverAsistenciasProcesadas(db, asistenciasProcesadas);
+    if (asistenciasProcesadas.length > 0) {
+      await moverAsistenciasProcesadas(db, asistenciasProcesadas);
+      console.log(`Movidas ${asistenciasProcesadas.length} asistencias`);
+    }
     
     const resumen = {
       fecha: fechaHoy,
+      dia: diaHoy,
       tipoBloque: tipoBloqueoActivo,
       totalHorarios: horarios.length,
       presentes: reportes.filter(r => r.estado === 'presente').length,
       ausentes: reportes.filter(r => r.estado === 'ausente').length,
-      tardanzas: reportes.filter(r => r.observaciones.includes('tarde')).length,
-      salidasTempranas: reportes.filter(r => r.observaciones.includes('antes')).length
+      tardanzas: reportes.filter(r => r.observaciones && r.observaciones.includes('tarde')).length,
+      salidasTempranas: reportes.filter(r => r.observaciones && r.observaciones.includes('antes')).length,
+      asistenciasEncontradas: asistenciasProcesadas.length,
+      horaMexico: horaEfectivaMexico.toISOString(),
+      horaUTC: ahoraUTC.toISOString()
     };
     
-    console.log('📊 Resumen:', resumen);
+    console.log('Resumen final:', JSON.stringify(resumen, null, 2));
     return resumen;
     
   } catch (error) {
-    console.error('❌ Error en procesarAsistencias:', error);
+    console.error('Error en procesarAsistencias:', error);
+    console.error('Stack trace:', error.stack);
+    throw error;
+  }
+}
+
+/**
+ * Procesar un horario individual (AUTOMÁTICO) - VERSIÓN CORREGIDA
+ */
+async function procesarHorarioIndividualCorregido(db, horario, fecha) {
+  try {
+    console.log(`Procesando horario individual: ${horario.nombreAsesor || 'Sin nombre'} (${horario.numeroCuenta || 'Sin cuenta'}) para fecha ${fecha}`);
+    
+    // Buscar asistencia correspondiente con manejo mejorado de zona horaria
+    const asistencia = await buscarAsistenciaCorregida(db, horario, fecha);
+    
+    if (asistencia) {
+      console.log(`Asistencia encontrada para ${horario.numeroCuenta}: entrada ${asistencia.entrada?.horaRedondeada}, salida ${asistencia.salida?.horaRedondeada}`);
+      // Hay asistencia - analizar cumplimiento
+      return procesarAsistenciaPresente(horario, asistencia, fecha);
+    } else {
+      console.log(`No se encontró asistencia para ${horario.numeroCuenta}`);
+      // No hay asistencia - marcar como falta
+      return procesarAsistenciaAusente(horario, fecha);
+    }
+    
+  } catch (error) {
+    console.error(`Error procesando horario ${horario.numeroCuenta || 'Sin cuenta'}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Buscar asistencia correspondiente al horario (AUTOMÁTICO) - VERSIÓN CORREGIDA
+ */
+async function buscarAsistenciaCorregida(db, horario, fecha) {
+  try {
+    console.log(`Buscando asistencia para ${horario.numeroCuenta} en fecha ${fecha} con tipo ${horario.tipoBloque}`);
+    
+    // Crear rangos de fecha más amplios para capturar asistencias
+    // Usar zona horaria de México explícitamente
+    const fechaBase = new Date(fecha + 'T00:00:00-06:00'); // Medianoche México
+    const fechaInicio = new Date(fechaBase);
+    fechaInicio.setHours(-6, 0, 0, 0); // 6 PM del día anterior México = Medianoche UTC
+    
+    const fechaFin = new Date(fechaBase);
+    fechaFin.setHours(29, 59, 59, 999); // 5:59 AM del día siguiente México = 11:59 PM UTC
+    
+    console.log(`Buscando asistencias entre: ${fechaInicio.toISOString()} y ${fechaFin.toISOString()}`);
+    console.log(`Para numeroCuenta: ${horario.numeroCuenta}, tipoBloque: ${horario.tipoBloque}`);
+    
+    const asistenciaSnapshot = await db
+      .collection('asistenciasemana')
+      .where('numeroCuenta', '==', horario.numeroCuenta)
+      .where('tipoBloque', '==', horario.tipoBloque)
+      .where('fechaCompleta', '>=', fechaInicio)
+      .where('fechaCompleta', '<', fechaFin)
+      .get();
+    
+    console.log(`Documentos encontrados en consulta: ${asistenciaSnapshot.size}`);
+    
+    if (!asistenciaSnapshot.empty) {
+      const doc = asistenciaSnapshot.docs[0];
+      const data = doc.data();
+      console.log(`Asistencia encontrada: ID=${doc.id}, fecha=${data.fechaCompleta?.toDate?.()?.toISOString()}`);
+      
+      return {
+        id: doc.id,
+        ...data
+      };
+    }
+    
+    // Búsqueda alternativa más amplia si no se encuentra nada
+    console.log('No se encontró con búsqueda estricta, intentando búsqueda ampliada...');
+    
+    const fechaAmpliadaInicio = new Date(fechaBase);
+    fechaAmpliadaInicio.setDate(fechaAmpliadaInicio.getDate() - 1);
+    fechaAmpliadaInicio.setHours(0, 0, 0, 0);
+    
+    const fechaAmpliadaFin = new Date(fechaBase);
+    fechaAmpliadaFin.setDate(fechaAmpliadaFin.getDate() + 1);
+    fechaAmpliadaFin.setHours(23, 59, 59, 999);
+    
+    const asistenciaAmpliadaSnapshot = await db
+      .collection('asistenciasemana')
+      .where('numeroCuenta', '==', horario.numeroCuenta)
+      .where('tipoBloque', '==', horario.tipoBloque)
+      .where('fechaCompleta', '>=', fechaAmpliadaInicio)
+      .where('fechaCompleta', '<', fechaAmpliadaFin)
+      .get();
+    
+    console.log(`Documentos encontrados en búsqueda ampliada: ${asistenciaAmpliadaSnapshot.size}`);
+    
+    if (!asistenciaAmpliadaSnapshot.empty) {
+      const doc = asistenciaAmpliadaSnapshot.docs[0];
+      const data = doc.data();
+      console.log(`Asistencia encontrada (ampliada): ID=${doc.id}, fecha=${data.fechaCompleta?.toDate?.()?.toISOString()}`);
+      
+      return {
+        id: doc.id,
+        ...data
+      };
+    }
+    
+    console.log(`No se encontró asistencia para ${horario.numeroCuenta} en ninguna búsqueda`);
+    return null;
+  } catch (error) {
+    console.error('Error buscando asistencia corregida:', error);
+    console.error('Parámetros de búsqueda:', {
+      numeroCuenta: horario.numeroCuenta,
+      tipoBloque: horario.tipoBloque,
+      fecha: fecha
+    });
     throw error;
   }
 }
