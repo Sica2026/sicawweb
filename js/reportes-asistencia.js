@@ -65,10 +65,18 @@ class ReportesManager {
             });
         }
 
-        // Botón de logout
+        // Botón de logout/cambiar usuario
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
+                this.logout();
+            });
+        }
+        
+        // También buscar por si el ID es diferente en el HTML
+        const cambiarUsuarioBtn = document.querySelector('.btn-logout');
+        if (cambiarUsuarioBtn && cambiarUsuarioBtn !== logoutBtn) {
+            cambiarUsuarioBtn.addEventListener('click', () => {
                 this.logout();
             });
         }
@@ -581,27 +589,81 @@ class ReportesManager {
 
         // Resetear formulario
         const numeroCuentaInput = document.getElementById('numeroCuentaInput');
+        const authBtn = document.getElementById('authBtn');
         if (numeroCuentaInput) {
             numeroCuentaInput.value = '';
         }
+        if (authBtn) {
+            authBtn.disabled = true;
+            authBtn.classList.add('disabled');
+        }
 
-        // Mostrar sección de auth
+        // Limpiar estadísticas
+        this.clearStats();
+
+        // Limpiar tabla
+        const reportsTableBody = document.getElementById('reportsTableBody');
+        if (reportsTableBody) {
+            reportsTableBody.innerHTML = '';
+        }
+
+        // Resetear filtros
+        const mesFilter = document.getElementById('mesFilter');
+        const estadoFilter = document.getElementById('estadoFilter');
+        if (mesFilter) mesFilter.value = '';
+        if (estadoFilter) estadoFilter.value = '';
+
+        // Mostrar sección de auth con animación
         const authSection = document.getElementById('authSection');
         const reportsSection = document.getElementById('reportsSection');
         
-        if (reportsSection) {
+        if (reportsSection && authSection) {
+            // Animar salida de reports
+            reportsSection.style.transition = 'all 0.3s ease';
             reportsSection.style.opacity = '0';
             reportsSection.style.transform = 'translateY(-20px)';
             
             setTimeout(() => {
                 reportsSection.style.display = 'none';
-                authSection.style.display = 'block';
-                authSection.style.opacity = '1';
-                authSection.style.transform = 'translateY(0)';
+                authSection.style.display = 'flex';
+                authSection.style.opacity = '0';
+                authSection.style.transform = 'translateY(20px)';
+                
+                // Animar entrada de auth
+                setTimeout(() => {
+                    authSection.style.transition = 'all 0.3s ease';
+                    authSection.style.opacity = '1';
+                    authSection.style.transform = 'translateY(0)';
+                    
+                    // Enfocar el input después de la animación
+                    setTimeout(() => {
+                        if (numeroCuentaInput) {
+                            numeroCuentaInput.focus();
+                        }
+                    }, 350);
+                }, 50);
             }, 300);
         }
 
-        this.showNotification('Sesión cerrada', 'Has cerrado sesión correctamente', 'info');
+        this.showNotification('Sesión cerrada', 'Has cerrado sesión correctamente. Ingresa otro número de cuenta.', 'info', 'bi-box-arrow-right');
+    }
+
+    clearStats() {
+        // Limpiar todas las estadísticas
+        const horasTrabajadasEl = document.getElementById('horasTrabajadas');
+        const progresoPorcentajeEl = document.getElementById('progresoPorcentaje');
+        const diasTrabajadosEl = document.getElementById('diasTrabajados');
+        const progressCircle = document.getElementById('progressCircle');
+        const totalReportesEl = document.getElementById('totalReportes');
+
+        if (horasTrabajadasEl) horasTrabajadasEl.textContent = '0h';
+        if (progresoPorcentajeEl) progresoPorcentajeEl.textContent = '0%';
+        if (diasTrabajadosEl) diasTrabajadosEl.textContent = '0';
+        if (totalReportesEl) totalReportesEl.textContent = '0';
+        
+        if (progressCircle) {
+            progressCircle.style.strokeDashoffset = '157'; // Círculo vacío
+        }
     }
 
     showNotification(title, message, type = 'info', icon = 'bi-info-circle') {

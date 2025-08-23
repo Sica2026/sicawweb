@@ -303,84 +303,131 @@ async function procesarHorarioIndividualCorregido(db, horario, fecha) {
  */
 async function buscarAsistenciaCorregida(db, horario, fecha) {
   try {
-    console.log(`Buscando asistencia para ${horario.numeroCuenta} en fecha ${fecha} con tipo ${horario.tipoBloque}`);
+    console.log(`Buscando asistencia para ${horario.numeroCuenta} en horario ${horario.horaInicio}-${horario.horaFinal}`);
     
-    // Crear rangos de fecha más amplios para capturar asistencias
-    // Usar zona horaria de México explícitamente
-    const fechaBase = new Date(fecha + 'T00:00:00-06:00'); // Medianoche México
-    const fechaInicio = new Date(fechaBase);
-    fechaInicio.setHours(-6, 0, 0, 0); // 6 PM del día anterior México = Medianoche UTC
+    // Crear objeto Date para la fecha y convertir a string
+    const fechaObj = new Date(fecha + 'T12:00:00.000Z');
+    const fechaStr = fechaObj.toDateString(); // Formato: "Wed Aug 21 2025"
     
-    const fechaFin = new Date(fechaBase);
-    fechaFin.setHours(29, 59, 59, 999); // 5:59 AM del día siguiente México = 11:59 PM UTC
+    console.log(`Buscando por fecha string: ${fechaStr}`);
     
-    console.log(`Buscando asistencias entre: ${fechaInicio.toISOString()} y ${fechaFin.toISOString()}`);
-    console.log(`Para numeroCuenta: ${horario.numeroCuenta}, tipoBloque: ${horario.tipoBloque}`);
-    
+    // Buscar usando el campo fecha (string)
     const asistenciaSnapshot = await db
       .collection('asistenciasemana')
       .where('numeroCuenta', '==', horario.numeroCuenta)
       .where('tipoBloque', '==', horario.tipoBloque)
-      .where('fechaCompleta', '>=', fechaInicio)
-      .where('fechaCompleta', '<', fechaFin)
+      .where('fecha', '==', fechaStr)
       .get();
     
-    console.log(`Documentos encontrados en consulta: ${asistenciaSnapshot.size}`);
+    console.log(`Encontradas ${asistenciaSnapshot.size} asistencias para ${horario.numeroCuenta}`);
     
-    if (!asistenciaSnapshot.empty) {
-      const doc = asistenciaSnapshot.docs[0];
-      const data = doc.data();
-      console.log(`Asistencia encontrada: ID=${doc.id}, fecha=${data.fechaCompleta?.toDate?.()?.toISOString()}`);
-      
-      return {
-        id: doc.id,
-        ...data
-      };
+    if (asistenciaSnapshot.empty) {
+      console.log('No se encontraron asistencias');
+      return null;
     }
     
-    // Búsqueda alternativa más amplia si no se encuentra nada
-    console.log('No se encontró con búsqueda estricta, intentando búsqueda ampliada...');
+    // Convertir a array para facilitar el procesamiento
+    const todasAsistencias = asistenciaSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
     
-    const fechaAmpliadaInicio = new Date(fechaBase);
-    fechaAmpliadaInicio.setDate(fechaAmpliadaInicio.getDate() - 1);
-    fechaAmpliadaInicio.setHours(0, 0, 0, 0);
-    
-    const fechaAmpliadaFin = new Date(fechaBase);
-    fechaAmpliadaFin.setDate(fechaAmpliadaFin.getDate() + 1);
-    fechaAmpliadaFin.setHours(23, 59, 59, 999);
-    
-    const asistenciaAmpliadaSnapshot = await db
-      .collection('asistenciasemana')
-      .where('numeroCuenta', '==', horario.numeroCuenta)
-      .where('tipoBloque', '==', horario.tipoBloque)
-      .where('fechaCompleta', '>=', fechaAmpliadaInicio)
-      .where('fechaCompleta', '<', fechaAmpliadaFin)
-      .get();
-    
-    console.log(`Documentos encontrados en búsqueda ampliada: ${asistenciaAmpliadaSnapshot.size}`);
-    
-    if (!asistenciaAmpliadaSnapshot.empty) {
-      const doc = asistenciaAmpliadaSnapshot.docs[0];
-      const data = doc.data();
-      console.log(`Asistencia encontrada (ampliada): ID=${doc.id}, fecha=${data.fechaCompleta?.toDate?.()?.toISOString()}`);
-      
-      return {
-        id: doc.id,
-        ...data
-      };
+    // Si solo hay una asistencia, verificar si se solapa
+    if (todasAsistencias.length === 1) {
+      const asistencia = todasAsistencias[0];
+      if (verificarSolapamiento(horario, asistencia)) {
+        console.log('Única asistencia se solapa con el horario');
+        return asistencia;
+      } else {
+        console.log('Única asistencia NO se solapa con el horario');
+        return null;
+      }
     }
     
-    console.log(`No se encontró asistencia para ${horario.numeroCuenta} en ninguna búsqueda`);
-    return null;
+    // Si hay múltiples asistencias, encontrar la que mejor se solape
+    console.log('Múltiples asistencias encontradas, buscando la mejor coincidencia...');
+    
+    const asistenciasSolapadas = todasAsistencias.filter(asistencia => 
+      verificarSolapamiento(horario, asistencia)
+    );
+    
+    if (asistenciasSolapadas.length === 0) {
+      console.log('Ninguna asistencia se solapa con el horario programado');
+      return null;
+    }
+    
+    if (asistenciasSolapadas.length === 1) {
+      console.log('Una sola asistencia se solapa con el horario');
+      return asistenciasSolapadas[0];
+    }
+    
+    // Si hay múltiples solapamientos, elegir la que tenga mayor solapamiento
+    const mejorAsistencia = encontrarMejorSolapamiento(horario, asistenciasSolapadas);
+    
+    console.log(`Seleccionada asistencia: entrada=${mejorAsistencia.entrada?.horaRedondeada}, salida=${mejorAsistencia.salida?.horaRedondeada}`);
+    return mejorAsistencia;
+    
   } catch (error) {
-    console.error('Error buscando asistencia corregida:', error);
-    console.error('Parámetros de búsqueda:', {
-      numeroCuenta: horario.numeroCuenta,
-      tipoBloque: horario.tipoBloque,
-      fecha: fecha
-    });
+    console.error('Error buscando asistencia:', error);
     throw error;
   }
+}
+
+function verificarSolapamiento(horario, asistencia) {
+  const entradaAsistencia = asistencia.entrada?.horaRedondeada;
+  const salidaAsistencia = asistencia.salida?.horaRedondeada;
+  const inicioHorario = horario.horaInicio;
+  const finalHorario = horario.horaFinal;
+  
+  // Si no tenemos datos completos, no hay solapamiento válido
+  if (!entradaAsistencia || !salidaAsistencia || !inicioHorario || !finalHorario) {
+    console.log('Datos incompletos para verificar solapamiento');
+    return false;
+  }
+  
+  const entradaMin = horaAMinutos(entradaAsistencia);
+  const salidaMin = horaAMinutos(salidaAsistencia);
+  const inicioMin = horaAMinutos(inicioHorario);
+  const finalMin = horaAMinutos(finalHorario);
+  
+  // Verificar si hay solapamiento entre los rangos
+  // Dos rangos se solapan si: inicio1 < final2 AND inicio2 < final1
+  const haySerlapamiento = entradaMin < finalMin && inicioMin < salidaMin;
+  
+  console.log(`Solapamiento: entrada=${entradaAsistencia}(${entradaMin}) salida=${salidaAsistencia}(${salidaMin}) vs horario=${inicioHorario}(${inicioMin})-${finalHorario}(${finalMin}) = ${haySerlapamiento}`);
+  
+  return haySerlapamiento;
+}
+
+/**
+ * Encontrar la asistencia con mayor solapamiento con el horario
+ */
+function encontrarMejorSolapamiento(horario, asistenciasSolapadas) {
+  const inicioMin = horaAMinutos(horario.horaInicio);
+  const finalMin = horaAMinutos(horario.horaFinal);
+  
+  let mejorAsistencia = null;
+  let mayorSolapamiento = 0;
+  
+  asistenciasSolapadas.forEach(asistencia => {
+    const entradaMin = horaAMinutos(asistencia.entrada?.horaRedondeada);
+    const salidaMin = horaAMinutos(asistencia.salida?.horaRedondeada);
+    
+    // Calcular minutos de solapamiento
+    const inicioSolapamiento = Math.max(inicioMin, entradaMin);
+    const finalSolapamiento = Math.min(finalMin, salidaMin);
+    const minutosSolapamiento = Math.max(0, finalSolapamiento - inicioSolapamiento);
+    
+    console.log(`Asistencia ${asistencia.entrada?.horaRedondeada}-${asistencia.salida?.horaRedondeada}: ${minutosSolapamiento} minutos de solapamiento`);
+    
+    if (minutosSolapamiento > mayorSolapamiento) {
+      mayorSolapamiento = minutosSolapamiento;
+      mejorAsistencia = asistencia;
+    }
+  });
+  
+  console.log(`Mejor solapamiento: ${mayorSolapamiento} minutos`);
+  return mejorAsistencia;
 }
 
 /**
@@ -441,8 +488,8 @@ async function procesarAsistenciasFechaEspecifica(fechaEspecifica, tipoBloqueFor
       totalHorarios: horarios.length,
       presentes: reportes.filter(r => r.estado === 'presente').length,
       ausentes: reportes.filter(r => r.estado === 'ausente').length,
-      tardanzas: reportes.filter(r => r.observaciones.includes('tarde')).length,
-      salidasTempranas: reportes.filter(r => r.observaciones.includes('antes')).length,
+      tardanzas: reportes.filter(r => r.observaciones && r.observaciones.includes('tarde')).length,
+      salidasTempranas: reportes.filter(r => r.observaciones && r.observaciones.includes('antes')).length,
       asistenciasMovidas: moverAsistencias ? asistenciasProcesadas.length : 0,
       procesamientoManual: true
     };
@@ -509,30 +556,6 @@ async function obtenerHorariosDelDia(db, tipoBloque, dia) {
 }
 
 /**
- * Procesar un horario individual (AUTOMÁTICO)
- */
-async function procesarHorarioIndividual(db, horario, fecha) {
-  try {
-    console.log(`👤 Procesando: ${horario.nombreAsesor || 'Sin nombre'} (${horario.numeroCuenta || 'Sin cuenta'})`);
-    
-    // Buscar asistencia correspondiente
-    const asistencia = await buscarAsistencia(db, horario, fecha);
-    
-    if (asistencia) {
-      // Hay asistencia - analizar cumplimiento
-      return procesarAsistenciaPresente(horario, asistencia, fecha);
-    } else {
-      // No hay asistencia - marcar como falta
-      return procesarAsistenciaAusente(horario, fecha);
-    }
-    
-  } catch (error) {
-    console.error(`❌ Error procesando horario ${horario.numeroCuenta || 'Sin cuenta'}:`, error);
-    throw error;
-  }
-}
-
-/**
  * Procesar un horario individual para fecha específica (MANUAL)
  */
 async function procesarHorarioIndividualFecha(db, horario, fechaEspecifica) {
@@ -556,69 +579,87 @@ async function procesarHorarioIndividualFecha(db, horario, fechaEspecifica) {
   }
 }
 
-/**
- * Buscar asistencia correspondiente al horario (AUTOMÁTICO)
- */
-async function buscarAsistencia(db, horario, fecha) {
-  try {
-    const fechaCompleta = new Date(fecha + 'T00:00:00.000Z');
-    const fechaSiguiente = new Date(fechaCompleta);
-    fechaSiguiente.setDate(fechaSiguiente.getDate() + 1);
-    
-    const asistenciaSnapshot = await db
-      .collection('asistenciasemana')
-      .where('numeroCuenta', '==', horario.numeroCuenta)
-      .where('tipoBloque', '==', horario.tipoBloque)
-      .where('fechaCompleta', '>=', fechaCompleta)
-      .where('fechaCompleta', '<', fechaSiguiente)
-      .limit(1)
-      .get();
-    
-    if (!asistenciaSnapshot.empty) {
-      const doc = asistenciaSnapshot.docs[0];
-      return {
-        id: doc.id,
-        ...doc.data()
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('❌ Error buscando asistencia:', error);
-    throw error;
-  }
-}
 
 /**
  * Buscar asistencia para fecha específica (MANUAL)
  */
 async function buscarAsistenciaFechaEspecifica(db, horario, fechaEspecifica) {
   try {
-    const fechaCompleta = new Date(fechaEspecifica + 'T00:00:00.000Z');
-    const fechaSiguiente = new Date(fechaCompleta);
-    fechaSiguiente.setDate(fechaSiguiente.getDate() + 1);
+    console.log(`Buscando asistencias para ${horario.numeroCuenta} en fecha ${fechaEspecifica}`);
     
+    // Crear objeto Date para la fecha específica y convertir a string
+    const fechaObj = new Date(fechaEspecifica + 'T12:00:00.000Z');
+    const fechaStr = fechaObj.toDateString(); // Formato: "Wed Aug 21 2025"
+    
+    console.log(`Buscando por fecha string: ${fechaStr}`);
+    
+    // Buscar usando el campo fecha (string)
     const asistenciaSnapshot = await db
       .collection('asistenciasemana')
       .where('numeroCuenta', '==', horario.numeroCuenta)
       .where('tipoBloque', '==', horario.tipoBloque)
-      .where('fechaCompleta', '>=', fechaCompleta)
-      .where('fechaCompleta', '<', fechaSiguiente)
-      .limit(1)
+      .where('fecha', '==', fechaStr)
       .get();
     
-    if (!asistenciaSnapshot.empty) {
-      const doc = asistenciaSnapshot.docs[0];
-      return {
-        id: doc.id,
-        ...doc.data()
-      };
+    console.log(`Encontradas ${asistenciaSnapshot.size} asistencias`);
+    
+    if (asistenciaSnapshot.empty) {
+      return null;
     }
     
-    return null;
+    const todasAsistencias = asistenciaSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Aplicar la misma lógica de solapamiento
+    if (todasAsistencias.length === 1) {
+      const asistencia = todasAsistencias[0];
+      return verificarSolapamiento(horario, asistencia) ? asistencia : null;
+    }
+    
+    const asistenciasSolapadas = todasAsistencias.filter(asistencia => 
+      verificarSolapamiento(horario, asistencia)
+    );
+    
+    if (asistenciasSolapadas.length === 0) {
+      return null;
+    }
+    
+    if (asistenciasSolapadas.length === 1) {
+      return asistenciasSolapadas[0];
+    }
+    
+    return encontrarMejorSolapamiento(horario, asistenciasSolapadas);
+    
   } catch (error) {
-    console.error('❌ Error buscando asistencia para fecha específica:', error);
+    console.error('Error buscando asistencia para fecha específica:', error);
     throw error;
+  }
+}
+
+function horaAMinutos(horaStr) {
+  if (!horaStr || typeof horaStr !== 'string') {
+    return 0;
+  }
+  
+  try {
+    const partes = horaStr.split(':');
+    if (partes.length !== 2) {
+      return 0;
+    }
+    
+    const hora = parseInt(partes[0], 10);
+    const minuto = parseInt(partes[1], 10);
+    
+    if (isNaN(hora) || isNaN(minuto)) {
+      return 0;
+    }
+    
+    return hora * 60 + minuto;
+  } catch (error) {
+    console.error(`Error procesando hora ${horaStr}:`, error);
+    return 0;
   }
 }
 
@@ -935,14 +976,7 @@ function calcularDiferenciaMinutos(hora1, hora2) {
   return minutos1 - minutos2;
 }
 
-/**
- * Convertir hora string a minutos
- */
-function horaAMinutos(horaStr) {
-  if (!horaStr) return 0;
-  const [hora, minuto] = horaStr.split(':').map(Number);
-  return hora * 60 + minuto;
-}
+
 
 /**
  * Calcular tiempo trabajado entre dos horas
