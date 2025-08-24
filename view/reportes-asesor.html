@@ -22,16 +22,6 @@
 
     <!-- Main Content Area -->
     <main class="main-content" id="main-content">
-        <!-- Breadcrumb Navigation -->
-        <nav aria-label="breadcrumb" class="breadcrumb-nav">
-            <div class="container">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
-                    <li class="breadcrumb-item"><a href="#">Asesor</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Reportes</li>
-                </ol>
-            </div>
-        </nav>
 
         <div class="container-fluid py-4">
             <!-- Authentication Section -->
@@ -44,7 +34,7 @@
                                     <i class="bi bi-shield-lock-fill"></i>
                                 </div>
                                 <h2>Acceso a Reportes</h2>
-                                <p>Ingresa tu número de cuenta para acceder a tus reportes</p>
+                                <p>Ingresa tu número de cuenta para acceder a tus reportes y pago de horas</p>
                             </div>
                             
                             <form id="authForm" class="auth-form">
@@ -65,7 +55,7 @@
                                 </div>
                                 
                                 <button type="submit" class="btn btn-auth" id="authBtn">
-                                    <span class="btn-text">Acceder a Reportes</span>
+                                    <span class="btn-text">Acceder al Sistema</span>
                                     <span class="btn-loader">
                                         <i class="bi bi-hourglass-split"></i>
                                     </span>
@@ -101,6 +91,20 @@
                     </div>
                 </div>
 
+                <!-- View Switcher -->
+                <div class="view-switcher-container mb-4">
+                    <div class="view-switcher">
+                        <button class="view-btn active" id="reportesViewBtn" data-view="reportes">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Reportes de Asistencia
+                        </button>
+                        <button class="view-btn" id="pagoViewBtn" data-view="pago">
+                            <i class="bi bi-cash-coin me-2"></i>
+                            Pago de Horas
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Stats Cards -->
                 <div class="stats-grid mb-4">
                     <div class="stat-card hours-worked">
@@ -118,30 +122,27 @@
                     
                     <div class="stat-card hours-required">
                         <div class="stat-icon">
-                            <i class="bi bi-calendar-check-fill"></i>
+                            <i class="bi bi-exclamation-triangle-fill"></i>
                         </div>
                         <div class="stat-content">
-                            <div class="stat-value" id="horasRequeridas">60h</div>
-                            <div class="stat-label">Horas Requeridas</div>
+                            <div class="stat-value" id="horasAdeudo">0h</div>
+                            <div class="stat-label">Adeudo de Horas</div>
                         </div>
                         <div class="stat-trend">
-                            <i class="bi bi-target"></i>
+                            <i class="bi bi-arrow-down-right"></i>
                         </div>
                     </div>
                     
                     <div class="stat-card progress-card">
                         <div class="stat-icon">
-                            <i class="bi bi-graph-up-arrow"></i>
+                            <i class="bi bi-cash-coin"></i>
                         </div>
                         <div class="stat-content">
-                            <div class="stat-value" id="progresoPorcentaje">0%</div>
-                            <div class="stat-label">Progreso</div>
+                            <div class="stat-value" id="totalPagoHoras">0h</div>
+                            <div class="stat-label">Total Pago de Horas</div>
                         </div>
-                        <div class="progress-ring">
-                            <svg class="progress-ring-svg" width="60" height="60">
-                                <circle class="progress-ring-circle-bg" cx="30" cy="30" r="25"></circle>
-                                <circle class="progress-ring-circle" cx="30" cy="30" r="25" id="progressCircle"></circle>
-                            </svg>
+                        <div class="stat-trend">
+                            <i class="bi bi-graph-up-arrow"></i>
                         </div>
                     </div>
                     
@@ -159,135 +160,305 @@
                     </div>
                 </div>
 
-                <!-- Filters and Controls -->
-                <div class="controls-section">
-                    <div class="row align-items-center mb-4">
-                        <div class="col-lg-6">
-                            <div class="filter-group">
-                                <div class="filter-item">
-                                    <label class="filter-label">
-                                        <i class="bi bi-calendar-range me-2"></i>
-                                        Mes
-                                    </label>
-                                    <select class="form-select filter-select" id="mesFilter">
-                                        <option value="">Todos los meses</option>
-                                        <option value="2025-01">Enero 2025</option>
-                                        <option value="2025-02">Febrero 2025</option>
-                                        <option value="2025-03">Marzo 2025</option>
-                                        <option value="2025-04">Abril 2025</option>
-                                        <option value="2025-05">Mayo 2025</option>
-                                        <option value="2025-06">Junio 2025</option>
-                                        <option value="2025-07">Julio 2025</option>
-                                        <option value="2025-08">Agosto 2025</option>
-                                        <option value="2025-09">Septiembre 2025</option>
-                                        <option value="2025-10">Octubre 2025</option>
-                                        <option value="2025-11">Noviembre 2025</option>
-                                        <option value="2025-12">Diciembre 2025</option>
-                                    </select>
+                <!-- Reportes View -->
+                <div id="reportesView" class="view-content">
+                    <!-- Filters and Controls -->
+                    <div class="controls-section">
+                        <div class="row align-items-center mb-4">
+                            <!--<div class="col-lg-6">
+                                <div class="filter-group">
+                                    <div class="filter-item">
+                                        <label class="filter-label">
+                                            <i class="bi bi-calendar-range me-2"></i>
+                                            Mes
+                                        </label>
+                                        <select class="form-select filter-select" id="mesFilter">
+                                            <option value="">Todos los meses</option>
+                                            <option value="2025-01">Enero 2025</option>
+                                            <option value="2025-02">Febrero 2025</option>
+                                            <option value="2025-03">Marzo 2025</option>
+                                            <option value="2025-04">Abril 2025</option>
+                                            <option value="2025-05">Mayo 2025</option>
+                                            <option value="2025-06">Junio 2025</option>
+                                            <option value="2025-07">Julio 2025</option>
+                                            <option value="2025-08">Agosto 2025</option>
+                                            <option value="2025-09">Septiembre 2025</option>
+                                            <option value="2025-10">Octubre 2025</option>
+                                            <option value="2025-11">Noviembre 2025</option>
+                                            <option value="2025-12">Diciembre 2025</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="filter-item">
+                                        <label class="filter-label">
+                                            <i class="bi bi-funnel me-2"></i>
+                                            Estado
+                                        </label>
+                                        <select class="form-select filter-select" id="estadoFilter">
+                                            <option value="">Todos los estados</option>
+                                            <option value="presente">Presente</option>
+                                            <option value="ausente">Ausente</option>
+                                            <option value="tardanza">Tardanza</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="filter-item">
+                                        <label class="filter-label">
+                                            <i class="bi bi-clock-history me-2"></i>
+                                            Tipo Bloque
+                                        </label>
+                                        <select class="form-select filter-select" id="tipoBloqueFilter">
+                                            <option value="">Todos los bloques</option>
+                                            <option value="provisional-a">Provisional A</option>
+                                            <option value="provisional-b">Provisional B</option>
+                                            <option value="definitivo">Definitivo</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                
-                                <div class="filter-item">
-                                    <label class="filter-label">
-                                        <i class="bi bi-funnel me-2"></i>
-                                        Estado
-                                    </label>
-                                    <select class="form-select filter-select" id="estadoFilter">
-                                        <option value="">Todos los estados</option>
-                                        <option value="presente">Presente</option>
-                                        <option value="ausente">Ausente</option>
-                                        <option value="tardanza">Tardanza</option>
-                                    </select>
+                            </div>-->
+                            
+                            <div class="col-lg-6 text-end">
+                                <div class="action-buttons">
+                                    <button class="btn btn-refresh" id="refreshBtn">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>
+                                        Actualizar
+                                    </button>
+                                    <!--<button class="btn btn-export" id="exportBtn">
+                                        <i class="bi bi-download me-2"></i>
+                                        Exportar
+                                    </button> -->
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="col-lg-6 text-end">
-                            <div class="action-buttons">
-                                <button class="btn btn-refresh" id="refreshBtn">
-                                    <i class="bi bi-arrow-clockwise me-2"></i>
-                                    Actualizar
-                                </button>
-                                <button class="btn btn-export" id="exportBtn">
-                                    <i class="bi bi-download me-2"></i>
-                                    Exportar
-                                </button>
+                    </div>
+
+                    <!-- Reports Table -->
+                    <div class="reports-table-container">
+                        <div class="table-header">
+                            <h3>
+                                <i class="bi bi-table me-2"></i>
+                                Historial de Reportes Detallado
+                            </h3>
+                            <div class="table-count">
+                                <span id="totalReportes">0</span> reportes encontrados
                             </div>
+                        </div>
+                        
+                        <!-- Sección de Alerta de Discrepancias -->
+                        <div id="discrepanciasAlert" class="discrepancias-alert" style="display: none;">
+                            <div class="alert-icon">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Discrepancias Detectadas</h4>
+                                <p>Se encontraron <span id="discrepanciasCount">0</span> registros con diferencias entre horario programado y registrado.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table reports-table" id="reportsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="fecha">
+                                            <i class="bi bi-calendar3"></i>
+                                            Fecha
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th class="sortable" data-sort="tipoBloque">
+                                            <i class="bi bi-clock-history"></i>
+                                            Bloque
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th colspan="2" class="horario-header">
+                                            <i class="bi bi-alarm"></i> Horario Programado
+                                        </th>
+                                        <th colspan="2" class="horario-header registro-header">
+                                            <i class="bi bi-person-check"></i> Registro Real
+                                        </th>
+                                        <th class="sortable" data-sort="horasValidas">
+                                            <i class="bi bi-check-circle"></i>
+                                            H. Válidas
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th class="sortable" data-sort="estado">
+                                            <i class="bi bi-check-circle"></i>
+                                            Estado
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th>
+                                            <i class="bi bi-chat-text"></i>
+                                            Observaciones
+                                        </th>
+                                    </tr>
+                                    <tr class="sub-header">
+                                        <th></th>
+                                        <th></th>
+                                        <th class="sub-column">Inicio</th>
+                                        <th class="sub-column">Fin</th>
+                                        <th class="sub-column registro-sub">Entrada</th>
+                                        <th class="sub-column registro-sub">Salida</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsTableBody">
+                                    <!-- Los reportes se cargarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div id="emptyState" class="empty-state" style="display: none;">
+                            <div class="empty-icon">
+                                <i class="bi bi-inbox"></i>
+                            </div>
+                            <h3>No hay reportes</h3>
+                            <p>No se encontraron reportes para los filtros seleccionados.</p>
+                        </div>
+                        
+                        <!-- Loading State -->
+                        <div id="loadingState" class="loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Cargando reportes...</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Reports Table -->
-                <div class="reports-table-container">
-                    <div class="table-header">
-                        <h3>
-                            <i class="bi bi-table me-2"></i>
-                            Historial de Reportes
-                        </h3>
-                        <div class="table-count">
-                            <span id="totalReportes">0</span> reportes encontrados
+                <!-- Pago de Horas View -->
+                <div id="pagoView" class="view-content" style="display: none;">
+                    <!-- Filters and Controls for Pago -->
+                    <div class="controls-section">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-lg-6">
+                                <div class="filter-group">
+                                    <div class="filter-item">
+                                        <label class="filter-label">
+                                            <i class="bi bi-calendar-range me-2"></i>
+                                            Mes
+                                        </label>
+                                        <select class="form-select filter-select" id="mesPagoFilter">
+                                            <option value="">Todos los meses</option>
+                                            <option value="2025-01">Enero 2025</option>
+                                            <option value="2025-02">Febrero 2025</option>
+                                            <option value="2025-03">Marzo 2025</option>
+                                            <option value="2025-04">Abril 2025</option>
+                                            <option value="2025-05">Mayo 2025</option>
+                                            <option value="2025-06">Junio 2025</option>
+                                            <option value="2025-07">Julio 2025</option>
+                                            <option value="2025-08">Agosto 2025</option>
+                                            <option value="2025-09">Septiembre 2025</option>
+                                            <option value="2025-10">Octubre 2025</option>
+                                            <option value="2025-11">Noviembre 2025</option>
+                                            <option value="2025-12">Diciembre 2025</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="filter-item">
+                                        <label class="filter-label">
+                                            <i class="bi bi-building me-2"></i>
+                                            Sala
+                                        </label>
+                                        <select class="form-select filter-select" id="salaFilter">
+                                            <option value="">Todas las salas</option>
+                                            <option value="SICA 1">SICA 1</option>
+                                            <option value="SICA 2">SICA 2</option>
+                                            <option value="SICA 3">SICA 3</option>
+                                            <option value="SICA 4">SICA 4</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-6 text-end">
+                                <div class="action-buttons">
+                                    <button class="btn btn-refresh" id="refreshPagoBtn">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>
+                                        Actualizar
+                                    </button>
+                                    <button class="btn btn-export" id="exportPagoBtn">
+                                        <i class="bi bi-download me-2"></i>
+                                        Exportar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table reports-table" id="reportsTable">
-                            <thead>
-                                <tr>
-                                    <th class="sortable" data-sort="fecha">
-                                        <i class="bi bi-calendar3"></i>
-                                        Fecha
-                                        <i class="bi bi-arrow-up-down sort-icon"></i>
-                                    </th>
-                                    <th class="sortable" data-sort="entrada">
-                                        <i class="bi bi-clock"></i>
-                                        Entrada
-                                        <i class="bi bi-arrow-up-down sort-icon"></i>
-                                    </th>
-                                    <th class="sortable" data-sort="salida">
-                                        <i class="bi bi-clock"></i>
-                                        Salida
-                                        <i class="bi bi-arrow-up-down sort-icon"></i>
-                                    </th>
-                                    <th class="sortable" data-sort="tiempoTrabajado">
-                                        <i class="bi bi-stopwatch"></i>
-                                        Tiempo
-                                        <i class="bi bi-arrow-up-down sort-icon"></i>
-                                    </th>
-                                    <th class="sortable" data-sort="estado">
-                                        <i class="bi bi-check-circle"></i>
-                                        Estado
-                                        <i class="bi bi-arrow-up-down sort-icon"></i>
-                                    </th>
-                                    <th>
-                                        <i class="bi bi-chat-text"></i>
-                                        Observaciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="reportsTableBody">
-                                <!-- Los reportes se cargarán aquí dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- Empty State -->
-                    <div id="emptyState" class="empty-state" style="display: none;">
-                        <div class="empty-icon">
-                            <i class="bi bi-inbox"></i>
+
+                    <!-- Pago de Horas Table -->
+                    <div class="pago-table-container">
+                        <div class="table-header">
+                            <h3>
+                                <i class="bi bi-cash-coin me-2"></i>
+                                Historial de Pago de Horas
+                            </h3>
+                            <div class="table-count">
+                                <span id="totalPagos">0</span> pagos registrados
+                            </div>
                         </div>
-                        <h3>No hay reportes</h3>
-                        <p>No se encontraron reportes para los filtros seleccionados.</p>
-                    </div>
-                    
-                    <!-- Loading State -->
-                    <div id="loadingState" class="loading-state">
-                        <div class="loading-spinner"></div>
-                        <p>Cargando reportes...</p>
+                        
+                        <div class="table-responsive">
+                            <table class="table pago-table" id="pagoTable">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="fecha">
+                                            <i class="bi bi-calendar3"></i>
+                                            Fecha
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th class="sortable" data-sort="sala">
+                                            <i class="bi bi-building"></i>
+                                            Sala
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th colspan="2" class="horario-header">
+                                            <i class="bi bi-clock"></i> Rango de Horas
+                                        </th>
+                                        <th class="sortable" data-sort="totalHoras">
+                                            <i class="bi bi-stopwatch"></i>
+                                            Total Horas
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                        <th class="sortable" data-sort="quienAutorizo">
+                                            <i class="bi bi-person-check"></i>
+                                            Autorizado por
+                                            <i class="bi bi-arrow-up-down sort-icon"></i>
+                                        </th>
+                                    </tr>
+                                    <tr class="sub-header">
+                                        <th></th>
+                                        <th></th>
+                                        <th class="sub-column">Inicio</th>
+                                        <th class="sub-column">Fin</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pagoTableBody">
+                                    <!-- Los pagos se cargarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Empty State for Pago -->
+                        <div id="emptyPagoState" class="empty-state" style="display: none;">
+                            <div class="empty-icon">
+                                <i class="bi bi-cash-coin"></i>
+                            </div>
+                            <h3>No hay pagos registrados</h3>
+                            <p>No se encontraron registros de pago de horas para los filtros seleccionados.</p>
+                        </div>
+                        
+                        <!-- Loading State for Pago -->
+                        <div id="loadingPagoState" class="loading-state" style="display: none;">
+                            <div class="loading-spinner"></div>
+                            <p>Cargando pagos...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-
     <!-- Footer Component -->
     <div id="footer-component"></div>
 

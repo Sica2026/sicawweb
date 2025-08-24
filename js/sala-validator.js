@@ -88,8 +88,8 @@ class SalaValidator {
             if (!horarioAsignado) {
                 console.log('📝 No se encontró horario específico - permitiendo acceso');
                 return {
-                    valido: true,
-                    mensaje: 'Sin horario específico asignado'
+                    valido: false,
+                    mensaje: 'No tienes horario asignado para este día. Contacta a tu supervisor para configurar tus horarios.'
                 };
             }
             

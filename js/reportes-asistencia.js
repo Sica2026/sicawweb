@@ -1,15 +1,18 @@
 /* =================================================================
-   REPORTES DE ASESORES - JAVASCRIPT
-   Sistema de visualización de reportes con autenticación
+   REPORTES DE ASESORES - SISTEMA DUAL
+   Reportes de Asistencia + Pago de Horas
    ================================================================= */
 
 class ReportesManager {
     constructor() {
         this.currentUser = null;
         this.reportes = [];
+        this.pagoHoras = [];
         this.filteredReportes = [];
+        this.filteredPagos = [];
         this.db = null;
         this.sortConfig = { key: 'fecha', direction: 'desc' };
+        this.currentView = 'reportes';
         
         this.init();
     }
@@ -48,16 +51,12 @@ class ReportesManager {
         // Input de número de cuenta con validación
         if (numeroCuentaInput) {
             numeroCuentaInput.addEventListener('input', (e) => {
-                // Solo números
                 e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                
-                // Habilitar/deshabilitar botón
                 const isValid = e.target.value.length === 9;
                 authBtn.disabled = !isValid;
                 authBtn.classList.toggle('disabled', !isValid);
             });
 
-            // Enter para enviar
             numeroCuentaInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && e.target.value.length === 9) {
                     this.authenticateUser();
@@ -65,7 +64,7 @@ class ReportesManager {
             });
         }
 
-        // Botón de logout/cambiar usuario
+        // Botón de logout
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
@@ -73,7 +72,6 @@ class ReportesManager {
             });
         }
         
-        // También buscar por si el ID es diferente en el HTML
         const cambiarUsuarioBtn = document.querySelector('.btn-logout');
         if (cambiarUsuarioBtn && cambiarUsuarioBtn !== logoutBtn) {
             cambiarUsuarioBtn.addEventListener('click', () => {
@@ -81,9 +79,26 @@ class ReportesManager {
             });
         }
 
-        // Filtros
+        // View Switcher
+        const reportesViewBtn = document.getElementById('reportesViewBtn');
+        const pagoViewBtn = document.getElementById('pagoViewBtn');
+        
+        if (reportesViewBtn) {
+            reportesViewBtn.addEventListener('click', () => {
+                this.switchView('reportes');
+            });
+        }
+        
+        if (pagoViewBtn) {
+            pagoViewBtn.addEventListener('click', () => {
+                this.switchView('pago');
+            });
+        }
+
+        // Filtros para reportes
         const mesFilter = document.getElementById('mesFilter');
         const estadoFilter = document.getElementById('estadoFilter');
+        const tipoBloqueFilter = document.getElementById('tipoBloqueFilter');
         
         if (mesFilter) {
             mesFilter.addEventListener('change', () => {
@@ -96,8 +111,30 @@ class ReportesManager {
                 this.applyFilters();
             });
         }
+        
+        if (tipoBloqueFilter) {
+            tipoBloqueFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
 
-        // Botones de acción
+        // Filtros para pago de horas
+        const mesPagoFilter = document.getElementById('mesPagoFilter');
+        const salaFilter = document.getElementById('salaFilter');
+        
+        if (mesPagoFilter) {
+            mesPagoFilter.addEventListener('change', () => {
+                this.applyPagoFilters();
+            });
+        }
+        
+        if (salaFilter) {
+            salaFilter.addEventListener('change', () => {
+                this.applyPagoFilters();
+            });
+        }
+
+        // Botones de acción - Reportes
         const refreshBtn = document.getElementById('refreshBtn');
         const exportBtn = document.getElementById('exportBtn');
         
@@ -113,24 +150,70 @@ class ReportesManager {
             });
         }
 
-        // Sorting de tabla
-        const sortableHeaders = document.querySelectorAll('.sortable');
-        sortableHeaders.forEach(header => {
-            header.addEventListener('click', () => {
-                const sortKey = header.dataset.sort;
-                this.sortReportes(sortKey);
+        // Botones de acción - Pago
+        const refreshPagoBtn = document.getElementById('refreshPagoBtn');
+        const exportPagoBtn = document.getElementById('exportPagoBtn');
+        
+        if (refreshPagoBtn) {
+            refreshPagoBtn.addEventListener('click', () => {
+                this.loadPagoHoras();
             });
+        }
+        
+        if (exportPagoBtn) {
+            exportPagoBtn.addEventListener('click', () => {
+                this.exportPagoHoras();
+            });
+        }
+
+        // Sorting de tablas
+        this.setupSorting();
+    }
+
+    setupSorting() {
+        // Configurar sorting para ambas tablas
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.sortable')) {
+                const sortKey = e.target.closest('.sortable').dataset.sort;
+                this.sortData(sortKey);
+            }
         });
     }
 
+    switchView(viewType) {
+        this.currentView = viewType;
+        
+        // Actualizar botones
+        const reportesBtn = document.getElementById('reportesViewBtn');
+        const pagoBtn = document.getElementById('pagoViewBtn');
+        const reportesView = document.getElementById('reportesView');
+        const pagoView = document.getElementById('pagoView');
+        
+        if (viewType === 'reportes') {
+            reportesBtn?.classList.add('active');
+            pagoBtn?.classList.remove('active');
+            if (reportesView) reportesView.style.display = 'block';
+            if (pagoView) pagoView.style.display = 'none';
+        } else {
+            pagoBtn?.classList.add('active');
+            reportesBtn?.classList.remove('active');
+            if (pagoView) pagoView.style.display = 'block';
+            if (reportesView) reportesView.style.display = 'none';
+        }
+        
+        // Actualizar título de página
+        document.title = viewType === 'reportes' ? 
+            'Reportes de Asistencia - SICA' : 
+            'Pago de Horas - SICA';
+    }
+
     checkExistingAuth() {
-        // Verificar si hay datos de usuario en localStorage
         const savedUser = localStorage.getItem('reportes_user');
         if (savedUser) {
             try {
                 this.currentUser = JSON.parse(savedUser);
                 this.showReportsSection();
-                this.loadReportes();
+                this.loadAllData();
             } catch (error) {
                 console.error('Error al recuperar usuario guardado:', error);
                 localStorage.removeItem('reportes_user');
@@ -148,42 +231,46 @@ class ReportesManager {
             return;
         }
 
-        // Mostrar estado de carga
         authBtn.classList.add('loading');
         authBtn.disabled = true;
 
         try {
-            // Verificar si existe el asesor en Firebase
+            // Verificar en ambas colecciones
             const reportesSnapshot = await this.db.collection('reportesasesores')
                 .where('numeroCuenta', '==', numeroCuenta)
                 .limit(1)
                 .get();
 
-            if (reportesSnapshot.empty) {
-                throw new Error('No se encontraron reportes para este número de cuenta');
+            const pagoSnapshot = await this.db.collection('pago_horas')
+                .where('numeroCuenta', '==', numeroCuenta)
+                .limit(1)
+                .get();
+
+            if (reportesSnapshot.empty && pagoSnapshot.empty) {
+                throw new Error('No se encontraron datos para este número de cuenta');
             }
 
-            // Obtener nombre del primer reporte
-            const primerReporte = reportesSnapshot.docs[0].data();
-            const nombreAsesor = primerReporte.nombreAsesor || 'Asesor';
+            // Obtener nombre del asesor
+            let nombreAsesor = 'Asesor';
+            if (!reportesSnapshot.empty) {
+                nombreAsesor = reportesSnapshot.docs[0].data().nombreAsesor || 'Asesor';
+            } else if (!pagoSnapshot.empty) {
+                nombreAsesor = pagoSnapshot.docs[0].data().nombreAsesor || 'Asesor';
+            }
 
-            // Guardar usuario
             this.currentUser = {
                 numeroCuenta,
                 nombreAsesor,
                 authenticatedAt: new Date().toISOString()
             };
 
-            // Guardar en localStorage para persistencia
             localStorage.setItem('reportes_user', JSON.stringify(this.currentUser));
-
-            // Mostrar sección de reportes
             this.showReportsSection();
-            this.loadReportes();
+            this.loadAllData();
 
             this.showNotification(
-                '¡Bienvenido!', 
-                `Acceso autorizado para ${nombreAsesor}`, 
+                'Acceso autorizado', 
+                `Bienvenido ${nombreAsesor}`, 
                 'success',
                 'bi-check-circle-fill'
             );
@@ -206,7 +293,6 @@ class ReportesManager {
         const authSection = document.getElementById('authSection');
         const reportsSection = document.getElementById('reportsSection');
         
-        // Actualizar información del usuario
         const userName = document.getElementById('userName');
         const userAccount = document.getElementById('userAccount');
         
@@ -218,7 +304,6 @@ class ReportesManager {
             userAccount.textContent = this.currentUser.numeroCuenta;
         }
 
-        // Animación de transición
         if (authSection) {
             authSection.style.opacity = '0';
             authSection.style.transform = 'translateY(-20px)';
@@ -231,6 +316,14 @@ class ReportesManager {
         }
     }
 
+    async loadAllData() {
+        await Promise.all([
+            this.loadReportes(),
+            this.loadPagoHoras()
+        ]);
+        this.updateStats();
+    }
+
     async loadReportes() {
         if (!this.currentUser) return;
 
@@ -238,13 +331,11 @@ class ReportesManager {
         const emptyState = document.getElementById('emptyState');
         const reportsTableBody = document.getElementById('reportsTableBody');
 
-        // Mostrar loading
         if (loadingState) loadingState.style.display = 'block';
         if (emptyState) emptyState.style.display = 'none';
         if (reportsTableBody) reportsTableBody.innerHTML = '';
 
         try {
-            // Consultar reportes de Firebase
             const reportesSnapshot = await this.db.collection('reportesasesores')
                 .where('numeroCuenta', '==', this.currentUser.numeroCuenta)
                 .orderBy('fecha', 'desc')
@@ -255,30 +346,58 @@ class ReportesManager {
                 ...doc.data()
             }));
 
-            // Aplicar filtros iniciales
             this.filteredReportes = [...this.reportes];
             this.applyFilters();
 
-            // Actualizar estadísticas
-            this.updateStats();
-
-            // Renderizar tabla
-            this.renderTable();
-
-            // Ocultar loading
             if (loadingState) loadingState.style.display = 'none';
-
             console.log(`📊 Cargados ${this.reportes.length} reportes`);
 
         } catch (error) {
             console.error('Error cargando reportes:', error);
-            this.showNotification('Error', 'No se pudieron cargar los reportes', 'error');
-            
             if (loadingState) loadingState.style.display = 'none';
             if (emptyState) {
                 emptyState.style.display = 'block';
                 emptyState.querySelector('h3').textContent = 'Error al cargar';
-                emptyState.querySelector('p').textContent = 'No se pudieron cargar los reportes. Intenta de nuevo.';
+                emptyState.querySelector('p').textContent = 'No se pudieron cargar los reportes.';
+            }
+        }
+    }
+
+    async loadPagoHoras() {
+        if (!this.currentUser) return;
+
+        const loadingPagoState = document.getElementById('loadingPagoState');
+        const emptyPagoState = document.getElementById('emptyPagoState');
+        const pagoTableBody = document.getElementById('pagoTableBody');
+
+        if (loadingPagoState) loadingPagoState.style.display = 'block';
+        if (emptyPagoState) emptyPagoState.style.display = 'none';
+        if (pagoTableBody) pagoTableBody.innerHTML = '';
+
+        try {
+            const pagoSnapshot = await this.db.collection('pago_horas')
+                .where('numeroCuenta', '==', this.currentUser.numeroCuenta)
+                .orderBy('fecha', 'desc')
+                .get();
+
+            this.pagoHoras = pagoSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            this.filteredPagos = [...this.pagoHoras];
+            this.applyPagoFilters();
+
+            if (loadingPagoState) loadingPagoState.style.display = 'none';
+            console.log(`💰 Cargados ${this.pagoHoras.length} pagos de horas`);
+
+        } catch (error) {
+            console.error('Error cargando pago de horas:', error);
+            if (loadingPagoState) loadingPagoState.style.display = 'none';
+            if (emptyPagoState) {
+                emptyPagoState.style.display = 'block';
+                emptyPagoState.querySelector('h3').textContent = 'Error al cargar';
+                emptyPagoState.querySelector('p').textContent = 'No se pudieron cargar los pagos.';
             }
         }
     }
@@ -286,38 +405,30 @@ class ReportesManager {
     updateStats() {
         // Calcular estadísticas
         const horasTrabajadas = this.calcularHorasTotales();
-        const horasRequeridas = 60; // Asumiendo 60 horas requeridas
-        const progreso = Math.min((horasTrabajadas / horasRequeridas) * 100, 100);
+        const adeudoHoras = this.calcularAdeudoHoras();
+        const totalPagoHoras = this.calcularTotalPagoHoras();
         const diasTrabajados = this.reportes.filter(r => r.estado === 'presente').length;
 
         // Actualizar UI
         const horasTrabajadasEl = document.getElementById('horasTrabajadas');
-        const horasRequeridasEl = document.getElementById('horasRequeridas');
-        const progresoPorcentajeEl = document.getElementById('progresoPorcentaje');
+        const horasAdeudoEl = document.getElementById('horasAdeudo');
+        const totalPagoHorasEl = document.getElementById('totalPagoHoras');
         const diasTrabajadosEl = document.getElementById('diasTrabajados');
-        const progressCircle = document.getElementById('progressCircle');
 
         if (horasTrabajadasEl) {
             this.animateValue(horasTrabajadasEl, 0, horasTrabajadas, 1000, 'h');
         }
 
-        if (horasRequeridasEl) {
-            horasRequeridasEl.textContent = `${horasRequeridas}h`;
+        if (horasAdeudoEl) {
+            this.animateValue(horasAdeudoEl, 0, adeudoHoras, 1000, 'h');
         }
 
-        if (progresoPorcentajeEl) {
-            this.animateValue(progresoPorcentajeEl, 0, Math.round(progreso), 1500, '%');
+        if (totalPagoHorasEl) {
+            this.animateValue(totalPagoHorasEl, 0, totalPagoHoras, 1000, 'h');
         }
 
         if (diasTrabajadosEl) {
             this.animateValue(diasTrabajadosEl, 0, diasTrabajados, 800);
-        }
-
-        // Animar círculo de progreso
-        if (progressCircle) {
-            const circumference = 2 * Math.PI * 25; // radio = 25
-            const offset = circumference - (progreso / 100) * circumference;
-            progressCircle.style.strokeDashoffset = offset;
         }
     }
 
@@ -325,23 +436,67 @@ class ReportesManager {
         let totalMinutos = 0;
 
         this.reportes.forEach(reporte => {
-            if (reporte.tiempoTrabajado && reporte.estado === 'presente') {
-                const tiempo = this.parseTimeString(reporte.tiempoTrabajado);
-                totalMinutos += tiempo.horas * 60 + tiempo.minutos;
+            if (reporte.horasValidas && reporte.estado === 'presente') {
+                const tiempo = this.parseTimeString(reporte.horasValidas);
+                totalMinutos += tiempo.total;
             }
         });
 
-        return Math.round(totalMinutos / 60 * 100) / 100; // Redondear a 2 decimales
+        return Math.round(totalMinutos / 60 * 100) / 100;
+    }
+
+    calcularAdeudoHoras() {
+        let totalAdeudoMinutos = 0;
+
+        this.reportes.forEach((reporte) => {
+            if (reporte.estado === 'ausente') {
+                // Para días ausentes, usar tiempoTrabajado (ej: "-3h 0m")
+                if (reporte.tiempoTrabajado) {
+                    const tiempoString = reporte.tiempoTrabajado.replace('-', '');
+                    const tiempo = this.parseTimeString(tiempoString);
+                    totalAdeudoMinutos += tiempo.total;
+                }
+            } else if (reporte.estado === 'presente' || reporte.estado === 'tardanza') {
+                // Para días presentes y tardanzas, calcular diferencia
+                const horasProgramadas = this.parseTimeString(reporte.horasProgramadas || '0h 0m');
+                const horasValidas = this.parseTimeString(reporte.horasValidas || '0h 0m');
+                
+                const diferencia = horasProgramadas.total - horasValidas.total;
+                
+                if (diferencia > 0) {
+                    totalAdeudoMinutos += diferencia;
+                }
+            }
+        });
+
+        return Math.round(totalAdeudoMinutos / 60 * 100) / 100;
+    }
+
+    calcularTotalPagoHoras() {
+        let totalHoras = 0;
+
+        this.pagoHoras.forEach(pago => {
+            if (pago.totalHoras && typeof pago.totalHoras === 'number') {
+                totalHoras += pago.totalHoras;
+            }
+        });
+
+        return Math.round(totalHoras * 100) / 100;
     }
 
     parseTimeString(timeStr) {
-        // Parsear strings como "1h 30m", "2h", "45m"
+        if (!timeStr) return { horas: 0, minutos: 0, total: 0 };
+        
         const horasMatch = timeStr.match(/(\d+)h/);
         const minutosMatch = timeStr.match(/(\d+)m/);
         
+        const horas = horasMatch ? parseInt(horasMatch[1]) : 0;
+        const minutos = minutosMatch ? parseInt(minutosMatch[1]) : 0;
+        
         return {
-            horas: horasMatch ? parseInt(horasMatch[1]) : 0,
-            minutos: minutosMatch ? parseInt(minutosMatch[1]) : 0
+            horas,
+            minutos,
+            total: (horas * 60) + minutos
         };
     }
 
@@ -355,7 +510,6 @@ class ReportesManager {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Función de easing
             const easeOutCubic = 1 - Math.pow(1 - progress, 3);
             const current = start + (range * easeOutCubic);
             
@@ -374,34 +528,59 @@ class ReportesManager {
     applyFilters() {
         const mesFilter = document.getElementById('mesFilter');
         const estadoFilter = document.getElementById('estadoFilter');
+        const tipoBloqueFilter = document.getElementById('tipoBloqueFilter');
         
         let filtered = [...this.reportes];
 
-        // Filtro por mes
         if (mesFilter && mesFilter.value) {
             const [year, month] = mesFilter.value.split('-');
             filtered = filtered.filter(reporte => {
-                // Parsear fecha correctamente para evitar problemas de zona horaria
-                const [reporteYear, reporteMonth, reporteDay] = reporte.fecha.split('-');
-                const fechaReporte = new Date(reporteYear, reporteMonth - 1, reporteDay);
-                return fechaReporte.getFullYear() == year && 
-                       (fechaReporte.getMonth() + 1) == parseInt(month);
+                const [reporteYear, reporteMonth] = reporte.fecha.split('-');
+                return reporteYear === year && reporteMonth === month;
             });
         }
 
-        // Filtro por estado
         if (estadoFilter && estadoFilter.value) {
             filtered = filtered.filter(reporte => 
                 reporte.estado === estadoFilter.value
             );
         }
 
+        if (tipoBloqueFilter && tipoBloqueFilter.value) {
+            filtered = filtered.filter(reporte => 
+                reporte.tipoBloque && reporte.tipoBloque.toLowerCase().includes(tipoBloqueFilter.value)
+            );
+        }
+
         this.filteredReportes = filtered;
-        this.renderTable();
+        this.renderReportsTable();
     }
 
-    sortReportes(key) {
-        // Actualizar configuración de sort
+    applyPagoFilters() {
+        const mesPagoFilter = document.getElementById('mesPagoFilter');
+        const salaFilter = document.getElementById('salaFilter');
+        
+        let filtered = [...this.pagoHoras];
+
+        if (mesPagoFilter && mesPagoFilter.value) {
+            const [year, month] = mesPagoFilter.value.split('-');
+            filtered = filtered.filter(pago => {
+                const [pagoYear, pagoMonth] = pago.fecha.split('-');
+                return pagoYear === year && pagoMonth === month;
+            });
+        }
+
+        if (salaFilter && salaFilter.value) {
+            filtered = filtered.filter(pago => 
+                pago.sala === salaFilter.value
+            );
+        }
+
+        this.filteredPagos = filtered;
+        this.renderPagoTable();
+    }
+
+    sortData(key) {
         if (this.sortConfig.key === key) {
             this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
         } else {
@@ -409,25 +588,28 @@ class ReportesManager {
             this.sortConfig.direction = 'asc';
         }
 
-        // Ordenar datos
+        if (this.currentView === 'reportes') {
+            this.sortReportes(key);
+        } else {
+            this.sortPagos(key);
+        }
+
+        this.updateSortIcons();
+    }
+
+    sortReportes(key) {
         this.filteredReportes.sort((a, b) => {
             let aVal = a[key];
             let bVal = b[key];
 
-            // Manejar fechas - parsear correctamente para evitar problemas de zona horaria
             if (key === 'fecha') {
-                const [aYear, aMonth, aDay] = aVal.split('-');
-                const [bYear, bMonth, bDay] = bVal.split('-');
-                aVal = new Date(aYear, aMonth - 1, aDay);
-                bVal = new Date(bYear, bMonth - 1, bDay);
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
             }
             
-            // Manejar tiempo trabajado
-            if (key === 'tiempoTrabajado') {
-                const aTime = this.parseTimeString(aVal);
-                const bTime = this.parseTimeString(bVal);
-                aVal = aTime.horas * 60 + aTime.minutos;
-                bVal = bTime.horas * 60 + bTime.minutos;
+            if (key === 'horasValidas') {
+                aVal = this.parseTimeString(aVal || '0h 0m').total;
+                bVal = this.parseTimeString(bVal || '0h 0m').total;
             }
 
             if (aVal < bVal) return this.sortConfig.direction === 'asc' ? -1 : 1;
@@ -435,55 +617,72 @@ class ReportesManager {
             return 0;
         });
 
-        // Actualizar iconos de sort
-        this.updateSortIcons();
-        
-        // Re-renderizar tabla
-        this.renderTable();
+        this.renderReportsTable();
+    }
+
+    sortPagos(key) {
+        this.filteredPagos.sort((a, b) => {
+            let aVal = a[key];
+            let bVal = b[key];
+
+            if (key === 'fecha') {
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
+            }
+
+            if (aVal < bVal) return this.sortConfig.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return this.sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        this.renderPagoTable();
     }
 
     updateSortIcons() {
         const sortableHeaders = document.querySelectorAll('.sortable');
         sortableHeaders.forEach(header => {
             const icon = header.querySelector('.sort-icon');
-            if (header.dataset.sort === this.sortConfig.key) {
-                icon.className = this.sortConfig.direction === 'asc' 
-                    ? 'bi bi-arrow-up sort-icon'
-                    : 'bi bi-arrow-down sort-icon';
-                header.style.background = 'var(--report-gold)';
-                header.style.color = 'white';
-            } else {
-                icon.className = 'bi bi-arrow-up-down sort-icon';
-                header.style.background = '';
-                header.style.color = '';
+            if (icon) {
+                if (header.dataset.sort === this.sortConfig.key) {
+                    icon.className = this.sortConfig.direction === 'asc' 
+                        ? 'bi bi-arrow-up sort-icon'
+                        : 'bi bi-arrow-down sort-icon';
+                    header.style.background = 'var(--report-gold)';
+                    header.style.color = 'white';
+                } else {
+                    icon.className = 'bi bi-arrow-up-down sort-icon';
+                    header.style.background = '';
+                    header.style.color = '';
+                }
             }
         });
     }
 
-    renderTable() {
+    renderReportsTable() {
         const reportsTableBody = document.getElementById('reportsTableBody');
         const emptyState = document.getElementById('emptyState');
         const totalReportesEl = document.getElementById('totalReportes');
+        const discrepanciasAlert = document.getElementById('discrepanciasAlert');
+        const discrepanciasCount = document.getElementById('discrepanciasCount');
 
         if (!reportsTableBody) return;
 
-        // Actualizar contador
         if (totalReportesEl) {
             totalReportesEl.textContent = this.filteredReportes.length;
         }
 
-        // Verificar si hay datos
         if (this.filteredReportes.length === 0) {
             reportsTableBody.innerHTML = '';
             if (emptyState) emptyState.style.display = 'block';
+            if (discrepanciasAlert) discrepanciasAlert.style.display = 'none';
             return;
         }
 
         if (emptyState) emptyState.style.display = 'none';
 
-        // Generar filas
+        let discrepancias = 0;
+
         const rows = this.filteredReportes.map((reporte, index) => {
-            // Parsear fecha correctamente para evitar problemas de zona horaria
             const [year, month, day] = reporte.fecha.split('-');
             const fecha = new Date(year, month - 1, day).toLocaleDateString('es-MX', {
                 day: '2-digit',
@@ -491,15 +690,39 @@ class ReportesManager {
                 year: 'numeric'
             });
 
+            const entradaDiscrepancia = this.tieneDiscrepancia(reporte.entrada, reporte.horarioProgramadoInicio);
+            const salidaDiscrepancia = this.tieneDiscrepancia(reporte.salida, reporte.horarioProgramadoFinal);
+            const horasDiscrepancia = this.parseTimeString(reporte.horasValidas || '0h 0m').total < 
+                                      this.parseTimeString(reporte.horasProgramadas || '0h 0m').total;
+
+            if (entradaDiscrepancia || salidaDiscrepancia || horasDiscrepancia) {
+                discrepancias++;
+            }
+
+            const tipoBloque = this.getTipoBloqueClass(reporte.tipoBloque);
             const statusClass = `status-${reporte.estado}`;
             const statusIcon = this.getStatusIcon(reporte.estado);
 
             return `
                 <tr style="animation-delay: ${index * 0.1}s">
                     <td class="date-cell">${fecha}</td>
-                    <td class="time-cell">${reporte.entrada || '--'}</td>
-                    <td class="time-cell">${reporte.salida || '--'}</td>
-                    <td class="duration-cell">${reporte.tiempoTrabajado || '--'}</td>
+                    <td class="tipo-bloque-cell">
+                        <span class="${tipoBloque}">${reporte.tipoBloque || '--'}</span>
+                    </td>
+                    <td class="horario-programado">${this.formatTime(reporte.horarioProgramadoInicio)}</td>
+                    <td class="horario-programado">${this.formatTime(reporte.horarioProgramadoFinal)}</td>
+                    <td class="horario-real ${entradaDiscrepancia ? 'horario-discrepancia' : 'horario-ok'}">
+                        ${this.formatTime(reporte.entrada)}
+                        ${entradaDiscrepancia ? '<div class="discrepancia-badge"></div>' : ''}
+                    </td>
+                    <td class="horario-real ${salidaDiscrepancia ? 'horario-discrepancia' : 'horario-ok'}">
+                        ${this.formatTime(reporte.salida)}
+                        ${salidaDiscrepancia ? '<div class="discrepancia-badge"></div>' : ''}
+                    </td>
+                    <td class="horas-validas ${this.getHorasValidasClass(reporte)}">
+                        ${reporte.horasValidas || '--'}
+                        ${horasDiscrepancia ? '<div class="discrepancia-badge"></div>' : ''}
+                    </td>
                     <td>
                         <span class="status-badge ${statusClass}">
                             <i class="${statusIcon}"></i>
@@ -514,6 +737,103 @@ class ReportesManager {
         }).join('');
 
         reportsTableBody.innerHTML = rows;
+
+        if (discrepanciasAlert && discrepanciasCount) {
+            if (discrepancias > 0) {
+                discrepanciasCount.textContent = discrepancias;
+                discrepanciasAlert.style.display = 'flex';
+            } else {
+                discrepanciasAlert.style.display = 'none';
+            }
+        }
+    }
+
+    renderPagoTable() {
+        const pagoTableBody = document.getElementById('pagoTableBody');
+        const emptyPagoState = document.getElementById('emptyPagoState');
+        const totalPagosEl = document.getElementById('totalPagos');
+
+        if (!pagoTableBody) return;
+
+        if (totalPagosEl) {
+            totalPagosEl.textContent = this.filteredPagos.length;
+        }
+
+        if (this.filteredPagos.length === 0) {
+            pagoTableBody.innerHTML = '';
+            if (emptyPagoState) emptyPagoState.style.display = 'block';
+            return;
+        }
+
+        if (emptyPagoState) emptyPagoState.style.display = 'none';
+
+        const rows = this.filteredPagos.map((pago, index) => {
+            const [year, month, day] = pago.fecha.split('-');
+            const fecha = new Date(year, month - 1, day).toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+
+            return `
+                <tr style="animation-delay: ${index * 0.1}s">
+                    <td class="date-cell">${fecha}</td>
+                    <td class="sala-cell">${pago.sala || '--'}</td>
+                    <td class="time-cell">${this.formatTime(pago.horaInicio)}</td>
+                    <td class="time-cell">${this.formatTime(pago.horaFin)}</td>
+                    <td class="total-horas-cell">${pago.totalHoras || 0}h</td>
+                    <td class="autorizado-cell">${pago.quienAutorizo || '--'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        pagoTableBody.innerHTML = rows;
+    }
+
+    // Detectar discrepancias entre horario programado y real
+    tieneDiscrepancia(horarioReal, horarioProgramado, toleranciaMinutos = 15) {
+        if (!horarioReal || !horarioProgramado) return false;
+        
+        const real = this.timeToMinutes(horarioReal);
+        const programado = this.timeToMinutes(horarioProgramado);
+        
+        return Math.abs(real - programado) > toleranciaMinutos;
+    }
+
+    timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return (hours * 60) + minutes;
+    }
+
+    formatTime(timeStr) {
+        if (!timeStr) return '<span class="text-muted">--:--</span>';
+        
+        const [hours, minutes] = timeStr.split(':');
+        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    }
+
+    getTipoBloqueClass(tipoBloque) {
+        if (!tipoBloque) return '';
+        
+        const tipo = tipoBloque.toLowerCase();
+        if (tipo.includes('provisional-a')) return 'bloque-provisional-a';
+        if (tipo.includes('provisional-b')) return 'bloque-provisional-b';
+        if (tipo.includes('definitivo')) return 'bloque-definitivo';
+        return '';
+    }
+
+    getHorasValidasClass(reporte) {
+        const horasValidas = this.parseTimeString(reporte.horasValidas || '0h 0m');
+        const horasProgramadas = this.parseTimeString(reporte.horasProgramadas || '0h 0m');
+        
+        if (horasValidas.total === horasProgramadas.total) {
+            return 'horas-completas';
+        } else if (horasValidas.total < horasProgramadas.total) {
+            return 'horas-incompletas';
+        } else {
+            return 'horas-fraude';
+        }
     }
 
     getStatusIcon(estado) {
@@ -531,41 +851,92 @@ class ReportesManager {
             return;
         }
 
-        // Preparar datos para CSV
         const headers = [
             'Fecha',
-            'Entrada',
-            'Salida',
-            'Tiempo Trabajado',
+            'Tipo Bloque',
+            'Horario Programado Inicio',
+            'Horario Programado Final',
+            'Entrada Real',
+            'Salida Real',
+            'Horas Válidas',
             'Estado',
-            'Observaciones'
+            'Observaciones',
+            'Discrepancia Entrada',
+            'Discrepancia Salida',
+            'Discrepancia Horas'
         ];
 
-        const csvData = this.filteredReportes.map(reporte => [
-            reporte.fecha,
-            reporte.entrada || '',
-            reporte.salida || '',
-            reporte.tiempoTrabajado || '',
-            reporte.estado,
-            reporte.observaciones || ''
+        const csvData = this.filteredReportes.map(reporte => {
+            const entradaDiscrepancia = this.tieneDiscrepancia(reporte.entrada, reporte.horarioProgramadoInicio);
+            const salidaDiscrepancia = this.tieneDiscrepancia(reporte.salida, reporte.horarioProgramadoFinal);
+            const horasDiscrepancia = this.parseTimeString(reporte.horasValidas || '0h 0m').total < 
+                                      this.parseTimeString(reporte.horasProgramadas || '0h 0m').total;
+
+            return [
+                reporte.fecha,
+                reporte.tipoBloque || '',
+                reporte.horarioProgramadoInicio || '',
+                reporte.horarioProgramadoFinal || '',
+                reporte.entrada || '',
+                reporte.salida || '',
+                reporte.horasValidas || '',
+                reporte.estado,
+                reporte.observaciones || '',
+                entradaDiscrepancia ? 'SÍ' : 'NO',
+                salidaDiscrepancia ? 'SÍ' : 'NO',
+                horasDiscrepancia ? 'SÍ' : 'NO'
+            ];
+        });
+
+        this.generateCSV(csvData, headers, `reportes_asistencia_${this.currentUser.numeroCuenta}`);
+    }
+
+    exportPagoHoras() {
+        if (this.filteredPagos.length === 0) {
+            this.showNotification('Sin datos', 'No hay pagos para exportar', 'warning');
+            return;
+        }
+
+        const headers = [
+            'Fecha',
+            'Sala',
+            'Hora Inicio',
+            'Hora Fin',
+            'Total Horas',
+            'Autorizado Por',
+            'Nombre Asesor',
+            'Número Cuenta'
+        ];
+
+        const csvData = this.filteredPagos.map(pago => [
+            pago.fecha,
+            pago.sala || '',
+            pago.horaInicio || '',
+            pago.horaFin || '',
+            pago.totalHoras || 0,
+            pago.quienAutorizo || '',
+            pago.nombreAsesor || '',
+            pago.numeroCuenta || ''
         ]);
 
-        // Generar CSV
+        this.generateCSV(csvData, headers, `pago_horas_${this.currentUser.numeroCuenta}`);
+    }
+
+    generateCSV(data, headers, filename) {
         const csvContent = [
             headers.join(','),
-            ...csvData.map(row => 
+            ...data.map(row => 
                 row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
             )
         ].join('\n');
 
-        // Crear y descargar archivo
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         
         if (link.download !== undefined) {
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', `reportes_${this.currentUser.numeroCuenta}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -573,7 +944,7 @@ class ReportesManager {
             
             this.showNotification(
                 'Exportación exitosa', 
-                'Los reportes se han exportado correctamente', 
+                'Los datos se han exportado correctamente', 
                 'success',
                 'bi-download'
             );
@@ -581,10 +952,11 @@ class ReportesManager {
     }
 
     logout() {
-        // Limpiar datos
         this.currentUser = null;
         this.reportes = [];
+        this.pagoHoras = [];
         this.filteredReportes = [];
+        this.filteredPagos = [];
         localStorage.removeItem('reportes_user');
 
         // Resetear formulario
@@ -601,24 +973,23 @@ class ReportesManager {
         // Limpiar estadísticas
         this.clearStats();
 
-        // Limpiar tabla
+        // Limpiar tablas
         const reportsTableBody = document.getElementById('reportsTableBody');
-        if (reportsTableBody) {
-            reportsTableBody.innerHTML = '';
-        }
+        const pagoTableBody = document.getElementById('pagoTableBody');
+        if (reportsTableBody) reportsTableBody.innerHTML = '';
+        if (pagoTableBody) pagoTableBody.innerHTML = '';
 
         // Resetear filtros
-        const mesFilter = document.getElementById('mesFilter');
-        const estadoFilter = document.getElementById('estadoFilter');
-        if (mesFilter) mesFilter.value = '';
-        if (estadoFilter) estadoFilter.value = '';
+        this.resetFilters();
 
-        // Mostrar sección de auth con animación
+        // Volver a vista de reportes por defecto
+        this.switchView('reportes');
+
+        // Mostrar sección de auth
         const authSection = document.getElementById('authSection');
         const reportsSection = document.getElementById('reportsSection');
         
         if (reportsSection && authSection) {
-            // Animar salida de reports
             reportsSection.style.transition = 'all 0.3s ease';
             reportsSection.style.opacity = '0';
             reportsSection.style.transform = 'translateY(-20px)';
@@ -629,13 +1000,11 @@ class ReportesManager {
                 authSection.style.opacity = '0';
                 authSection.style.transform = 'translateY(20px)';
                 
-                // Animar entrada de auth
                 setTimeout(() => {
                     authSection.style.transition = 'all 0.3s ease';
                     authSection.style.opacity = '1';
                     authSection.style.transform = 'translateY(0)';
                     
-                    // Enfocar el input después de la animación
                     setTimeout(() => {
                         if (numeroCuentaInput) {
                             numeroCuentaInput.focus();
@@ -645,145 +1014,56 @@ class ReportesManager {
             }, 300);
         }
 
-        this.showNotification('Sesión cerrada', 'Has cerrado sesión correctamente. Ingresa otro número de cuenta.', 'info', 'bi-box-arrow-right');
+        this.showNotification('Sesión cerrada', 'Ingresa otro número de cuenta', 'info', 'bi-box-arrow-right');
     }
 
-    clearStats() {
-        // Limpiar todas las estadísticas
-        const horasTrabajadasEl = document.getElementById('horasTrabajadas');
-        const progresoPorcentajeEl = document.getElementById('progresoPorcentaje');
-        const diasTrabajadosEl = document.getElementById('diasTrabajados');
-        const progressCircle = document.getElementById('progressCircle');
-        const totalReportesEl = document.getElementById('totalReportes');
-
-        if (horasTrabajadasEl) horasTrabajadasEl.textContent = '0h';
-        if (progresoPorcentajeEl) progresoPorcentajeEl.textContent = '0%';
-        if (diasTrabajadosEl) diasTrabajadosEl.textContent = '0';
-        if (totalReportesEl) totalReportesEl.textContent = '0';
+    resetFilters() {
+        const filters = [
+            'mesFilter', 'estadoFilter', 'tipoBloqueFilter',
+            'mesPagoFilter', 'salaFilter'
+        ];
         
-        if (progressCircle) {
-            progressCircle.style.strokeDashoffset = '157'; // Círculo vacío
-        }
-    }
-
-    showNotification(title, message, type = 'info', icon = 'bi-info-circle') {
-        // Usar el sistema de notificaciones de navigation.js si está disponible
-        if (window.modernNav && typeof window.modernNav.showModernNotification === 'function') {
-            window.modernNav.showModernNotification(title, message, type, icon);
-        } else {
-            // Fallback a console
-            console.log(`${type.toUpperCase()}: ${title} - ${message}`);
-        }
-    }
-
-    // Método para establecer mes actual por defecto
-    setCurrentMonth() {
-        const mesFilter = document.getElementById('mesFilter');
-        if (mesFilter) {
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-            mesFilter.value = currentMonth;
-        }
-    }
-
-    // Método para estadísticas avanzadas
-    getAdvancedStats() {
-        const presenteDays = this.reportes.filter(r => r.estado === 'presente').length;
-        const ausenteDays = this.reportes.filter(r => r.estado === 'ausente').length;
-        const tardanzaDays = this.reportes.filter(r => r.estado === 'tardanza').length;
-        
-        const horasPromedioPorDia = this.reportes.length > 0 
-            ? this.calcularHorasTotales() / presenteDays
-            : 0;
-
-        return {
-            presenteDays,
-            ausenteDays,
-            tardanzaDays,
-            horasPromedioPorDia: Math.round(horasPromedioPorDia * 100) / 100,
-            totalDays: this.reportes.length,
-            asistenciaRate: Math.round((presenteDays / this.reportes.length) * 100)
-        };
-    }
-}
-
-// Utilidades adicionales
-class ReportesUtils {
-    static parseDate(dateStr) {
-        // Parsear fecha en formato "YYYY-MM-DD" correctamente
-        // Evita problemas de zona horaria usando Date constructor con parámetros separados
-        if (!dateStr) return null;
-        const [year, month, day] = dateStr.split('-');
-        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    }
-
-    static formatDate(dateStr) {
-        const date = this.parseDate(dateStr);
-        if (!date) return 'Fecha inválida';
-        
-        return date.toLocaleDateString('es-MX', {
-            weekday: 'short',
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
+        filters.forEach(filterId => {
+            const filter = document.getElementById(filterId);
+            if (filter) filter.value = '';
         });
     }
 
-    static formatTime(timeStr) {
-        if (!timeStr) return '--:--';
+    clearStats() {
+        const statElements = [
+            'horasTrabajadas', 'horasAdeudo', 'totalPagoHoras', 
+            'diasTrabajados', 'totalReportes', 'totalPagos'
+        ];
         
-        // Asegurar formato HH:MM
-        const [hours, minutes] = timeStr.split(':');
-        return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+        statElements.forEach(statId => {
+            const element = document.getElementById(statId);
+            if (element) {
+                element.textContent = statId.includes('total') ? '0' : '0h';
+            }
+        });
     }
 
-    static calculateTimeDifference(entrada, salida) {
-        if (!entrada || !salida) return null;
-        
-        const [entradaHours, entradaMinutes] = entrada.split(':').map(Number);
-        const [salidaHours, salidaMinutes] = salida.split(':').map(Number);
-        
-        const entradaTotal = entradaHours * 60 + entradaMinutes;
-        const salidaTotal = salidaHours * 60 + salidaMinutes;
-        
-        const diferencia = salidaTotal - entradaTotal;
-        const hours = Math.floor(diferencia / 60);
-        const minutes = diferencia % 60;
-        
-        return `${hours}h ${minutes}m`;
-    }
-
-    static exportToPDF(reportes, userInfo) {
-        // Esta función requeriría una librería como jsPDF
-        console.warn('Exportación a PDF no implementada. Usar CSV por ahora.');
-    }
-
-    static validateReportData(reporte) {
-        const required = ['fecha', 'numeroCuenta', 'nombreAsesor'];
-        const missing = required.filter(field => !reporte[field]);
-        
-        if (missing.length > 0) {
-            throw new Error(`Campos requeridos faltantes: ${missing.join(', ')}`);
+    showNotification(title, message, type = 'info', icon = 'bi-info-circle') {
+        if (window.modernNav && typeof window.modernNav.showModernNotification === 'function') {
+            window.modernNav.showModernNotification(title, message, type, icon);
+        } else {
+            console.log(`${type.toUpperCase()}: ${title} - ${message}`);
         }
-        
-        return true;
     }
 }
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-    // Esperar a que Firebase esté listo
     if (typeof firebase !== 'undefined') {
         window.reportesManager = new ReportesManager();
-        console.log('🚀 Sistema de Reportes inicializado');
+        console.log('Sistema de Reportes Dual inicializado');
     } else {
-        console.error('❌ Firebase no disponible');
+        console.error('Firebase no disponible');
         
-        // Retry después de un momento
         setTimeout(() => {
             if (typeof firebase !== 'undefined') {
                 window.reportesManager = new ReportesManager();
-                console.log('🚀 Sistema de Reportes inicializado (retry)');
+                console.log('Sistema de Reportes Dual inicializado (retry)');
             } else {
                 alert('Error: No se pudo conectar con la base de datos. Por favor, recarga la página.');
             }
@@ -794,55 +1074,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Cleanup al cerrar la página
 window.addEventListener('beforeunload', () => {
     if (window.reportesManager) {
-        console.log('🧹 Limpiando recursos del sistema de reportes');
+        console.log('Limpiando recursos del sistema dual');
     }
 });
 
 // Exportar para uso global
 window.ReportesManager = ReportesManager;
-window.ReportesUtils = ReportesUtils;
-
-// Atajos de teclado
-document.addEventListener('keydown', (e) => {
-    // Ctrl+R para refresh (si no es F5)
-    if (e.ctrlKey && e.key === 'r' && !e.shiftKey) {
-        e.preventDefault();
-        if (window.reportesManager && window.reportesManager.currentUser) {
-            window.reportesManager.loadReportes();
-        }
-    }
-    
-    // Ctrl+E para export
-    if (e.ctrlKey && e.key === 'e') {
-        e.preventDefault();
-        if (window.reportesManager && window.reportesManager.currentUser) {
-            window.reportesManager.exportReportes();
-        }
-    }
-    
-    // Escape para logout
-    if (e.key === 'Escape' && window.reportesManager && window.reportesManager.currentUser) {
-        const confirmLogout = confirm('¿Deseas cerrar sesión?');
-        if (confirmLogout) {
-            window.reportesManager.logout();
-        }
-    }
-});
-
-// Configuración para modo desarrollo
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('🔧 Modo desarrollo activado para Reportes');
-    
-    // Funciones de debug
-    window.debugReportes = {
-        showCurrentUser: () => {
-            console.log('Usuario actual:', window.reportesManager?.currentUser);
-        },
-        showReportes: () => {
-            console.log('Reportes cargados:', window.reportesManager?.reportes);
-        },
-        testNotification: () => {
-            window.reportesManager?.showNotification('Test', 'Notificación de prueba', 'info');
-        }
-    };
-}
