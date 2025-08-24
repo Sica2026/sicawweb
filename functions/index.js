@@ -3,8 +3,13 @@
  * Sistema que procesa asistencias diariamente a las 10 PM
  */
 
-const functions = require('firebase-functions');
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest, onCall } = require("firebase-functions/v2/https");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require('firebase-admin');
+
+// Configurar región globalmente
+setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
 // Inicializar Firebase Admin
 admin.initializeApp();
@@ -20,45 +25,43 @@ db.settings({
 // =============================================
 
 // Función principal que se ejecuta diariamente a las 10 PM
-exports.procesarAsistenciasDiarias = functions
-  .region('us-central1')
-  .pubsub
-  .schedule('0 22 * * *') // 10:00 PM todos los días
-  .timeZone('America/Mexico_City')
-  .onRun(async (context) => {
-    const inicioEjecucion = new Date();
-    console.log('🚀 Iniciando procesamiento diario de asistencias...', inicioEjecucion.toISOString());
+exports.procesarAsistenciasDiarias = onSchedule({
+  schedule: '0 22 * * *', // 10:00 PM todos los días
+  timeZone: 'America/Mexico_City'
+}, async (event) => {
+  const inicioEjecucion = new Date();
+  console.log('🚀 Iniciando procesamiento diario de asistencias...', inicioEjecucion.toISOString());
+  
+  try {
+    // Registrar inicio de ejecución
+    await registrarEjecucion(db, 'inicio', inicioEjecucion);
     
-    try {
-      // Registrar inicio de ejecución
-      await registrarEjecucion(db, 'inicio', inicioEjecucion);
-      
-      const resultado = await procesarAsistencias();
-      
-      const finEjecucion = new Date();
-      const duracion = finEjecucion - inicioEjecucion;
-      
-      console.log('✅ Procesamiento completado:', resultado);
-      console.log(`⏱️ Duración: ${duracion}ms`);
-      
-      // Registrar éxito de ejecución
-      await registrarEjecucion(db, 'exito', inicioEjecucion, {
-        duracion: duracion,
-        resultado: resultado
-      });
-      
-      return resultado;
-    } catch (error) {
-      console.error('❌ Error en procesamiento:', error);
-      
-      // Registrar error de ejecución
-      await registrarEjecucion(db, 'error', inicioEjecucion, {
-        error: error.message
-      });
-      
-      throw error;
-    }
-  });
+    const resultado = await procesarAsistencias();
+    
+    const finEjecucion = new Date();
+    const duracion = finEjecucion - inicioEjecucion;
+    
+    console.log('✅ Procesamiento completado:', resultado);
+    console.log(`⏱️ Duración: ${duracion}ms`);
+    
+    // Registrar éxito de ejecución
+    await registrarEjecucion(db, 'exito', inicioEjecucion, {
+      duracion: duracion,
+      resultado: resultado
+    });
+    
+    return resultado;
+  } catch (error) {
+    console.error('❌ Error en procesamiento:', error);
+    
+    // Registrar error de ejecución
+    await registrarEjecucion(db, 'error', inicioEjecucion, {
+      error: error.message
+    });
+    
+    throw error;
+  }
+});
 
 // =============================================
 // FUNCIÓN MANUAL PARA FECHA ESPECÍFICA
@@ -72,7 +75,7 @@ exports.procesarAsistenciasDiarias = functions
  * - tipoBloque: opcional, si no se especifica usa la configuración activa
  * - moverAsistencias: true/false, default true
  */
-exports.procesarFechaEspecifica = functions.https.onRequest(async (req, res) => {
+exports.procesarFechaEspecifica = onRequest(async (req, res) => {
   console.log('🛠️ Iniciando procesamiento manual de fecha específica...');
   
   // Configurar CORS
@@ -694,26 +697,27 @@ function procesarAsistenciaPresente(horario, asistencia, fecha) {
     observaciones.push('Puntual');
   }
   
-  // Crear reporte limpio sin campos undefined
+  // Crear reporte enriquecido
   const reporte = {};
   
-  // Solo agregar campos que no sean undefined
-  if (horario.nombreAsesor || asistencia.nombreAsesor) {
-    reporte.nombreAsesor = horario.nombreAsesor || asistencia.nombreAsesor || 'Sin nombre';
-  } else {
-    reporte.nombreAsesor = 'Sin nombre';
-  }
-  
-  if (horario.numeroCuenta) {
-    reporte.numeroCuenta = horario.numeroCuenta;
-  } else {
-    reporte.numeroCuenta = 'Sin cuenta';
-  }
-  
+  reporte.nombreAsesor = horario.nombreAsesor || asistencia.nombreAsesor || 'Sin nombre';
+  reporte.numeroCuenta = horario.numeroCuenta || 'Sin cuenta';
   reporte.fecha = fecha;
+  
+  // Información original de asistencia (conservada)
   reporte.entrada = entradaReal || null;
   reporte.salida = salidaReal || null;
   reporte.tiempoTrabajado = asistencia.horasTrabajadas || calcularTiempoTrabajado(entradaReal, salidaReal) || '0h 0m';
+  
+  // NUEVO: Información del horario programado
+  reporte.horarioProgramadoInicio = horario.horaInicio;
+  reporte.horarioProgramadoFinal = horario.horaFinal;
+  reporte.horasProgramadas = calcularHorasEsperadas(horario.horaInicio, horario.horaFinal);
+  reporte.nombreHorario = horario.nombreHorario;
+  
+  // NUEVO: Análisis de horas válidas
+  reporte.horasValidas = calcularHorasValidas(horario, asistencia);
+  
   reporte.observaciones = observaciones.join(', ');
   reporte.tipoBloque = horario.tipoBloque || 'Sin tipo';
   reporte.estado = 'presente';
@@ -723,6 +727,33 @@ function procesarAsistenciaPresente(horario, asistencia, fecha) {
     reporte: reporte,
     asistenciaProcesada: asistencia
   };
+}
+
+function calcularHorasValidas(horario, asistencia) {
+  const entradaReal = asistencia.entrada?.horaRedondeada;
+  const salidaReal = asistencia.salida?.horaRedondeada;
+  const horaInicio = horario.horaInicio;
+  const horaFinal = horario.horaFinal;
+  
+  if (!entradaReal || !salidaReal || !horaInicio || !horaFinal) {
+    return '0h 0m';
+  }
+  
+  const entradaMin = horaAMinutos(entradaReal);
+  const salidaMin = horaAMinutos(salidaReal);
+  const inicioMin = horaAMinutos(horaInicio);
+  const finalMin = horaAMinutos(horaFinal);
+  
+  // Calcular intersección entre horario programado y trabajado
+  const inicioValido = Math.max(inicioMin, entradaMin);
+  const finalValido = Math.min(finalMin, salidaMin);
+  
+  const minutosValidos = Math.max(0, finalValido - inicioValido);
+  
+  const horas = Math.floor(minutosValidos / 60);
+  const minutos = minutosValidos % 60;
+  
+  return `${horas}h ${minutos}m`;
 }
 
 /**
@@ -962,7 +993,7 @@ async function registrarEjecucionManual(db, estado, inicioEjecucion, datos = {})
  * Obtener nombre del día en español
  */
 function obtenerNombreDia(fecha) {
-  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sábado'];
   return dias[fecha.getDay()];
 }
 
@@ -975,8 +1006,6 @@ function calcularDiferenciaMinutos(hora1, hora2) {
   const minutos2 = horaAMinutos(hora2);
   return minutos1 - minutos2;
 }
-
-
 
 /**
  * Calcular tiempo trabajado entre dos horas
@@ -1022,7 +1051,8 @@ function calcularHorasEsperadas(horaInicio, horaFinal) {
  * Función para probar manualmente (callable)
  * Se puede llamar desde la consola de Firebase
  */
-exports.procesarAsistenciasManual = functions.https.onCall(async (data, context) => {
+exports.procesarAsistenciasManual = onCall(async (request) => {
+  const data = request.data;
   console.log('🧪 Ejecutando procesamiento manual...');
   
   try {
@@ -1044,7 +1074,7 @@ exports.procesarAsistenciasManual = functions.https.onCall(async (data, context)
  * Función para probar manualmente via HTTP
  * Accesible desde navegador web
  */
-exports.probarProcesamiento = functions.https.onRequest(async (req, res) => {
+exports.probarProcesamiento = onRequest(async (req, res) => {
   console.log('🧪 Iniciando prueba manual via HTTP...');
   
   // Configurar CORS para permitir acceso desde navegador
@@ -1083,7 +1113,7 @@ exports.probarProcesamiento = functions.https.onRequest(async (req, res) => {
  * Función para obtener estadísticas sin procesar
  * Útil para verificar datos antes del procesamiento
  */
-exports.obtenerEstadisticas = functions.https.onRequest(async (req, res) => {
+exports.obtenerEstadisticas = onRequest(async (req, res) => {
   console.log('📊 Obteniendo estadísticas...');
   
   res.set('Access-Control-Allow-Origin', '*');
@@ -1161,7 +1191,7 @@ exports.obtenerEstadisticas = functions.https.onRequest(async (req, res) => {
  * Función para consultar logs de ejecuciones
  * Útil para verificar el historial de ejecuciones automáticas y manuales
  */
-exports.consultarLogsEjecuciones = functions.https.onRequest(async (req, res) => {
+exports.consultarLogsEjecuciones = onRequest(async (req, res) => {
   console.log('📋 Consultando logs de ejecuciones...');
   
   res.set('Access-Control-Allow-Origin', '*');
