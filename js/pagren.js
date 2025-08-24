@@ -1204,6 +1204,7 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 // Service Worker para caché (opcional)
+/*
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
         .then(registration => {
@@ -1213,6 +1214,7 @@ if ('serviceWorker' in navigator) {
             console.log('Error al registrar Service Worker:', error);
         });
 }
+*/
 
 // Configuración de PWA
 window.addEventListener('beforeinstallprompt', (e) => {
