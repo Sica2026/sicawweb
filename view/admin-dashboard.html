@@ -225,6 +225,34 @@
         </div>
     </div>
 
+    <!-- Modal de Contraseña PAGREN -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Acceso a PAGREN
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Ingresa la contraseña para acceder al Panel de Enlaces:</p>
+                <input type="password" class="form-control" id="pagrenPassword" placeholder="Contraseña">
+                <div class="invalid-feedback" id="passwordError" style="display: none;">
+                    Contraseña incorrecta
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="verifyPassword">
+                    <i class="bi bi-unlock me-1"></i>Acceder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <!-- Notificaciones -->
     <div id="notification-container"></div>
 

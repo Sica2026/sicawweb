@@ -387,11 +387,15 @@ async function saveTarea() {
 function setupQuickActions() {
     const actions = {
         'viewRegistros': () => {
-    showNotification('Abriendo Panel de Enlaces PAGREN...', 'info');
-    setTimeout(() => {
-        window.location.href = '../view/pagren.html'; // Subir un nivel y luego entrar a view
-    }, 500);
-},
+            // Mostrar modal de contraseña
+            const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+            modal.show();
+            
+            // Focus en el input cuando se abra el modal
+            document.getElementById('passwordModal').addEventListener('shown.bs.modal', () => {
+                document.getElementById('pagrenPassword').focus();
+            });
+        },
         'manageUsers': () => showNotification('Función en desarrollo', 'info'),
         'systemSettings': () => showNotification('Función en desarrollo', 'info'),
         'generateReport': () => generateReport()
@@ -403,6 +407,46 @@ function setupQuickActions() {
             element.addEventListener('click', handler);
         }
     });
+    
+    // Event listener para verificar contraseña
+    const verifyBtn = document.getElementById('verifyPassword');
+    const passwordInput = document.getElementById('pagrenPassword');
+    const errorDiv = document.getElementById('passwordError');
+    
+    if (verifyBtn && passwordInput) {
+        verifyBtn.addEventListener('click', verifyPagrenPassword);
+        
+        // Permitir Enter para enviar
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                verifyPagrenPassword();
+            }
+        });
+    }
+}
+
+function verifyPagrenPassword() {
+    const password = document.getElementById('pagrenPassword').value;
+    const errorDiv = document.getElementById('passwordError');
+    const modal = bootstrap.Modal.getInstance(document.getElementById('passwordModal'));
+    
+    if (password === '@@@@@') {
+        errorDiv.style.display = 'none';
+        modal.hide();
+        showNotification('Acceso autorizado. Abriendo PAGREN...', 'success');
+        setTimeout(() => {
+            window.location.href = '../view/pagren.html';
+        }, 500);
+    } else {
+        errorDiv.style.display = 'block';
+        document.getElementById('pagrenPassword').classList.add('is-invalid');
+        
+        // Limpiar error después de 3 segundos
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+            document.getElementById('pagrenPassword').classList.remove('is-invalid');
+        }, 3000);
+    }
 }
 
 async function generateReport() {

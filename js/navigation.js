@@ -390,7 +390,7 @@ class ModernNavigation {
             title: 'Reportes',
             message: 'Generando reportes del sistema...',
             icon: 'bi-file-earmark-text',
-            page: 'reportes-asesor.html'
+            page: 'reportes-aesor.html'
         },
         'horario': {
             title: 'Consulta de Horario',
