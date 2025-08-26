@@ -713,7 +713,6 @@
     
     .document-name {
         font-size: 0.75rem;
-        -webkit-line-clamp: 1;
     }
     
     .detail-item {
