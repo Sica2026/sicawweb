@@ -322,6 +322,11 @@ class AdminDownloadsManager {
                                     <i class="bi bi-eye"></i>
                                     Detalles
                                 </button>
+                                <button class="btn-document-action btn-open-files" 
+                                        onclick="adminDownloads.openFiles('${doc.id}')">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                    Abrir
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -468,11 +473,28 @@ class AdminDownloadsManager {
         this.downloadProgress.total = docs.reduce((sum, doc) => sum + doc.downloadUrls.length, 0);
         this.downloadProgress.currentFile = '';
         
+        // Show modal
         this.elements.downloadModal.show();
         this.updateDownloadProgress();
         
         const logList = document.getElementById('download-log-list');
         logList.innerHTML = '';
+        
+        // If there are many files, ask user preference
+        if (this.downloadProgress.total > 5) {
+            const userChoice = confirm(
+                `Se van a descargar ${this.downloadProgress.total} archivos. ` +
+                `Esto podría abrir muchas ventanas/pestañas.\n\n` +
+                `¿Prefieres continuar con la descarga automática?\n\n` +
+                `Presiona "Cancelar" para abrir los archivos en pestañas nuevas en su lugar.`
+            );
+            
+            if (!userChoice) {
+                this.openMultipleFiles(docs);
+                this.elements.downloadModal.hide();
+                return;
+            }
+        }
         
         try {
             for (const doc of docs) {
@@ -484,50 +506,68 @@ class AdminDownloadsManager {
                         await this.downloadFile(urlInfo.url, `${doc.displayName}_${urlInfo.label}`);
                         this.addDownloadLog(`✓ ${this.downloadProgress.currentFile}`, 'success');
                     } catch (error) {
-                        console.error('Download error:', error);
-                        this.addDownloadLog(`✗ Error: ${this.downloadProgress.currentFile}`, 'error');
+                        console.log('Download info:', error.message);
+                        this.addDownloadLog(`→ ${this.downloadProgress.currentFile} (abierto en nueva pestaña)`, 'info');
                     }
                     
                     this.downloadProgress.current++;
                     this.updateDownloadProgress();
                     
-                    // Small delay between downloads
-                    await this.delay(500);
+                    // Longer delay between downloads to avoid browser blocking
+                    await this.delay(1000);
                 }
             }
             
             this.playSound(800, 0.3);
-            this.showNotification('Descarga completada', 'success');
+            this.showNotification('Proceso de descarga completado', 'success');
             
         } catch (error) {
             console.error('Download process error:', error);
-            this.showNotification('Error durante la descarga', 'error');
+            this.showNotification('Error durante el proceso de descarga', 'error');
         } finally {
             document.getElementById('close-download-modal').disabled = false;
-            this.downloadProgress.currentFile = 'Descarga completada';
+            this.downloadProgress.currentFile = 'Proceso completado';
             this.updateDownloadProgress();
         }
     }
 
+    openMultipleFiles(docs) {
+        let totalOpened = 0;
+        
+        docs.forEach(doc => {
+            doc.downloadUrls.forEach(urlInfo => {
+                window.open(urlInfo.url, '_blank');
+                totalOpened++;
+            });
+        });
+        
+        this.showNotification(
+            `${totalOpened} archivos abiertos en pestañas nuevas`, 
+            'info'
+        );
+    }
+
     async downloadFile(url, filename) {
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            
+            // Create download link with direct URL
             const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = this.sanitizeFilename(filename);
+            link.href = url;
+            link.setAttribute('download', this.sanitizeFilename(filename));
+            link.style.display = 'none';
+            
+            // Add to document and trigger download
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
             
-            window.URL.revokeObjectURL(downloadUrl);
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 100);
             
         } catch (error) {
-            throw new Error(`Failed to download ${filename}: ${error.message}`);
+            // If download fails, open in new tab as fallback
+            window.open(url, '_blank');
+            throw new Error(`Direct download failed for ${filename}, opened in new tab`);
         }
     }
 
@@ -553,6 +593,13 @@ class AdminDownloadsManager {
         li.textContent = message;
         logList.appendChild(li);
         logList.scrollTop = logList.scrollHeight;
+    }
+
+    openFiles(docId) {
+        const doc = this.documents.find(d => d.id === docId);
+        if (!doc) return;
+        
+        this.openMultipleFiles([doc]);
     }
 
     viewDetails(docId) {
