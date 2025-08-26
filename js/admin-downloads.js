@@ -272,67 +272,76 @@ class AdminDownloadsManager {
 
         this.elements.emptyState.style.display = 'none';
         
-        grid.innerHTML = this.filteredDocuments.map((doc, index) => {
-            const isSelected = this.selectedDocuments.has(doc.id);
-            const statusClass = `status-${doc.estado || 'pendiente'}`;
-            const statusIcon = this.getStatusIcon(doc.estado);
-            
-            return `
-                <div class="col-lg-6 col-xl-4 fade-in-up" style="animation-delay: ${index * 0.1}s">
-                    <div class="document-card ${isSelected ? 'selected' : ''}" data-id="${doc.id}">
-                        <input type="checkbox" class="document-checkbox" 
-                               ${isSelected ? 'checked' : ''} 
-                               onchange="adminDownloads.toggleSelection('${doc.id}')">
-                        
-                        <div class="document-info">
-                            <h3 class="document-name">${doc.displayName}</h3>
-                            
-                            <div class="document-details">
-                                <div class="detail-item">
-                                    <i class="bi bi-person-badge"></i>
-                                    <span>${doc.curp || 'No disponible'}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <i class="bi bi-envelope"></i>
-                                    <span>${doc.correoElectronico || 'No disponible'}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <i class="bi bi-files"></i>
-                                    <span>${doc.downloadUrls.length} documento(s)</span>
-                                </div>
-                                <div class="detail-item">
-                                    <i class="bi bi-calendar-event"></i>
-                                    <span>${this.formatDate(doc.fechaActualizacion || doc.fechaNacimiento)}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="document-status ${statusClass}">
-                                <i class="bi ${statusIcon}"></i>
-                                ${this.getStatusText(doc.estado)}
-                            </div>
-                            
-                            <div class="document-actions">
-                                <button class="btn-document-action btn-download-single" 
-                                        onclick="adminDownloads.downloadSingle('${doc.id}')">
-                                    <i class="bi bi-download"></i>
-                                    Descargar
-                                </button>
-                                <button class="btn-document-action btn-view-details" 
-                                        onclick="adminDownloads.viewDetails('${doc.id}')">
-                                    <i class="bi bi-eye"></i>
-                                    Detalles
-                                </button>
-                                <button class="btn-document-action btn-open-files" 
-                                        onclick="adminDownloads.openFiles('${doc.id}')">
-                                    <i class="bi bi-box-arrow-up-right"></i>
-                                    Abrir
-                                </button>
-                            </div>
+        // Create table structure for better column layout
+        grid.innerHTML = `
+            <div class="col-12">
+                <div class="documents-table-container">
+                    <div class="documents-table-header">
+                        <div class="header-cell checkbox-cell">
+                            <input type="checkbox" id="select-all-checkbox" onchange="adminDownloads.toggleSelectAll(this)">
                         </div>
+                        <div class="header-cell name-cell">Nombre</div>
+                        <div class="header-cell curp-cell">CURP</div>
+                        <div class="header-cell docs-cell">Docs</div>
+                        <div class="header-cell status-cell">Estado</div>
+                        <div class="header-cell actions-cell">Acciones</div>
+                    </div>
+                    <div class="documents-table-body">
+                        ${this.filteredDocuments.map((doc, index) => {
+                            const isSelected = this.selectedDocuments.has(doc.id);
+                            const statusClass = `status-${doc.estado || 'pendiente'}`;
+                            const statusIcon = this.getStatusIcon(doc.estado);
+                            
+                            return `
+                                <div class="document-row ${isSelected ? 'selected' : ''} fade-in-up" 
+                                     style="animation-delay: ${index * 0.02}s" data-id="${doc.id}">
+                                    <div class="row-cell checkbox-cell">
+                                        <input type="checkbox" class="document-checkbox" 
+                                               ${isSelected ? 'checked' : ''} 
+                                               onchange="adminDownloads.toggleSelection('${doc.id}')">
+                                    </div>
+                                    <div class="row-cell name-cell" title="${doc.displayName}">
+                                        <strong>${doc.displayName}</strong>
+                                    </div>
+                                    <div class="row-cell curp-cell" title="${doc.curp || 'No disponible'}">
+                                        ${doc.curp || 'N/D'}
+                                    </div>
+                                    <div class="row-cell docs-cell">
+                                        <span class="docs-count">${doc.downloadUrls.length}</span>
+                                    </div>
+                                    <div class="row-cell status-cell">
+                                        <span class="document-status ${statusClass}">
+                                            <i class="bi ${statusIcon}"></i>
+                                            ${this.getStatusText(doc.estado)}
+                                        </span>
+                                    </div>
+                                    <div class="row-cell actions-cell">
+                                        <button class="btn-action btn-zip" 
+                                                onclick="adminDownloads.downloadSingle('${doc.id}')"
+                                                title="Descargar ZIP">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                        <button class="btn-action btn-details" 
+                                                onclick="adminDownloads.viewDetails('${doc.id}')"
+                                                title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
-            `;
-        }).join('');
+            </div>
+        `;
+    }
+    
+    toggleSelectAll(checkbox) {
+        if (checkbox.checked) {
+            this.selectAll();
+        } else {
+            this.clearSelection();
+        }
     }
 
     getStatusIcon(estado) {
