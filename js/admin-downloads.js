@@ -479,68 +479,63 @@ class AdminDownloadsManager {
         }
     }
 
-    async downloadMultipleDocuments(docs) {
-        this.downloadProgress.current = 0;
-        this.downloadProgress.total = docs.reduce((sum, doc) => sum + doc.downloadUrls.length, 0);
-        this.downloadProgress.currentFile = '';
-        
-        // Show modal
-        this.elements.downloadModal.show();
-        this.updateDownloadProgress();
-        
-        const logList = document.getElementById('download-log-list');
-        logList.innerHTML = '';
-        
-        // If there are many files, ask user preference
-        if (this.downloadProgress.total > 5) {
-            const userChoice = confirm(
-                `Se van a descargar ${this.downloadProgress.total} archivos. ` +
-                `Esto podría abrir muchas ventanas/pestañas.\n\n` +
-                `¿Prefieres continuar con la descarga automática?\n\n` +
-                `Presiona "Cancelar" para abrir los archivos en pestañas nuevas en su lugar.`
-            );
-            
-            if (!userChoice) {
-                this.openMultipleFiles(docs);
-                this.elements.downloadModal.hide();
-                return;
-            }
-        }
-        
-        try {
-            for (const doc of docs) {
-                for (const urlInfo of doc.downloadUrls) {
-                    this.downloadProgress.currentFile = `${doc.displayName} - ${urlInfo.label}`;
-                    this.updateDownloadProgress();
-                    
-                    try {
-                        await this.downloadFile(urlInfo.url, `${doc.displayName}_${urlInfo.label}`);
-                        this.addDownloadLog(`✓ ${this.downloadProgress.currentFile}`, 'success');
-                    } catch (error) {
-                        console.log('Download info:', error.message);
-                        this.addDownloadLog(`→ ${this.downloadProgress.currentFile} (abierto en nueva pestaña)`, 'info');
-                    }
-                    
-                    this.downloadProgress.current++;
-                    this.updateDownloadProgress();
-                    
-                    // Longer delay between downloads to avoid browser blocking
-                    await this.delay(1000);
+async downloadMultipleDocuments(docs) {
+    this.downloadProgress.current = 0;
+    this.downloadProgress.total = docs.reduce((sum, doc) => sum + doc.downloadUrls.length, 0);
+    this.downloadProgress.currentFile = '';
+
+    // Mostrar modal de progreso
+    this.elements.downloadModal.show();
+    this.updateDownloadProgress();
+
+    const logList = document.getElementById('download-log-list');
+    logList.innerHTML = '';
+
+    try {
+        const zip = new JSZip();
+
+        for (const doc of docs) {
+            for (const urlInfo of doc.downloadUrls) {
+                this.downloadProgress.currentFile = `${doc.displayName} - ${urlInfo.label}`;
+                this.updateDownloadProgress();
+
+                try {
+                    // Obtener archivo como blob
+                    const response = await fetch(urlInfo.url);
+                    const blob = await response.blob();
+
+                    // Guardar en ZIP
+                    const safeName = this.sanitizeFilename(`${doc.displayName}_${urlInfo.label}${this.getFileExtension(urlInfo.url)}`);
+                    zip.file(safeName, blob);
+
+                    this.addDownloadLog(`✓ ${this.downloadProgress.currentFile}`, 'success');
+                } catch (error) {
+                    console.error("Error al descargar:", error);
+                    this.addDownloadLog(`✗ ${this.downloadProgress.currentFile}`, 'error');
                 }
+
+                this.downloadProgress.current++;
+                this.updateDownloadProgress();
             }
-            
-            this.playSound(800, 0.3);
-            this.showNotification('Proceso de descarga completado', 'success');
-            
-        } catch (error) {
-            console.error('Download process error:', error);
-            this.showNotification('Error durante el proceso de descarga', 'error');
-        } finally {
-            document.getElementById('close-download-modal').disabled = false;
-            this.downloadProgress.currentFile = 'Proceso completado';
-            this.updateDownloadProgress();
         }
+
+        // Generar y descargar el ZIP
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, "documentos.zip");
+
+        this.playSound(800, 0.3);
+        this.showNotification('Archivo ZIP generado y descargado', 'success');
+
+    } catch (error) {
+        console.error('Error al generar ZIP:', error);
+        this.showNotification('Error durante el proceso de compresión', 'error');
+    } finally {
+        document.getElementById('close-download-modal').disabled = false;
+        this.downloadProgress.currentFile = 'Proceso completado';
+        this.updateDownloadProgress();
     }
+}
+
 
     openMultipleFiles(docs) {
         let totalOpened = 0;
@@ -557,6 +552,17 @@ class AdminDownloadsManager {
             'info'
         );
     }
+
+    getFileExtension(url) {
+    try {
+        const pathname = new URL(url).pathname;
+        const ext = pathname.split('.').pop();
+        return ext && ext.length < 6 ? `.${ext}` : "";
+    } catch {
+        return "";
+    }
+}
+
 
     async downloadFile(url, filename) {
         // Simple approach: just open in new tab
