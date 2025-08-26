@@ -527,7 +527,7 @@ class AdminDownloadsManager {
                 const zip = new JSZip();
                 let filesAdded = 0;
                 
-                // Add all files for this advisor to the ZIP
+                // Add all files directly to ZIP root (no subfolders)
                 for (const urlInfo of doc.downloadUrls) {
                     try {
                         this.addDownloadLog(`  Descargando: ${urlInfo.label}...`, 'info');
@@ -541,9 +541,11 @@ class AdminDownloadsManager {
                         
                         if (response.ok) {
                             const blob = await response.blob();
-                            const fileExtension = this.getFileExtension(urlInfo.url, urlInfo.label);
-                            const filename = `${urlInfo.label}${fileExtension}`;
+                            // Always add .pdf extension and ensure no double extensions
+                            const cleanLabel = urlInfo.label.replace(/\.pdf$/i, '');
+                            const filename = `${cleanLabel}.pdf`;
                             
+                            // Add file directly to ZIP root (no folders)
                             zip.file(filename, blob);
                             filesAdded++;
                             this.addDownloadLog(`  ✓ ${filename}`, 'success');
@@ -570,13 +572,13 @@ class AdminDownloadsManager {
                     // Download the ZIP
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(zipBlob);
-                    link.download = `${advisorName}_documentos.zip`;
+                    link.download = `${advisorName}.zip`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                     URL.revokeObjectURL(link.href);
                     
-                    this.addDownloadLog(`✓ ZIP creado: ${advisorName}_documentos.zip`, 'success');
+                    this.addDownloadLog(`✓ ZIP creado: ${advisorName}.zip`, 'success');
                 } else {
                     this.addDownloadLog(`⚠ No se pudieron descargar archivos para ${advisorName}`, 'warning');
                 }
