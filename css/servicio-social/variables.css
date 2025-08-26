@@ -1,0 +1,41 @@
+/* variables.css */
+/* Variables globales del sistema de servicio social */
+
+:root {
+    /* Colores principales */
+    --ss-primary: #6366f1;
+    --ss-primary-light: #818cf8;
+    --ss-primary-dark: #4f46e5;
+    --ss-success: #10b981;
+    --ss-warning: #f59e0b;
+    --ss-danger: #ef4444;
+    --ss-info: #3b82f6;
+    
+    /* Gradientes */
+    --ss-gradient: linear-gradient(135deg, var(--ss-primary), var(--ss-primary-light));
+    --ss-hero-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    /* Sombras */
+    --ss-card-shadow: 0 10px 30px rgba(99, 102, 241, 0.1);
+    --ss-card-shadow-hover: 0 20px 40px rgba(99, 102, 241, 0.2);
+    
+    /* Bordes */
+    --ss-border-radius: 16px;
+    --ss-border-radius-sm: 12px;
+    
+    /* Transiciones */
+    --ss-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --ss-animation-duration: 0.6s;
+}
+
+/* Variables para modo oscuro */
+[data-theme="dark"] {
+    --ss-card-bg: rgba(30, 41, 59, 0.8);
+    --ss-card-border: rgba(99, 102, 241, 0.2);
+    --ss-text-muted: rgba(148, 163, 184, 0.7);
+    --ss-surface: rgba(15, 23, 42, 0.9);
+    --ss-dark-bg: #1e293b;
+    --ss-dark-text: #f1f5f9;
+    --ss-dark-surface: #334155;
+    --ss-dark-border: rgba(99, 102, 241, 0.2);
+}

@@ -1,0 +1,11 @@
+/* servicio-social-main.css */
+/* Archivo principal que importa todos los módulos CSS */
+
+/* Importar módulos CSS en orden de dependencia */
+@import url('./servicio-social/variables.css');
+@import url('./servicio-social/hero-section.css');
+@import url('./servicio-social/search-filter.css');
+@import url('./servicio-social/cards-accordion.css');
+@import url('./servicio-social/modal-forms.css');
+@import url('./servicio-social/file-viewer.css');
+@import url('./servicio-social/animations-utils.css');
