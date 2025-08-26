@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Centro de Descargas - Administración SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/admin-downloads.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="admin-panel.html">Administración</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Centro de Descargas</li>
+            </ol>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Header Section -->
+            <div class="admin-header mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h1 class="admin-title">
+                            <i class="bi bi-cloud-download-fill me-3"></i>
+                            Centro de Descargas
+                        </h1>
+                        <p class="admin-subtitle">Gestión de documentos de asesores</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="admin-stats">
+                            <div class="stat-item">
+                                <span class="stat-number" id="total-documents">0</span>
+                                <span class="stat-label">Documentos</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" id="selected-count">0</span>
+                                <span class="stat-label">Seleccionados</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel mb-4">
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <div class="search-container">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="search-input" 
+                                   placeholder="Buscar por nombre, número de cuenta...">
+                        </div>
+                    </div>
+                    <div class="col-lg-2">
+                        <select class="form-select filter-select" id="state-filter">
+                            <option value="">Todos los estados</option>
+                            <option value="aprobado">Aprobados</option>
+                            <option value="pendiente">Pendientes</option>
+                            <option value="rechazado">Rechazados</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="bulk-actions">
+                            <button class="btn btn-outline-primary btn-select-all" id="select-all-btn">
+                                <i class="bi bi-check-all"></i> Seleccionar Todo
+                            </button>
+                            <button class="btn btn-outline-secondary btn-clear-selection" id="clear-selection-btn">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <button class="btn btn-sica btn-download-selected w-100" id="download-selected-btn" disabled>
+                            <i class="bi bi-download me-2"></i>
+                            <span class="download-text">Descargar Seleccionados</span>
+                            <div class="download-progress" style="display: none;">
+                                <div class="progress-bar"></div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Grid -->
+            <div class="documents-container">
+                <div class="row" id="documents-grid">
+                    <!-- Loading State -->
+                    <div class="col-12" id="loading-state">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p class="loading-text">Cargando documentos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="bi bi-inbox"></i>
+                </div>
+                <h3>No se encontraron documentos</h3>
+                <p>No hay documentos que coincidan con tus criterios de búsqueda.</p>
+            </div>
+        </div>
+
+        <!-- Download Modal -->
+        <div class="modal fade" id="downloadModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title">
+                            <i class="bi bi-download me-2"></i>
+                            Descargando Documentos
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="download-progress-container">
+                            <div class="progress mb-3">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="download-status">
+                                <span class="current-file">Preparando descarga...</span>
+                                <span class="download-count">0 / 0</span>
+                            </div>
+                        </div>
+                        <div class="download-log">
+                            <ul id="download-log-list"></ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" id="close-download-modal" disabled>
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/admin-downloads.js"></script>
+</body>
+</html>
