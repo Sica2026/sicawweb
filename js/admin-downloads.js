@@ -465,7 +465,18 @@ class AdminDownloadsManager {
         const doc = this.documents.find(d => d.id === docId);
         if (!doc) return;
         
-        await this.downloadMultipleDocuments([doc]);
+        // For single document, ask user preference
+        const choice = confirm(
+            `¿Cómo quieres acceder a los documentos de ${doc.displayName}?\n\n` +
+            `OK = Descargar automáticamente (puede no funcionar en todos los navegadores)\n` +
+            `Cancelar = Abrir en pestañas nuevas (más confiable)`
+        );
+        
+        if (choice) {
+            await this.downloadMultipleDocuments([doc]);
+        } else {
+            this.openMultipleFiles([doc]);
+        }
     }
 
     async downloadMultipleDocuments(docs) {
@@ -548,27 +559,9 @@ class AdminDownloadsManager {
     }
 
     async downloadFile(url, filename) {
-        try {
-            // Create download link with direct URL
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', this.sanitizeFilename(filename));
-            link.style.display = 'none';
-            
-            // Add to document and trigger download
-            document.body.appendChild(link);
-            link.click();
-            
-            // Clean up
-            setTimeout(() => {
-                document.body.removeChild(link);
-            }, 100);
-            
-        } catch (error) {
-            // If download fails, open in new tab as fallback
-            window.open(url, '_blank');
-            throw new Error(`Direct download failed for ${filename}, opened in new tab`);
-        }
+        // Simple approach: just open in new tab
+        // Modern browsers prevent cross-origin downloads for security
+        window.open(url, '_blank');
     }
 
     sanitizeFilename(filename) {
