@@ -774,6 +774,12 @@ handleAdminAction(action, button) {
             icon: 'bi-cash-coin',
             route: 'pago-horas.html'
         },
+        'reportes': {
+            title: 'Reportes Administrativos',
+            message: 'Accediendo al módulo de reportes...',
+            icon: 'bi-graph-up',
+            route: 'reportes-admin.html'
+        },
         'mas': {
             title: 'Más Opciones',
             message: 'Cargando opciones adicionales...',

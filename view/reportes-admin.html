@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - SICA Reportes</title>
+    
+    <!-- External Dependencies -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Modular CSS -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <link href="../css/modules/base-variables.css" rel="stylesheet">
+    <link href="../css/modules/layout-core.css" rel="stylesheet">
+    <link href="../css/modules/components-search.css" rel="stylesheet">
+    <link href="../css/modules/components-cards.css" rel="stylesheet">
+    <link href="../css/modules/stats-dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+    <div id="navbar-component"></div>
+
+    <!-- Main Container -->
+    <main class="admin-container" id="main-content">
+        
+        <!-- Search Panel Section -->
+        <section id="searchPanel" class="search-panel">
+            <div class="search-panel-inner">
+                <!-- Search Header -->
+                <div class="search-header">
+                    <div class="search-logo">
+                        <div class="logo-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="logo-text">
+                            <h1>Panel Administrativo</h1>
+                            <p>Sistema de Control de Asesores SICA</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Area -->
+                <div class="search-area">
+                    <div class="search-title">
+                        <h2>Seleccionar Asesor</h2>
+                        <p>Busca por nombre o número de cuenta para acceder a los reportes</p>
+                    </div>
+                    
+                    <div class="search-container">
+                        <div class="search-box">
+                            <div class="search-input-group">
+                                <i class="bi bi-search search-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="advisorSearch" 
+                                    class="search-input" 
+                                    placeholder="Escribe el nombre del asesor o número de cuenta..."
+                                    autocomplete="off"
+                                >
+                                <button class="search-clear" id="searchClear" style="display: none;">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Results Dropdown -->
+                        <div class="search-results" id="searchResults"></div>
+                        
+                        <!-- Quick Stats Preview -->
+                        <div class="quick-stats" id="quickStats" style="display: none;">
+                            <div class="stats-row">
+                                <div class="stat-item">
+                                    <i class="bi bi-people"></i>
+                                    <span id="totalAsesores">0</span>
+                                    <label>Total Asesores</label>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span id="recentActivity">0</span>
+                                    <label>Activos Hoy</label>
+                                </div>
+                                <div class="stat-item">
+                                    <i class="bi bi-graph-up"></i>
+                                    <span>98%</span>
+                                    <label>Sistema</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboardPanel" class="dashboard-panel" style="display: none;">
+            
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <div class="advisor-summary">
+                    <button class="back-btn" id="backToSearch">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <div class="advisor-avatar" id="advisorAvatar">
+                        <span id="advisorInitials">--</span>
+                    </div>
+                    <div class="advisor-info">
+                        <h2 id="advisorName">Cargando...</h2>
+                        <div class="advisor-meta">
+                            <span class="account-number" id="advisorAccount">000000</span>
+                            <span class="admin-badge">
+                                <i class="bi bi-shield-fill"></i>
+                                Vista Admin
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="action-btn refresh-btn" id="refreshData">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Actualizar</span>
+                    </button>
+                    <button class="action-btn export-btn" id="exportData">
+                        <i class="bi bi-download"></i>
+                        <span>Exportar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="dashboard-nav">
+                <div class="nav-container">
+                    <button class="nav-tab active" data-panel="overview" id="overviewTab">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Resumen</span>
+                        <div class="nav-indicator"></div>
+                    </button>
+                    <button class="nav-tab" data-panel="reports" id="reportsTab">
+                        <i class="bi bi-file-text"></i>
+                        <span>Reportes</span>
+                        <div class="tab-count" id="reportsCount">0</div>
+                        <div class="nav-indicator"></div>
+                    </button>
+                    <button class="nav-tab" data-panel="payments" id="paymentsTab">
+                        <i class="bi bi-cash-coin"></i>
+                        <span>Pagos</span>
+                        <div class="tab-count" id="paymentsCount">0</div>
+                        <div class="nav-indicator"></div>
+                    </button>
+                    <button class="nav-tab" data-panel="analytics" id="analyticsTab">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Análisis</span>
+                        <div class="nav-indicator"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                
+                <!-- Overview Panel -->
+                <div class="content-panel active" id="overviewPanel">
+                    <div class="overview-grid">
+                        <!-- Stats Cards Container -->
+                        <div id="statsContainer" class="stats-container">
+                            <!-- Stats will be loaded by stats module -->
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="quick-actions-card">
+                            <h3>
+                                <i class="bi bi-lightning"></i>
+                                Acciones Rápidas
+                            </h3>
+                            <div class="actions-grid">
+                                <button class="quick-action" data-action="view-reports">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                    <span>Ver Reportes</span>
+                                </button>
+                                <button class="quick-action" data-action="export-all">
+                                    <i class="bi bi-download"></i>
+                                    <span>Exportar Todo</span>
+                                </button>
+                                <button class="quick-action" data-action="generate-summary">
+                                    <i class="bi bi-clipboard-data"></i>
+                                    <span>Resumen Mensual</span>
+                                </button>
+                                <button class="quick-action" data-action="view-analytics">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                    <span>Ver Análisis</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Activity -->
+                        <div class="recent-activity-card">
+                            <h3>
+                                <i class="bi bi-clock-history"></i>
+                                Actividad Reciente
+                            </h3>
+                            <div class="activity-list" id="recentActivityList">
+                                <!-- Activity items will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Panel -->
+                <div class="content-panel" id="reportsPanel">
+                    <div id="reportsContainer">
+                        <!-- Reports content will be loaded by reports module -->
+                    </div>
+                </div>
+
+                <!-- Payments Panel -->
+                <div class="content-panel" id="paymentsPanel">
+                    <div id="paymentsContainer">
+                        <!-- Payments content will be loaded by payments module -->
+                    </div>
+                </div>
+
+                <!-- Analytics Panel -->
+                <div class="content-panel" id="analyticsPanel">
+                    <div id="analyticsContainer">
+                        <!-- Analytics content will be loaded by analytics module -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loadingText">Cargando datos...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- External Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+
+    <!-- Modular JavaScript -->
+    <script src="../js/modules/admin-core.js"></script>
+    <script src="../js/modules/search-manager.js"></script>
+    <script src="../js/modules/stats-manager.js"></script>
+    <script src="../js/modules/reports-manager.js"></script>
+    <script src="../js/modules/payments-manager.js"></script>
+    <script src="../js/modules/analytics-manager.js"></script>
+
+    <!-- Main App Initializer -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof AdminCore !== 'undefined') {
+                window.adminApp = new AdminCore();
+                console.log('🚀 Admin Panel System initialized');
+            } else {
+                console.error('AdminCore module not loaded');
+            }
+        });
+    </script>
+</body>
+</html>

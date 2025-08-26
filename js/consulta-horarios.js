@@ -173,9 +173,9 @@ class ConsultaHorariosManager {
             
             if (!configSnapshot.empty) {
                 const configDoc = configSnapshot.docs[0];
-                this.currentTipoBloque = configDoc.data().tipoBloque || 'provisional-a';
+                this.currentTipoBloque = configDoc.data().tipoBloque || 'definitivo';
             } else {
-                this.currentTipoBloque = 'provisional-a'; // Valor por defecto
+                this.currentTipoBloque = 'definitivo'; // Valor por defecto
             }
             
             console.log('📋 Tipo de bloque actual:', this.currentTipoBloque);
@@ -187,7 +187,7 @@ class ConsultaHorariosManager {
             
         } catch (error) {
             console.error('❌ Error cargando configuración:', error);
-            this.currentTipoBloque = 'provisional-a'; // Fallback
+            this.currentTipoBloque = 'definitivo'; // Fallback
             await this.loadAsesores();
             this.hideLoading();
         }

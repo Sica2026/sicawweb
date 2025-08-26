@@ -290,6 +290,14 @@ loadFavicon() {
                                                 <span>Pago de Horas</span>
                                             </div>
                                         </button>
+                                        <button class="option-btn" data-admin-action="reportes">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-graph-up"></i>
+                                                </div>
+                                                <span>Reportes</span>
+                                            </div>
+                                        </button>
                                         <button class="option-btn" data-admin-action="mas">
                                             <div class="option-content">
                                                 <div class="option-icon">
