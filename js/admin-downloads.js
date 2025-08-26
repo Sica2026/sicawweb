@@ -479,63 +479,149 @@ class AdminDownloadsManager {
         }
     }
 
-async downloadMultipleDocuments(docs) {
-    this.downloadProgress.current = 0;
-    this.downloadProgress.total = docs.reduce((sum, doc) => sum + doc.downloadUrls.length, 0);
-    this.downloadProgress.currentFile = '';
-
-    // Mostrar modal de progreso
-    this.elements.downloadModal.show();
-    this.updateDownloadProgress();
-
-    const logList = document.getElementById('download-log-list');
-    logList.innerHTML = '';
-
-    try {
-        const zip = new JSZip();
-
-        for (const doc of docs) {
-            for (const urlInfo of doc.downloadUrls) {
-                this.downloadProgress.currentFile = `${doc.displayName} - ${urlInfo.label}`;
-                this.updateDownloadProgress();
-
-                try {
-                    // Obtener archivo como blob
-                    const response = await fetch(urlInfo.url);
-                    const blob = await response.blob();
-
-                    // Guardar en ZIP
-                    const safeName = this.sanitizeFilename(`${doc.displayName}_${urlInfo.label}${this.getFileExtension(urlInfo.url)}`);
-                    zip.file(safeName, blob);
-
-                    this.addDownloadLog(`✓ ${this.downloadProgress.currentFile}`, 'success');
-                } catch (error) {
-                    console.error("Error al descargar:", error);
-                    this.addDownloadLog(`✗ ${this.downloadProgress.currentFile}`, 'error');
-                }
-
-                this.downloadProgress.current++;
-                this.updateDownloadProgress();
-            }
-        }
-
-        // Generar y descargar el ZIP
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        saveAs(zipBlob, "documentos.zip");
-
-        this.playSound(800, 0.3);
-        this.showNotification('Archivo ZIP generado y descargado', 'success');
-
-    } catch (error) {
-        console.error('Error al generar ZIP:', error);
-        this.showNotification('Error durante el proceso de compresión', 'error');
-    } finally {
-        document.getElementById('close-download-modal').disabled = false;
-        this.downloadProgress.currentFile = 'Proceso completado';
+    async downloadMultipleDocuments(docs) {
+        this.downloadProgress.current = 0;
+        this.downloadProgress.total = docs.length; // Now counting docs, not files
+        this.downloadProgress.currentFile = '';
+        
+        this.elements.downloadModal.show();
         this.updateDownloadProgress();
+        
+        const logList = document.getElementById('download-log-list');
+        logList.innerHTML = '';
+        
+        // Ask user for download method
+        const choice = confirm(
+            `Se crearán ${docs.length} archivos ZIP, uno por cada asesor.\n\n` +
+            `¿Continuar con la descarga de ZIPs individuales?\n\n` +
+            `OK = Crear ZIPs individuales\n` +
+            `Cancelar = Abrir archivos en pestañas`
+        );
+        
+        if (!choice) {
+            this.openMultipleFiles(docs);
+            this.elements.downloadModal.hide();
+            return;
+        }
+        
+        await this.createIndividualZips(docs);
     }
-}
 
+    async createIndividualZips(docs) {
+        try {
+            if (typeof JSZip === 'undefined') {
+                alert('Error: JSZip library no está disponible');
+                this.openMultipleFiles(docs);
+                this.elements.downloadModal.hide();
+                return;
+            }
+            
+            for (let i = 0; i < docs.length; i++) {
+                const doc = docs[i];
+                const advisorName = this.sanitizeFilename(doc.nombreAsesor || doc.displayName);
+                
+                this.downloadProgress.currentFile = `Creando ZIP: ${advisorName}`;
+                this.updateDownloadProgress();
+                this.addDownloadLog(`Procesando: ${advisorName}`, 'info');
+                
+                const zip = new JSZip();
+                let filesAdded = 0;
+                
+                // Add all files for this advisor to the ZIP
+                for (const urlInfo of doc.downloadUrls) {
+                    try {
+                        this.addDownloadLog(`  Descargando: ${urlInfo.label}...`, 'info');
+                        
+                        const response = await fetch(urlInfo.url, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': '*/*'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const fileExtension = this.getFileExtension(urlInfo.url, urlInfo.label);
+                            const filename = `${urlInfo.label}${fileExtension}`;
+                            
+                            zip.file(filename, blob);
+                            filesAdded++;
+                            this.addDownloadLog(`  ✓ ${filename}`, 'success');
+                        } else {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        
+                    } catch (error) {
+                        this.addDownloadLog(`  ✗ Error: ${urlInfo.label} - ${error.message}`, 'error');
+                        console.error(`Error fetching ${urlInfo.label}:`, error);
+                    }
+                }
+                
+                // Generate ZIP only if we have files
+                if (filesAdded > 0) {
+                    this.addDownloadLog(`Generando ZIP para ${advisorName} (${filesAdded} archivos)...`, 'info');
+                    
+                    const zipBlob = await zip.generateAsync({
+                        type: "blob",
+                        compression: "DEFLATE",
+                        compressionOptions: { level: 6 }
+                    });
+                    
+                    // Download the ZIP
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(zipBlob);
+                    link.download = `${advisorName}_documentos.zip`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                    
+                    this.addDownloadLog(`✓ ZIP creado: ${advisorName}_documentos.zip`, 'success');
+                } else {
+                    this.addDownloadLog(`⚠ No se pudieron descargar archivos para ${advisorName}`, 'warning');
+                }
+                
+                this.downloadProgress.current = i + 1;
+                this.updateDownloadProgress();
+                
+                // Small delay between ZIPs to avoid overwhelming the browser
+                await this.delay(1000);
+            }
+            
+            this.playSound(800, 0.5);
+            this.showNotification(`${docs.length} ZIPs creados exitosamente`, 'success');
+            
+        } catch (error) {
+            console.error('Error creating individual ZIPs:', error);
+            this.addDownloadLog('✗ Error general creando ZIPs', 'error');
+            this.showNotification('Error creando los ZIPs', 'error');
+        } finally {
+            document.getElementById('close-download-modal').disabled = false;
+            this.downloadProgress.currentFile = 'Proceso completado';
+            this.updateDownloadProgress();
+        }
+    }
+    
+    getFileExtension(url, label) {
+        // Try to get extension from URL first
+        const urlPath = new URL(url).pathname;
+        const urlMatch = urlPath.match(/\.[^.]*$/);
+        if (urlMatch) return urlMatch[0];
+        
+        // Fallback: assume PDF for most documents
+        if (label.toLowerCase().includes('pdf') || 
+            label.toLowerCase().includes('documento') ||
+            label.toLowerCase().includes('comprobante') ||
+            label.toLowerCase().includes('credencial') ||
+            label.toLowerCase().includes('historial') ||
+            label.toLowerCase().includes('curp') ||
+            label.toLowerCase().includes('ine')) {
+            return '.pdf';
+        }
+        
+        // Default to .pdf if uncertain
+        return '.pdf';
+    }
 
     openMultipleFiles(docs) {
         let totalOpened = 0;
@@ -552,17 +638,6 @@ async downloadMultipleDocuments(docs) {
             'info'
         );
     }
-
-    getFileExtension(url) {
-    try {
-        const pathname = new URL(url).pathname;
-        const ext = pathname.split('.').pop();
-        return ext && ext.length < 6 ? `.${ext}` : "";
-    } catch {
-        return "";
-    }
-}
-
 
     async downloadFile(url, filename) {
         // Simple approach: just open in new tab
