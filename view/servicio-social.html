@@ -7,7 +7,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Base Styles -->
     <link href="../css/base-styles.css" rel="stylesheet">
     <!-- Page Specific Styles -->
@@ -467,82 +467,177 @@
                         </div>
 
                         <!-- Documentos -->
-                        <div class="info-section">
-                            <h6 class="section-title">
-                                <i class="bi bi-cloud-upload"></i>
-                                Documentos del Servicio Social
-                            </h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Carta de Presentación</label>
-                                    <div class="file-upload-area">
-                                        <input type="file" id="cartaPresentacion" class="file-input" accept=".pdf">
-                                        <div class="file-upload-display">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span>Seleccionar archivo PDF</span>
-                                        </div>
-                                        <div class="file-current" style="display: none;">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span class="file-name"></span>
-                                            <button type="button" class="btn-file-remove">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Carta de Aceptación Firmada</label>
-                                    <div class="file-upload-area">
-                                        <input type="file" id="cartaAceptacion" class="file-input" accept=".pdf">
-                                        <div class="file-upload-display">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span>Seleccionar archivo PDF</span>
-                                        </div>
-                                        <div class="file-current" style="display: none;">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span class="file-name"></span>
-                                            <button type="button" class="btn-file-remove">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Carta de Término</label>
-                                    <div class="file-upload-area">
-                                        <input type="file" id="cartaTermino" class="file-input" accept=".pdf">
-                                        <div class="file-upload-display">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span>Seleccionar archivo PDF</span>
-                                        </div>
-                                        <div class="file-current" style="display: none;">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span class="file-name"></span>
-                                            <button type="button" class="btn-file-remove">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Reporte de SS</label>
-                                    <div class="file-upload-area">
-                                        <input type="file" id="reporteSS" class="file-input" accept=".pdf">
-                                        <div class="file-upload-display">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span>Seleccionar archivo PDF</span>
-                                        </div>
-                                        <div class="file-current" style="display: none;">
-                                            <i class="bi bi-file-earmark-pdf"></i>
-                                            <span class="file-name"></span>
-                                            <button type="button" class="btn-file-remove">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Sección de Documentos Mejorada -->
+<div class="info-section">
+    <h6 class="section-title">
+        <i class="bi bi-cloud-upload"></i>
+        Documentos del Servicio Social
+    </h6>
+    
+    <div class="documents-grid">
+        
+        <!-- Carta de Presentación -->
+        <div class="document-card" data-document="cartaPresentacion">
+            <div class="document-header">
+                <div class="document-icon pdf">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </div>
+                <h6 class="document-title">Carta de Presentación</h6>
+            </div>
+            
+            <div class="document-status">
+                <div class="document-empty">
+                    <div class="empty-icon">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                    <p class="empty-text">Seleccionar archivo PDF</p>
+                </div>
+                
+                <div class="document-loaded" style="display: none;">
+                    <div class="file-info">
+                        <i class="bi bi-file-earmark-pdf file-icon"></i>
+                        <span class="file-name">documento.pdf</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="document-actions">
+                <button type="button" class="document-action primary" title="Seleccionar archivo">
+                    <i class="bi bi-folder-open"></i>
+                </button>
+                <button type="button" class="document-action secondary" title="Vista previa" style="display: none;">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button type="button" class="document-action danger" title="Eliminar" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            
+            <input type="file" class="document-input" accept=".pdf" id="cartaPresentacion">
+        </div>
+        
+        <!-- Carta de Aceptación Firmada -->
+        <div class="document-card" data-document="cartaAceptacion">
+            <div class="document-header">
+                <div class="document-icon pdf">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </div>
+                <h6 class="document-title">Carta de Aceptación Firmada</h6>
+            </div>
+            
+            <div class="document-status">
+                <div class="document-empty">
+                    <div class="empty-icon">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                    <p class="empty-text">Seleccionar archivo PDF</p>
+                </div>
+                
+                <div class="document-loaded" style="display: none;">
+                    <div class="file-info">
+                        <i class="bi bi-file-earmark-pdf file-icon"></i>
+                        <span class="file-name">documento.pdf</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="document-actions">
+                <button type="button" class="document-action primary" title="Seleccionar archivo">
+                    <i class="bi bi-folder-open"></i>
+                </button>
+                <button type="button" class="document-action secondary" title="Vista previa" style="display: none;">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button type="button" class="document-action danger" title="Eliminar" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            
+            <input type="file" class="document-input" accept=".pdf" id="cartaAceptacion">
+        </div>
+        
+        <!-- Carta de Término -->
+        <div class="document-card" data-document="cartaTermino">
+            <div class="document-header">
+                <div class="document-icon pdf">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </div>
+                <h6 class="document-title">Carta de Término</h6>
+            </div>
+            
+            <div class="document-status">
+                <div class="document-empty">
+                    <div class="empty-icon">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                    <p class="empty-text">Seleccionar archivo PDF</p>
+                </div>
+                
+                <div class="document-loaded" style="display: none;">
+                    <div class="file-info">
+                        <i class="bi bi-file-earmark-pdf file-icon"></i>
+                        <span class="file-name">documento.pdf</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="document-actions">
+                <button type="button" class="document-action primary" title="Seleccionar archivo">
+                    <i class="bi bi-folder-open"></i>
+                </button>
+                <button type="button" class="document-action secondary" title="Vista previa" style="display: none;">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button type="button" class="document-action danger" title="Eliminar" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            
+            <input type="file" class="document-input" accept=".pdf" id="cartaTermino">
+        </div>
+        
+        <!-- Reporte de SS -->
+        <div class="document-card" data-document="reporteSS">
+            <div class="document-header">
+                <div class="document-icon pdf">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </div>
+                <h6 class="document-title">Reporte de Servicio Social</h6>
+            </div>
+            
+            <div class="document-status">
+                <div class="document-empty">
+                    <div class="empty-icon">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                    <p class="empty-text">Seleccionar archivo PDF</p>
+                </div>
+                
+                <div class="document-loaded" style="display: none;">
+                    <div class="file-info">
+                        <i class="bi bi-file-earmark-pdf file-icon"></i>
+                        <span class="file-name">documento.pdf</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="document-actions">
+                <button type="button" class="document-action primary" title="Seleccionar archivo">
+                    <i class="bi bi-folder-open"></i>
+                </button>
+                <button type="button" class="document-action secondary" title="Vista previa" style="display: none;">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button type="button" class="document-action danger" title="Eliminar" style="display: none;">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            
+            <input type="file" class="document-input" accept=".pdf" id="reporteSS">
+        </div>
+        
+    </div>
+</div>
 
                         <!-- Horas -->
                         <div class="info-section">

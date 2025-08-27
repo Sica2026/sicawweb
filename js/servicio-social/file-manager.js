@@ -1,32 +1,87 @@
-// file-manager.js
+// file-manager.js (actualizado para nuevo diseño)
 // Módulo para gestión y visualización de archivos
 
 class FileManager {
     constructor(core) {
         this.core = core;
-        this.supportedFormats = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+        this.supportedFormats = ['pdf'];
         this.setupFileUploads();
     }
 
     setupFileUploads() {
-        const fileInputs = ['cartaPresentacion', 'cartaAceptacion', 'cartaTermino', 'reporteSS'];
+        const documentCards = document.querySelectorAll('.document-card');
         
-        fileInputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.addEventListener('change', (e) => {
-                    this.handleFileUpload(e, inputId);
+        documentCards.forEach(card => {
+            const documentType = card.getAttribute('data-document');
+            const input = card.querySelector('.document-input');
+            const primaryAction = card.querySelector('.document-action.primary');
+            const secondaryAction = card.querySelector('.document-action.secondary');
+            const dangerAction = card.querySelector('.document-action.danger');
+            
+            if (input && primaryAction) {
+                // Click en botón principal abre selector
+                primaryAction.addEventListener('click', () => {
+                    input.click();
                 });
+                
+                // Manejar selección de archivo
+                input.addEventListener('change', (e) => {
+                    this.handleFileUpload(e, documentType);
+                });
+                
+                // Vista previa
+                secondaryAction?.addEventListener('click', () => {
+                    this.previewDocument(documentType);
+                });
+                
+                // Eliminar archivo
+                dangerAction?.addEventListener('click', () => {
+                    this.removeFile(documentType);
+                });
+                
+                // Drag and drop
+                this.setupDragDrop(card, input, documentType);
             }
         });
 
-        console.log('📁 File manager configurado');
+        console.log('File manager configurado para nuevo diseño');
     }
 
-    handleFileUpload(event, inputId) {
+    setupDragDrop(card, input, documentType) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            card.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            card.addEventListener(eventName, () => {
+                card.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            card.addEventListener(eventName, () => {
+                card.classList.remove('drag-over');
+            });
+        });
+
+        card.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                input.files = files;
+                const event = new Event('change', { bubbles: true });
+                input.dispatchEvent(event);
+            }
+        });
+    }
+
+    handleFileUpload(event, documentType) {
         const file = event.target.files[0];
         if (!file) return;
         
+        // Validaciones
         if (file.type !== 'application/pdf') {
             this.core.showNotification('Solo se permiten archivos PDF', 'warning');
             event.target.value = '';
@@ -39,154 +94,122 @@ class FileManager {
             return;
         }
         
-        this.displayFilePreview(event.target, file, inputId);
+        this.showDocumentLoaded(documentType, file.name, file);
         
+        // Guardar en pendingFiles
         if (!this.core.currentAsesor.servicioSocial.pendingFiles) {
             this.core.currentAsesor.servicioSocial.pendingFiles = {};
         }
-        this.core.currentAsesor.servicioSocial.pendingFiles[inputId] = file;
+        this.core.currentAsesor.servicioSocial.pendingFiles[documentType] = file;
     }
 
-    displayFilePreview(input, file, inputId) {
-        const container = input.closest('.file-upload-area');
-        const display = container.querySelector('.file-upload-display');
-        const current = container.querySelector('.file-current');
+    showDocumentLoaded(documentType, fileName, file) {
+        const card = document.querySelector(`[data-document="${documentType}"]`);
+        if (!card) return;
         
-        if (display) display.style.display = 'none';
-        if (current) {
-            current.style.display = 'flex';
-            const fileName = current.querySelector('.file-name');
-            if (fileName) {
-                fileName.textContent = file.name;
-            }
-
-            // Agregar botón de vista previa
-            this.addPreviewButton(current, file, inputId);
+        // Elementos UI
+        const emptyState = card.querySelector('.document-empty');
+        const loadedState = card.querySelector('.document-loaded');
+        const fileNameElement = card.querySelector('.file-name');
+        const secondaryAction = card.querySelector('.document-action.secondary');
+        const dangerAction = card.querySelector('.document-action.danger');
+        
+        // Actualizar UI
+        if (emptyState) emptyState.style.display = 'none';
+        if (loadedState) loadedState.style.display = 'block';
+        if (fileNameElement) fileNameElement.textContent = fileName;
+        if (secondaryAction) secondaryAction.style.display = 'flex';
+        if (dangerAction) dangerAction.style.display = 'flex';
+        
+        // Guardar referencia del archivo para preview
+        card.setAttribute('data-file-loaded', 'true');
+        if (file) {
+            card._fileObject = file;
         }
     }
 
-    addPreviewButton(container, file, inputId) {
-        // Eliminar botón existente si existe
-        const existingBtn = container.querySelector('.btn-file-preview');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
-
-        const previewBtn = document.createElement('button');
-        previewBtn.className = 'btn-file-preview';
-        previewBtn.innerHTML = '<i class="bi bi-eye"></i>';
-        previewBtn.title = 'Vista previa';
-        previewBtn.type = 'button';
-        
-        previewBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.previewFile(file, inputId);
-        });
-
-        // Insertar antes del botón de eliminar
-        const removeBtn = container.querySelector('.btn-file-remove');
-        if (removeBtn) {
-            container.insertBefore(previewBtn, removeBtn);
-        } else {
-            container.appendChild(previewBtn);
-        }
-    }
-
-    displayFileStatus(inputId, fileData) {
-        const container = document.getElementById(inputId)?.closest('.file-upload-area');
-        if (!container) return;
-        
-        const display = container.querySelector('.file-upload-display');
-        const current = container.querySelector('.file-current');
+    displayFileStatus(documentType, fileData) {
+        const card = document.querySelector(`[data-document="${documentType}"]`);
+        if (!card) return;
         
         if (fileData && fileData.url) {
-            if (display) display.style.display = 'none';
-            if (current) {
-                current.style.display = 'flex';
-                const fileName = current.querySelector('.file-name');
-                if (fileName) {
-                    fileName.textContent = fileData.name || 'Archivo cargado';
-                }
-                
-                // Agregar botón de vista previa para archivos guardados
-                this.addPreviewButtonForSavedFile(current, fileData, inputId);
-                
-                const removeBtn = current.querySelector('.btn-file-remove');
-                if (removeBtn) {
-                    removeBtn.onclick = () => this.removeFile(inputId);
-                }
-            }
+            this.showDocumentLoaded(documentType, fileData.name || 'Archivo cargado');
+            card._fileData = fileData;
         } else {
-            if (display) display.style.display = 'flex';
-            if (current) current.style.display = 'none';
+            this.showDocumentEmpty(documentType);
         }
     }
 
-    addPreviewButtonForSavedFile(container, fileData, inputId) {
-        const existingBtn = container.querySelector('.btn-file-preview');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
-
-        const previewBtn = document.createElement('button');
-        previewBtn.className = 'btn-file-preview';
-        previewBtn.innerHTML = '<i class="bi bi-eye"></i>';
-        previewBtn.title = 'Vista previa';
-        previewBtn.type = 'button';
+    showDocumentEmpty(documentType) {
+        const card = document.querySelector(`[data-document="${documentType}"]`);
+        if (!card) return;
         
-        previewBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.previewSavedFile(fileData, inputId);
-        });
+        const emptyState = card.querySelector('.document-empty');
+        const loadedState = card.querySelector('.document-loaded');
+        const secondaryAction = card.querySelector('.document-action.secondary');
+        const dangerAction = card.querySelector('.document-action.danger');
+        
+        if (emptyState) emptyState.style.display = 'block';
+        if (loadedState) loadedState.style.display = 'none';
+        if (secondaryAction) secondaryAction.style.display = 'none';
+        if (dangerAction) dangerAction.style.display = 'none';
+        
+        card.removeAttribute('data-file-loaded');
+        delete card._fileObject;
+        delete card._fileData;
+    }
 
-        const removeBtn = container.querySelector('.btn-file-remove');
-        if (removeBtn) {
-            container.insertBefore(previewBtn, removeBtn);
-        } else {
-            container.appendChild(previewBtn);
+    previewDocument(documentType) {
+        const card = document.querySelector(`[data-document="${documentType}"]`);
+        if (!card) return;
+        
+        if (card._fileObject) {
+            // Archivo nuevo (pendiente de subir)
+            this.previewFile(card._fileObject, documentType);
+        } else if (card._fileData) {
+            // Archivo ya guardado
+            this.previewSavedFile(card._fileData, documentType);
         }
     }
 
-    async previewFile(file, inputId) {
+    async previewFile(file, documentType) {
         try {
             const fileURL = URL.createObjectURL(file);
-            this.openFileViewer(fileURL, file.name, file.type, inputId);
+            this.openFileViewer(fileURL, file.name, file.type, documentType);
         } catch (error) {
             console.error('Error creando vista previa:', error);
             this.core.showNotification('Error al crear vista previa', 'error');
         }
     }
 
-    previewSavedFile(fileData, inputId) {
+    previewSavedFile(fileData, documentType) {
         if (fileData.url) {
-            this.openFileViewer(fileData.url, fileData.name, 'application/pdf', inputId);
+            this.openFileViewer(fileData.url, fileData.name, 'application/pdf', documentType);
         } else {
             this.core.showNotification('URL del archivo no disponible', 'error');
         }
     }
 
-    openFileViewer(url, fileName, fileType, inputId) {
-        // Crear modal de vista previa
-        const modal = this.createViewerModal(url, fileName, fileType, inputId);
+    openFileViewer(url, fileName, fileType, documentType) {
+        const modal = this.createViewerModal(url, fileName, fileType, documentType);
         document.body.appendChild(modal);
         
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
         
-        // Remover modal al cerrar
         modal.addEventListener('hidden.bs.modal', () => {
             document.body.removeChild(modal);
         });
     }
 
-    createViewerModal(url, fileName, fileType, inputId) {
+    createViewerModal(url, fileName, fileType, documentType) {
         const modal = document.createElement('div');
         modal.className = 'modal fade';
         modal.id = `fileViewer_${Date.now()}`;
         modal.setAttribute('tabindex', '-1');
         modal.setAttribute('data-bs-backdrop', 'static');
         
-        const documentTypeLabel = this.getDocumentTypeLabel(inputId);
+        const documentTypeLabel = this.getDocumentTypeLabel(documentType);
         
         modal.innerHTML = `
             <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -246,12 +269,6 @@ class FileManager {
                     <a href="${url}" target="_blank">Haga clic aquí para abrir el archivo</a>.</p>
                 </iframe>
             `;
-        } else if (fileType.startsWith('image/')) {
-            return `
-                <div class="d-flex justify-content-center align-items-center h-100 bg-light">
-                    <img src="${url}" class="img-fluid" style="max-height: 100%; max-width: 100%;" alt="Vista previa de imagen">
-                </div>
-            `;
         } else {
             return `
                 <div class="d-flex justify-content-center align-items-center h-100 text-center">
@@ -267,40 +284,38 @@ class FileManager {
         }
     }
 
-    getDocumentTypeLabel(inputId) {
+    removeFile(documentType) {
+        const card = document.querySelector(`[data-document="${documentType}"]`);
+        const input = card?.querySelector('.document-input');
+        
+        if (input) input.value = '';
+        
+        this.showDocumentEmpty(documentType);
+        
+        // Marcar para eliminación
+        if (!this.core.currentAsesor.servicioSocial.filesToDelete) {
+            this.core.currentAsesor.servicioSocial.filesToDelete = [];
+        }
+        this.core.currentAsesor.servicioSocial.filesToDelete.push(documentType);
+        
+        // Remover de archivos pendientes
+        if (this.core.currentAsesor.servicioSocial.pendingFiles) {
+            delete this.core.currentAsesor.servicioSocial.pendingFiles[documentType];
+        }
+    }
+
+    getDocumentTypeLabel(documentType) {
         const labels = {
             'cartaPresentacion': 'Carta de Presentación',
             'cartaAceptacion': 'Carta de Aceptación Firmada',
             'cartaTermino': 'Carta de Término',
             'reporteSS': 'Reporte de Servicio Social'
         };
-        return labels[inputId] || 'Documento';
+        return labels[documentType] || 'Documento';
     }
 
     getAsesorName() {
         return this.core.currentAsesor?.nombreAsesor || 'Sin nombre';
-    }
-
-    removeFile(inputId) {
-        const input = document.getElementById(inputId);
-        const container = input?.closest('.file-upload-area');
-        if (!container) return;
-        
-        const display = container.querySelector('.file-upload-display');
-        const current = container.querySelector('.file-current');
-        
-        if (input) input.value = '';
-        if (display) display.style.display = 'flex';
-        if (current) current.style.display = 'none';
-        
-        if (!this.core.currentAsesor.servicioSocial.filesToDelete) {
-            this.core.currentAsesor.servicioSocial.filesToDelete = [];
-        }
-        this.core.currentAsesor.servicioSocial.filesToDelete.push(inputId);
-        
-        if (this.core.currentAsesor.servicioSocial.pendingFiles) {
-            delete this.core.currentAsesor.servicioSocial.pendingFiles[inputId];
-        }
     }
 }
 
