@@ -63,7 +63,7 @@ class StatsManager {
             const [reportsData, paymentsData, servicioSocialData] = await Promise.all([
                 this.loadReportsData(numeroCuenta),
                 this.loadPaymentsData(numeroCuenta),
-                this.loadServicioSocialHours(numeroCuenta) // Nueva carga
+                this.loadServicioSocialHours(numeroCuenta)
             ]);
 
             // Calculate comprehensive statistics
@@ -127,7 +127,7 @@ class StatsManager {
     async calculateAdvancedStats(reportsData, paymentsData) {
         // Basic calculations
         this.currentStats.horasTrabajadas = this.calculateTotalHours(reportsData);
-        this.currentStats.horasPendientes = this.calculatePendingHours(reportsData);
+        this.currentStats.horasPendientes = this.calculatePendingHoursImproved(reportsData);
         this.currentStats.horasPagadas = this.calculatePaidHours(paymentsData);
         this.currentStats.diasTrabajados = this.calculateWorkingDays(reportsData);
 
@@ -168,23 +168,80 @@ class StatsManager {
     }
 
     /**
-     * Calculate pending/owed hours with complex logic
+     * Parse time string to minutes with improved handling
      */
-    calculatePendingHours(reportsData) {
+    parseTimeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        
+        // Si es un número simple, asumimos que son horas
+        if (!isNaN(timeStr)) {
+            return parseFloat(timeStr) * 60;
+        }
+        
+        // Formato "Xh Ym"
+        const horasMatch = timeStr.match(/(\d+(?:\.\d+)?)h/);
+        const minutosMatch = timeStr.match(/(\d+)m/);
+        
+        const horas = horasMatch ? parseFloat(horasMatch[1]) : 0;
+        const minutos = minutosMatch ? parseInt(minutosMatch[1]) : 0;
+        
+        return (horas * 60) + minutos;
+    }
+
+    /**
+     * Calculate expected hours for a report
+     */
+    calculateExpectedHours(report) {
+        // Para ausentes, usar tiempoTrabajado (valor negativo que indica lo que debe)
+        if (report.estado === 'ausente' && report.tiempoTrabajado) {
+            // tiempoTrabajado viene como "-1h 30m", quitamos el signo negativo
+            const debtTime = report.tiempoTrabajado.replace('-', '');
+            return this.parseTimeToMinutes(debtTime);
+        }
+        
+        // Si ya existe horasProgramadas, usarla
+        if (report.horasProgramadas) {
+            return this.parseTimeToMinutes(report.horasProgramadas);
+        }
+        
+        // Si no, calcular desde horarios programados
+        if (report.horarioProgramadoInicio && report.horarioProgramadoFinal) {
+            const inicioMinutes = this.timeToMinutes(report.horarioProgramadoInicio);
+            const finMinutes = this.timeToMinutes(report.horarioProgramadoFinal);
+            
+            let totalMinutes = finMinutes - inicioMinutes;
+            
+            // Si pasa de medianoche, ajustar
+            if (totalMinutes < 0) {
+                totalMinutes += 24 * 60;
+            }
+            
+            return totalMinutes;
+        }
+        
+        // Valor por defecto si no hay datos
+        return 8 * 60; // 8 horas por defecto
+    }
+
+    /**
+     * Calculate pending/owed hours with improved logic
+     */
+    calculatePendingHoursImproved(reportsData) {
         let pendingMinutes = 0;
 
         reportsData.forEach(report => {
+            const expectedMinutes = this.calculateExpectedHours(report);
+            
             if (report.estado === 'ausente') {
-                // Full day absence
-                const expectedMinutes = this.parseTimeToMinutes(report.horasProgramadas || '8h 0m');
+                // Día completo ausente
                 pendingMinutes += expectedMinutes;
                 
             } else if (report.estado === 'presente' || report.estado === 'tardanza') {
-                // Partial hours missing
-                const expectedMinutes = this.parseTimeToMinutes(report.horasProgramadas || '8h 0m');
-                const actualMinutes = this.parseTimeToMinutes(report.horasValidas || '0h 0m');
-                const shortfall = expectedMinutes - actualMinutes;
+                // Calcular la diferencia real
+                const validMinutes = this.parseTimeToMinutes(report.horasValidas || '0h 0m');
+                const shortfall = expectedMinutes - validMinutes;
                 
+                // Solo contar diferencias significativas
                 if (shortfall > this.config.toleranciaMinutos) {
                     pendingMinutes += shortfall;
                 }
@@ -237,7 +294,7 @@ class StatsManager {
 
         reportsData.forEach(report => {
             if (report.estado !== 'ausente') {
-                const expected = this.parseTimeToMinutes(report.horasProgramadas || '8h 0m');
+                const expected = this.calculateExpectedHours(report);
                 const actual = this.parseTimeToMinutes(report.horasValidas || '0h 0m');
                 
                 totalExpected += expected;
@@ -460,96 +517,96 @@ class StatsManager {
     /**
      * Render statistics cards in the UI
      */
-renderStatsCards() {
-    const container = document.getElementById('statsContainer');
-    if (!container) return;
+    renderStatsCards() {
+        const container = document.getElementById('statsContainer');
+        if (!container) return;
 
-    const stats = this.currentStats;
-    const currentAdvisor = this.adminCore.getCurrentAdvisor();
-    
-    // Verificar si el asesor actual tiene servicio social
-    const showServicioSocial = currentAdvisor && 
-        this.adminCore.modules.search && 
-        this.adminCore.modules.search.asesores.find(
-            asesor => asesor.numeroCuenta === currentAdvisor.numeroCuenta && asesor.isServicioSocial
-        );
+        const stats = this.currentStats;
+        const currentAdvisor = this.adminCore.getCurrentAdvisor();
+        
+        // Verificar si el asesor actual tiene servicio social
+        const showServicioSocial = currentAdvisor && 
+            this.adminCore.modules.search && 
+            this.adminCore.modules.search.asesores.find(
+                asesor => asesor.numeroCuenta === currentAdvisor.numeroCuenta && asesor.isServicioSocial
+            );
 
-    let cardsHTML = `
-        ${this.createStatCard('hours-worked', 'Horas Trabajadas', stats.horasTrabajadas, 'h', 'bi-clock-fill', stats.tendencias?.ultimo_mes?.tendencia)}
-        ${this.createStatCard('hours-pending', 'Horas Pendientes', stats.horasPendientes, 'h', 'bi-exclamation-triangle-fill', 'stable')}
-        ${this.createStatCard('hours-paid', 'Horas Pagadas', stats.horasPagadas, 'h', 'bi-cash-coin', 'stable')}
-    `;
-    
-    // Agregar panel de Servicio Social condicionalmente
-    if (showServicioSocial && stats.servicioSocial) {
-        cardsHTML += this.createStatCard(
-            'servicio-social', 
-            'Horas de SS', 
-            stats.servicioSocial.ajustesHoras, 
-            'h', 
-            'bi-mortarboard-fill', 
-            'stable'
-        );
+        let cardsHTML = `
+            ${this.createStatCard('hours-worked', 'Horas Trabajadas', stats.horasTrabajadas, 'h', 'bi-clock-fill', stats.tendencias?.ultimo_mes?.tendencia)}
+            ${this.createStatCard('hours-pending', 'Horas Pendientes', stats.horasPendientes, 'h', 'bi-exclamation-triangle-fill', 'stable')}
+            ${this.createStatCard('hours-paid', 'Horas Pagadas', stats.horasPagadas, 'h', 'bi-cash-coin', 'stable')}
+        `;
+        
+        // Agregar panel de Servicio Social condicionalmente
+        if (showServicioSocial && stats.servicioSocial) {
+            cardsHTML += this.createStatCard(
+                'servicio-social', 
+                'Horas de SS', 
+                stats.servicioSocial.ajustesHoras, 
+                'h', 
+                'bi-mortarboard-fill', 
+                'stable'
+            );
+        }
+        
+        cardsHTML += `
+            ${this.createStatCard('performance', 'Eficiencia', stats.eficiencia, '%', 'bi-speedometer2', 'stable')}
+            ${this.createStatCard('attendance', 'Días Trabajados', stats.diasTrabajados, '', 'bi-calendar-event-fill', stats.tendencias?.ultimo_mes?.tendencia)}
+        `;
+
+        container.innerHTML = cardsHTML;
+
+        // Animate values
+        this.animateStatValues();
     }
-    
-    cardsHTML += `
-        ${this.createStatCard('performance', 'Eficiencia', stats.eficiencia, '%', 'bi-speedometer2', 'stable')}
-        ${this.createStatCard('attendance', 'Días Trabajados', stats.diasTrabajados, '', 'bi-calendar-event-fill', stats.tendencias?.ultimo_mes?.tendencia)}
-    `;
-
-    container.innerHTML = cardsHTML;
-
-    // Animate values
-    this.animateStatValues();
-}
 
     /**
      * Create individual stat card HTML
      */
-createStatCard(type, label, value, unit, icon, trend) {
-    const trendClass = trend === 'increasing' ? 'positive' : trend === 'decreasing' ? 'negative' : 'neutral';
-    const trendIcon = trend === 'increasing' ? 'bi-arrow-up' : trend === 'decreasing' ? 'bi-arrow-down' : 'bi-dash';
-    
-    // Clase CSS específica para Servicio Social
-    const cardClass = type === 'servicio-social' ? 'servicio-social' : type;
-    
-    return `
-        <div class="stat-card ${cardClass}">
-            <div class="stat-header">
-                <div class="stat-icon">
-                    <i class="${icon}"></i>
+    createStatCard(type, label, value, unit, icon, trend) {
+        const trendClass = trend === 'increasing' ? 'positive' : trend === 'decreasing' ? 'negative' : 'neutral';
+        const trendIcon = trend === 'increasing' ? 'bi-arrow-up' : trend === 'decreasing' ? 'bi-arrow-down' : 'bi-dash';
+        
+        // Clase CSS específica para Servicio Social
+        const cardClass = type === 'servicio-social' ? 'servicio-social' : type;
+        
+        return `
+            <div class="stat-card ${cardClass}">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="stat-menu">
+                        <button class="stat-menu-btn">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-menu">
-                    <button class="stat-menu-btn">
-                        <i class="bi bi-three-dots"></i>
-                    </button>
+                
+                <div class="stat-value-section">
+                    <div class="stat-value" data-value="${value}">
+                        0<span class="stat-unit">${unit}</span>
+                    </div>
+                    <div class="stat-label">${label}</div>
+                </div>
+                
+                <div class="stat-change ${trendClass}">
+                    <i class="${trendIcon}"></i>
+                    <span>${trend === 'stable' ? 'Sin cambios' : trend === 'increasing' ? 'En aumento' : 'En descenso'}</span>
+                </div>
+                
+                <div class="stat-progress">
+                    <div class="stat-progress-bar" style="width: ${this.calculateProgressWidth(type, value)}%"></div>
+                </div>
+                
+                <div class="stat-chart">
+                    <div class="stat-chart-placeholder">
+                        Gráfica ${label}
+                    </div>
                 </div>
             </div>
-            
-            <div class="stat-value-section">
-                <div class="stat-value" data-value="${value}">
-                    0<span class="stat-unit">${unit}</span>
-                </div>
-                <div class="stat-label">${label}</div>
-            </div>
-            
-            <div class="stat-change ${trendClass}">
-                <i class="${trendIcon}"></i>
-                <span>${trend === 'stable' ? 'Sin cambios' : trend === 'increasing' ? 'En aumento' : 'En descenso'}</span>
-            </div>
-            
-            <div class="stat-progress">
-                <div class="stat-progress-bar" style="width: ${this.calculateProgressWidth(type, value)}%"></div>
-            </div>
-            
-            <div class="stat-chart">
-                <div class="stat-chart-placeholder">
-                    Gráfica ${label}
-                </div>
-            </div>
-        </div>
-    `;
-}
+        `;
+    }
 
     /**
      * Animate stat values with smooth counting
@@ -605,7 +662,7 @@ createStatCard(type, label, value, unit, icon, trend) {
             case 'hours-pending':
                 return Math.min(100, (value / 40) * 100);
             case 'servicio-social':
-                return Math.min(100, (value / 480) * 100); // Asumiendo 480h máximo para SS
+                return Math.min(100, (value / 480) * 100);
             case 'attendance':
                 return Math.min(100, (value / this.config.diasHabilesMes) * 100);
             default:
@@ -620,18 +677,6 @@ createStatCard(type, label, value, unit, icon, trend) {
         if (!dateStr) return new Date();
         const [year, month, day] = dateStr.split('-').map(Number);
         return new Date(year, month - 1, day);
-    }
-
-    parseTimeToMinutes(timeStr) {
-        if (!timeStr) return 0;
-        
-        const horasMatch = timeStr.match(/(\d+)h/);
-        const minutosMatch = timeStr.match(/(\d+)m/);
-        
-        const horas = horasMatch ? parseInt(horasMatch[1]) : 0;
-        const minutos = minutosMatch ? parseInt(minutosMatch[1]) : 0;
-        
-        return (horas * 60) + minutos;
     }
 
     timeToMinutes(timeStr) {
@@ -716,9 +761,6 @@ createStatCard(type, label, value, unit, icon, trend) {
     /**
      * Clear all data
      */
-    /**
-     * Clear all data
-     */
     clearData() {
         this.currentStats = {
             horasTrabajadas: 0,
@@ -741,6 +783,9 @@ createStatCard(type, label, value, unit, icon, trend) {
         }
     }
 
+    /**
+     * Load servicio social hours data
+     */
     async loadServicioSocialHours(numeroCuenta) {
         try {
             const asesorId = `asesor_${numeroCuenta}`;
