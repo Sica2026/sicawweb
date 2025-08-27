@@ -249,14 +249,15 @@ class DetailModal {
         }
     }
 
-    generateDocument(docType) {
+ generateDocument(docType) {
         if (!this.core.currentAsesor) return;
         
         console.log(`📄 Generando documento: ${docType}`);
         
+        // AQUÍ AGREGAS EL NUEVO DOCUMENTO
         const docScripts = {
             'carta-termino-fq': 'carta-termino-FQ-pdf.js',
-            'carta-termino-prepa': 'carta-termino-prepa.js',
+            'carta-termino-prepa': 'carta-termino-prepa.js',    // ← NUEVA LÍNEA
             'carta-aceptacion-fq': 'carta-aceptacion-FQ.js',
             'carta-aceptacion-prepa': 'carta-aceptacion-prepa.js',
             'formato-asesor-ss': 'formato-asesor-ss.js',
@@ -277,11 +278,12 @@ class DetailModal {
             
             this.loadScript(`../js/documents/${scriptFile}`)
                 .then(() => {
+                    // AQUÍ AGREGAS EL NUEVO CASE
                     switch(docType) {
                         case 'carta-termino-fq':
                             return window.generarCartaTerminoFQWord(datosAsesor);
-                        case 'carta-termino-prepa':
-                            return window.generarCartaTerminoPrepaWord(datosAsesor);
+                        case 'carta-termino-prepa':                           // ← NUEVA LÍNEA
+                            return window.generarCartaTerminoPrepaWord(datosAsesor);  // ← NUEVA LÍNEA
                         case 'carta-aceptacion-fq':
                             return window.generarCartaAceptacionFQWord(datosAsesor);
                         case 'carta-aceptacion-prepa':
@@ -322,9 +324,9 @@ class DetailModal {
     }
 
     getDocumentName(docType) {
-        const names = {
+         const names = {
             'carta-termino-fq': 'Carta de Término FQ',
-            'carta-termino-prepa': 'Carta de Término Prepa',
+            'carta-termino-prepa': 'Carta de Término Prepa',    // ← NUEVA LÍNEA
             'carta-aceptacion-fq': 'Carta de Aceptación FQ',
             'carta-aceptacion-prepa': 'Carta de Aceptación Prepa',
             'formato-asesor-ss': 'Formato Asesor + SS',

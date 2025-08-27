@@ -14,8 +14,8 @@ class CartaTerminoFQPDF {
             programa: "Sala de Informática y Cómputo para Alumnos (SICA)",
             horasReglamentarias: 480,
             responsables: {
-                coordinadora: "MTRA. ADANELY PÉREZ RODRÍGUEZ ",
-                cargoCoordinadora: "COORDINADORA GENERAL DE LOS ESTUDIOS TÉCNICOS ESPECIALIZADOS DE LA ESCUELA NACIONAL PREPARATORIA",
+                coordinadora: "MVZ GRISELL MORENO MORALES",
+                cargoCoordinadora: "COORDINADORA DE ATENCIÓN A ALUMNOS",
                 responsableArea: "LIC. ALBERTO PINEDA JIMÉNEZ",
                 cargoResponsable: "RESPONSABLE DEL ÁREA DE SERVICIO SOCIAL"
             }
@@ -529,8 +529,8 @@ async function generarCartaTerminoFQPDF(datosAsesor) {
 }
 
 // Exportar para uso global
-window.CartaTerminoFQPDF = CartaTerminoFQPDF;
-window.generarCartaTerminoFQPDF = generarCartaTerminoFQPDF;
+window.generarCartaTerminoPrepaPDF = generarCartaTerminoFQPDF;
+window.generarCartaTerminoPrepaWord = generarCartaTerminoFQPDF;
 
 // Para compatibilidad, también exportar como la función esperada
 window.generarCartaTerminoFQWord = generarCartaTerminoFQPDF;
