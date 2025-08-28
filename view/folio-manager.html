@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Folios - SICA Admin</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Folio Manager Styles -->
+    <link href="../css/folio-manager.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated" data-theme="light">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="folio-header">
+                <div class="header-content">
+                    <h1 class="page-title">
+                        <i class="bi bi-file-earmark-code me-3"></i>
+                        Gestión de Folios
+                    </h1>
+                    <p class="page-subtitle">
+                        Control de folios para cartas de aceptación y término
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalFolios">0</div>
+                        <div class="stat-label">Total Folios Registrados</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalAceptacion">0</div>
+                        <div class="stat-label">Folios Aceptación</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="bi bi-file-text-fill"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalTermino">0</div>
+                        <div class="stat-label">Folios Término</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Folio Management Section -->
+            <div class="row g-4">
+                <!-- Add Folio Panel -->
+                <div class="col-xl-4">
+                    <div class="folio-card add-folio-card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-plus-square me-2"></i>
+                                Agregar Nuevo Folio
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="addFolioForm" class="folio-form">
+                                <div class="form-section">
+                                    <label class="form-label">Tipo de Folio</label>
+                                    <div class="folio-type-selector">
+                                        <input type="radio" id="cartaAceptacion" name="folioType" value="aceptacion" checked>
+                                        <label for="cartaAceptacion" class="folio-type-option">
+                                            <div class="option-left">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </div>
+                                                <div class="option-text">
+                                                    <span class="option-title">Carta Aceptación</span>
+                                                    <span class="option-desc">Folio para cartas de aceptación</span>
+                                                </div>
+                                            </div>
+                                            <div class="option-right">
+                                                <div class="current-value-badge" id="currentAceptacionBadge">
+                                                    Actual: <span id="currentAceptacion">-</span>
+                                                </div>
+                                                <div class="suggested-value" id="suggestedAceptacion">
+                                                    Siguiente: -
+                                                </div>
+                                            </div>
+                                        </label>
+
+                                        <input type="radio" id="cartaTermino" name="folioType" value="termino">
+                                        <label for="cartaTermino" class="folio-type-option">
+                                            <div class="option-left">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-file-text"></i>
+                                                </div>
+                                                <div class="option-text">
+                                                    <span class="option-title">Carta Término</span>
+                                                    <span class="option-desc">Folio para cartas de término</span>
+                                                </div>
+                                            </div>
+                                            <div class="option-right">
+                                                <div class="current-value-badge" id="currentTerminoBadge">
+                                                    Actual: <span id="currentTermino">-</span>
+                                                </div>
+                                                <div class="suggested-value" id="suggestedTermino">
+                                                    Siguiente: -
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <label for="folioNumber" class="form-label">Número de Folio</label>
+                                    <div class="folio-input-group">
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-hash input-icon"></i>
+                                            <input type="number" 
+                                                   id="folioNumber" 
+                                                   class="form-control folio-input" 
+                                                   placeholder="Ingresa el número de folio" 
+                                                   min="1" 
+                                                   required>
+                                        </div>
+                                        <div class="suggestion-container" id="suggestionContainer" style="display: none;">
+                                            <span class="suggestion-text">Sugerencia (consecutivo):</span>
+                                            <span class="suggestion-value" id="suggestionValue" onclick="applySuggestion()">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-folio-primary">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        Agregar Folio
+                                        <div class="btn-glow"></div>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Folio History Panel -->
+                <div class="col-xl-8">
+                    <div class="folio-card history-card">
+                        <div class="card-header">
+                            <div class="header-content">
+                                <h3 class="card-title">
+                                    <i class="bi bi-clock-history me-2"></i>
+                                    Historial de Folios
+                                </h3>
+                                <div class="header-actions">
+                                    <div class="filter-buttons">
+                                        <button class="filter-btn active" data-filter="all">
+                                            <i class="bi bi-list"></i>
+                                            Todos
+                                        </button>
+                                        <button class="filter-btn" data-filter="aceptacion">
+                                            <i class="bi bi-check-circle"></i>
+                                            Aceptación
+                                        </button>
+                                        <button class="filter-btn" data-filter="termino">
+                                            <i class="bi bi-file-text"></i>
+                                            Término
+                                        </button>
+                                    </div>
+                                    <button class="btn btn-refresh" id="refreshHistory">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Loading State -->
+                            <div class="loading-state" id="historyLoading">
+                                <div class="loading-animation">
+                                    <div class="loading-dots">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <p>Cargando historial de folios...</p>
+                                </div>
+                            </div>
+
+                            <!-- History List -->
+                            <div class="folio-history" id="folioHistory" style="display: none;">
+                                <!-- Los registros se cargarán dinámicamente aquí -->
+                            </div>
+
+                            <!-- Empty State -->
+                            <div class="empty-state" id="emptyHistory" style="display: none;">
+                                <div class="empty-icon">
+                                    <i class="bi bi-inbox"></i>
+                                </div>
+                                <h4>No hay registros</h4>
+                                <p>Aún no se han agregado folios al sistema.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Folio Manager JS -->
+    <script src="../js/folio-manager.js"></script>
+</body>
+</html>

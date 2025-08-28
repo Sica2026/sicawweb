@@ -1032,7 +1032,10 @@ window.AdminDownloadsManager = AdminDownloadsManager;
             // Redirigir a la página de descargas
             window.location.href = '../view/admin-downloads.html';
         },
-        'systemSettings': () => showNotification('Función en desarrollo', 'info'),
+        'systemSettings': () =>  {
+            // Redirigir a la página de descargas
+            window.location.href = '../view/folio-manager.html';
+        },
         'generateReport': () => generateReport()
     };
     
