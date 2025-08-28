@@ -1,22 +1,26 @@
-// carta-termino-prepa-pdf.js 
-// Generador de Carta de Término para Preparatoria en formato PDF
+// carta-aceptacion-FQ.js 
+// Generador de Carta de Aceptación para Facultad de Química en formato PDF
 
-class CartaTerminoPrepaPDF {
+class CartaAceptacionFQPDF {
     constructor() {
         this.config = {
             programa: "Sala de informática y cómputo para alumnos (SICA)",
             horasReglamentarias: 480,
+            horasSemanales: 20,
             periodoMeses: 6,
             responsables: {
-                coordinadora: "MTRA. ADANELY PÉREZ RODRÍGUEZ",
-                cargoCoordinadora: "COORDINADORA GENERAL DE LOS ESTUDIOS TÉCNICOS ESPECIALIZADOS DE LA ESCUELA NACIONAL PREPARATORIA"
+                coordinadora: "MVZ GRISELL MORENO MORALES",
+                cargoCoordinadora: "COORDINADORA",
+                facultad: "FACULTAD DE QUÍMICA",
+                responsableArea: "LIC. ALBERTO PINEDA JIMÉNEZ",
+                cargoResponsable: "RESPONSABLE DEL ÁREA DE SERVICIO SOCIAL"
             }
         };
     }
 
     async generar(datosAsesor) {
         try {
-            console.log('📄 Generando carta de término Prepa (PDF)...');
+            console.log('📄 Generando carta de aceptación FQ (PDF)...');
             console.log('📋 Datos recibidos:', datosAsesor);
 
             // Verificar que jsPDF esté disponible
@@ -39,7 +43,7 @@ class CartaTerminoPrepaPDF {
             await this.generarContenido(doc, datosAsesor, logoData);
 
             // Descargar archivo
-            const fileName = `Carta_Termino_Prepa_${datosAsesor.nombreAsesor.replace(/\s+/g, '_')}_${datosAsesor.numeroCuenta}.pdf`;
+            const fileName = `Carta_Aceptacion_FQ_${datosAsesor.nombreAsesor.replace(/\s+/g, '_')}_${datosAsesor.numeroCuenta}.pdf`;
             doc.save(fileName);
 
             return {
@@ -225,7 +229,7 @@ class CartaTerminoPrepaPDF {
         // Texto del encabezado a la derecha del logo
         doc.setFontSize(14);
         doc.setFont("times", "bold");
-        const titulo1 = "FACULTAD DE QUÍMICA";
+        const titulo1 = "FACULTAD DE QUÍMICA UNAM";
         const titulo1Width = doc.getTextWidth(titulo1);
         doc.text(titulo1, 210 - 25 - titulo1Width, yPos + 8);
 
@@ -234,42 +238,30 @@ class CartaTerminoPrepaPDF {
         const titulo2Width = doc.getTextWidth(titulo2);
         doc.text(titulo2, 210 - 25 - titulo2Width, yPos + 15);
 
-        const titulo3 = "CENTRO DE INFORMÁTICA";
+        const titulo3 = "CENTRO DE INFORMÁTICA Y SICAS";
         const titulo3Width = doc.getTextWidth(titulo3);
         doc.text(titulo3, 210 - 25 - titulo3Width, yPos + 22);
 
-        yPos += 35; // Espacio después del encabezado
+        yPos += 45; // Espacio después del encabezado
 
         // ========================================
         // FOLIO (alineado a la derecha)
         // ========================================
         doc.setFont("times", "bold");
         doc.setFontSize(12);
-        const folio = `FOLIO: ${datos.folioTermino || ''}`;
+        const folio = `FOLIO: ${datos.folioAceptacion || ''}`;
         const folioWidth = doc.getTextWidth(folio);
-        doc.text(folio, 210 - 25 - folioWidth, yPos); // Alineado a la derecha
-        yPos += 10;
-
-        // ========================================
-        // FECHA EN ENCABEZADO (alineada a la derecha)
-        // ========================================
-        const hoyISO = new Date().toISOString().split('T')[0];
-        const fechaDoc = datos.fechaCarta || hoyISO;
-        const { dia, mes, anio } = this.descomponerFecha(fechaDoc);
-        
-        const fechaTexto = `Ciudad de México a ${dia} de ${mes} de ${anio}`;
-        const fechaWidth = doc.getTextWidth(fechaTexto);
-        doc.text(fechaTexto, 210 - 25 - fechaWidth, yPos); // Alineado a la derecha
-        yPos += 8;
+        doc.text(folio, 210 - 25 - folioWidth, yPos);
+        yPos += 15;
 
         // ========================================
         // ASUNTO (alineado a la derecha)
         // ========================================
         doc.setFont("times", "bold");
-        const asunto = "Asunto: Carta de término de Servicio Social.";
+        const asunto = "Asunto: Carta de aceptación.";
         const asuntoWidth = doc.getTextWidth(asunto);
-        doc.text(asunto, 210 - 25 - asuntoWidth, yPos); // Alineado a la derecha
-        yPos += 10;
+        doc.text(asunto, 210 - 25 - asuntoWidth, yPos);
+        yPos += 15;
 
         // ========================================
         // DESTINATARIOS
@@ -277,16 +269,25 @@ class CartaTerminoPrepaPDF {
         doc.setFont("times", "bold");
         doc.text(this.config.responsables.coordinadora, 25, yPos);
         yPos += 7;
-        
-        // Dividir el cargo largo en líneas
-        const cargoLineas = doc.splitTextToSize(this.config.responsables.cargoCoordinadora, 160);
-        cargoLineas.forEach(linea => {
-            doc.text(linea, 25, yPos);
-            yPos += 5;
-        });
-        yPos += 2;
-        
+        doc.text(this.config.responsables.cargoCoordinadora, 25, yPos);
+        yPos += 7;
+        doc.text(this.config.responsables.facultad, 25, yPos);
+        yPos += 7;
         doc.text("PRESENTE", 25, yPos);
+        yPos += 12;
+
+        // ========================================
+        // ATENCIÓN (alineada a la derecha)
+        // ========================================
+        doc.setFont("times", "bold");
+        const atencion1 = `ATENCIÓN. ${this.config.responsables.responsableArea}`;
+        const atencion1Width = doc.getTextWidth(atencion1);
+        doc.text(atencion1, 210 - 25 - atencion1Width, yPos);
+        yPos += 5;
+
+        const atencion2 = this.config.responsables.cargoResponsable;
+        const atencion2Width = doc.getTextWidth(atencion2);
+        doc.text(atencion2, 210 - 25 - atencion2Width, yPos);
         yPos += 15;
 
         // ========================================
@@ -297,36 +298,32 @@ class CartaTerminoPrepaPDF {
         const programaUsado = datos.programa || this.config.programa;
         const fIni = this.formatearFecha(datos.fechaInicio);
         const fFin = this.formatearFecha(datos.fechaTermino);
-        const horarioInicio = "9:00";
-        const horarioFin = "13:00";
 
         const runsCuerpo = [
             "Por este conducto me permito informar a usted, que el alumno (a) ",
             { b: true, t: datos.nombreAsesor },
-            " con número de cuenta ",
+            ", con número de cuenta ",
             { b: true, t: datos.numeroCuenta },
             ", inscrito en la ",
-            { b: true, t: datos.carrera || "XXXXXX" },
-            ", ha concluido satisfactoriamente su servicio social, durante un periodo de ",
+            { b: true, t: datos.carrera },
+            ", ha sido aceptado para poder realizar su servicio social, durante un periodo de ",
             { b: true, t: String(this.config.periodoMeses) },
             " meses, en el programa de trabajo \"",
             { b: true, t: programaUsado },
             "\" con clave ",
             { b: true, t: datos.clavePrograma },
-            ", que se llevó a cabo en el área de SICA de la Facultad de Química UNAM, su colaboración en el periodo comprendido del ",
+            ". Su colaboración tendrá inicio a partir del ",
             { b: true, t: fIni },
-            " al ",
+            " y concluirá el ",
             { b: true, t: fFin },
-            ", en un horario de ",
-            { b: true, t: horarioInicio },
-            " a ",
-            { b: true, t: horarioFin },
-            ", cubriendo ",
+            ", cubriendo un total de ",
+            { b: true, t: String(this.config.horasSemanales) },
+            " horas a la semana y ",
             { b: true, t: String(this.config.horasReglamentarias) },
             " horas totales."
         ];
 
-        yPos = this.drawRichText(doc, 25, yPos, 165, runsCuerpo, 6) + 10;
+        yPos = this.drawRichText(doc, 25, yPos, 165, runsCuerpo, 6) + 15;
 
         // ========================================
         // DESPEDIDA
@@ -357,50 +354,44 @@ class CartaTerminoPrepaPDF {
         // FECHA Y LUGAR FINAL
         // ========================================
         doc.setFont("times", "normal");
-        const fechaFinal = `Cd. Universitaria, CDMX ${dia} del ${mes} de ${anio}.`;
+        const hoyISO = new Date().toISOString().split('T')[0];
+        const fechaDoc = datos.fechaAceptacion || hoyISO;
+        const { dia, mes, anio } = this.descomponerFecha(fechaDoc);
+        
+        const fechaFinal = `Cd. Universitaria, CDMX a ${dia} de ${mes} de ${anio}.`;
         const fechaFinalWidth = doc.getTextWidth(fechaFinal);
         doc.text(fechaFinal, (216 - fechaFinalWidth) / 2, yPos);
-        
-        // Texto "SELLO" al lado derecho
-        doc.setFont("times", "bold");
-        const sello = "SELLO";
-        doc.text(sello, 170, yPos);
-        
-        yPos += 25;
-
-        // ========================================
-        // LÍNEAS DE FIRMA
-        // ========================================
-        doc.setFont("times", "normal");
-        doc.setFontSize(10);
-        
-        // Líneas de firma
-        doc.line(25, yPos, 95, yPos);
-        doc.line(120, yPos, 190, yPos);
-        yPos += 10;
+        yPos += 35; // Espacio para las firmas
 
         // ========================================
         // FIRMAS ADICIONALES (con negritas)
         // ========================================
         doc.setFontSize(12);
 
+        // Líneas de firma
+        doc.line(25, yPos, 95, yPos);
+        doc.line(120, yPos, 190, yPos);
+        yPos += 10;
+
         // Firma izquierda
         doc.setFont("times", "bold");
-        doc.text("Ing. Edgar López García", 25, yPos);
-        doc.text("Responsable de servicio social SICA", 25, yPos + 5);
-        yPos += 15;
+        doc.text("Por la dependencia:", 25, yPos);
+        doc.text("Ing. Edgar López García", 25, yPos + 7);
+        doc.text("Responsable de servicio social", 25, yPos + 12);
+        doc.text("SICA", 25, yPos + 17);
 
         // Firma derecha  
-        doc.text("p.IQ Marcos René López Hernández", 120, yPos - 15);
-        doc.text("Jefe de Área Salas de Informática y", 120, yPos - 10);
-        doc.text("Cómputo para Alumnos (SICA)", 120, yPos - 5);
+        doc.text("p.IQ Marcos René López Hernández", 120, yPos);
+        doc.text("Jefe de Área Salas de Informática y", 120, yPos + 5);
+        doc.text("Cómputo para Alumnos (SICA)", 120, yPos + 10);
+        yPos += 25;
 
         // ========================================
         // COPIA
         // ========================================
         doc.setFont("times", "normal");
         doc.setFontSize(10);
-        doc.text("c.c.p.- El alumno", 25, yPos + 5);
+        doc.text("c.c.p.- El alumno.", 25, yPos);
     }
 
     dibujarPlaceholderLogo(doc, x, y) {
@@ -443,16 +434,16 @@ class CartaTerminoPrepaPDF {
     }
 }
 
-// Función principal para generar carta de término Prepa en PDF
-async function generarCartaTerminoPrepaPDF(datosAsesor) {
+// Función principal para generar carta de aceptación FQ en PDF
+async function generarCartaAceptacionFQPDF(datosAsesor) {
     try {
-        console.log('📄 Generando Carta de Término Prepa (PDF)...');
+        console.log('📄 Generando Carta de Aceptación FQ (PDF)...');
         
-        const generador = new CartaTerminoPrepaPDF();
+        const generador = new CartaAceptacionFQPDF();
         
         // Cargar configuración personalizada si existe
         if (window.servicioSocialManager && window.servicioSocialManager.configuracion) {
-            const configSS = window.servicioSocialManager.configuracion.cartaTerminoPrepa;
+            const configSS = window.servicioSocialManager.configuracion.cartaAceptacionFQ;
             if (configSS) {
                 generador.actualizarConfiguracion(configSS);
             }
@@ -473,7 +464,7 @@ async function generarCartaTerminoPrepaPDF(datosAsesor) {
         return resultado;
         
     } catch (error) {
-        console.error('❌ Error generando carta de término Prepa PDF:', error);
+        console.error('❌ Error generando carta de aceptación FQ PDF:', error);
         
         if (window.servicioSocialManager) {
             window.servicioSocialManager.showNotification(
@@ -488,14 +479,14 @@ async function generarCartaTerminoPrepaPDF(datosAsesor) {
 }
 
 // Exportar para uso global
-window.generarCartaTerminoPrepaPDF = generarCartaTerminoPrepaPDF;
-window.generarCartaTerminoPrepaWord = generarCartaTerminoPrepaPDF; // Para compatibilidad con modal
-window.CartaTerminoPrepaPDF = CartaTerminoPrepaPDF;
+window.generarCartaAceptacionFQPDF = generarCartaAceptacionFQPDF;
+window.generarCartaAceptacionFQWord = generarCartaAceptacionFQPDF; // Para compatibilidad con modal
+window.CartaAceptacionFQPDF = CartaAceptacionFQPDF;
 
 // Verificar que se exportó correctamente
-console.log('✅ carta-termino-prepa-pdf.js cargado correctamente');
+console.log('✅ carta-aceptacion-FQ.js cargado correctamente');
 console.log('📋 Funciones disponibles:', {
-    CartaTerminoPrepaPDF: typeof window.CartaTerminoPrepaPDF,
-    generarCartaTerminoPrepaPDF: typeof window.generarCartaTerminoPrepaPDF,
-    generarCartaTerminoPrepaWord: typeof window.generarCartaTerminoPrepaWord
+    CartaAceptacionFQPDF: typeof window.CartaAceptacionFQPDF,
+    generarCartaAceptacionFQPDF: typeof window.generarCartaAceptacionFQPDF,
+    generarCartaAceptacionFQWord: typeof window.generarCartaAceptacionFQWord
 });
