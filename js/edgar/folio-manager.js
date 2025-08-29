@@ -55,8 +55,52 @@ class FolioManager {
     showMainView() {
         document.getElementById('main-view').style.display = 'block';
         document.getElementById('config-view').style.display = 'none';
+        document.getElementById('btnCustomFolio')?.classList.remove('d-none');
+
+        
+        // Limpiar estado
         this.currentAsesor = null;
         this.currentDocType = null;
+        
+        // Limpiar búsqueda
+        if (window.folioSearch) {
+            window.folioSearch.resetSearch();
+        }
+        
+        // Limpiar formulario de configuración - verificar que existe primero
+        if (window.folioConfig && typeof window.folioConfig.resetForm === 'function') {
+            try {
+                window.folioConfig.resetForm();
+            } catch (error) {
+                console.log('Error limpiando formulario:', error);
+                // Limpiar manualmente como fallback
+                this.manualFormReset();
+            }
+        }
+        
+        // Limpiar vista previa
+        if (window.documentPreview && typeof window.documentPreview.clearPreview === 'function') {
+            window.documentPreview.clearPreview();
+        }
+    }
+
+    manualFormReset() {
+        // Limpiar campos del formulario manualmente
+        const configForm = document.getElementById('configForm');
+        if (configForm) {
+            const inputs = configForm.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.value = '';
+                input.classList.remove('is-valid', 'is-invalid');
+            });
+        }
+        
+        // Limpiar folio
+        const folioInput = document.getElementById('folioInput');
+        if (folioInput) {
+            folioInput.value = '';
+            folioInput.classList.remove('is-valid', 'is-invalid', 'border-success', 'border-info', 'border-warning');
+        }
     }
 
     showConfigView(asesor, docType) {
@@ -65,17 +109,41 @@ class FolioManager {
         
         document.getElementById('main-view').style.display = 'none';
         document.getElementById('config-view').style.display = 'block';
+        document.getElementById('btnCustomFolio')?.classList.add('d-none');
+
         
         // Actualizar títulos
         document.getElementById('selectedAsesorName').textContent = asesor.nombreAsesor;
         document.getElementById('selectedDocType').textContent = docType.title;
         document.getElementById('configTitle').textContent = `${docType.title}`;
         
+        // Limpiar campo de folio y validaciones
+        this.resetFolioField();
+        
+        // Limpiar vista previa antes de cargar nueva configuración
+        if (window.documentPreview && typeof window.documentPreview.clearPreview === 'function') {
+            window.documentPreview.clearPreview();
+        }
+        
         // Cargar configuración del asesor
         this.loadAsesorConfig(asesor);
         
         // Añadir clase de animación
         document.getElementById('config-view').classList.add('slide-in-right');
+    }
+
+    resetFolioField() {
+        const folioInput = document.getElementById('folioInput');
+        if (folioInput) {
+            folioInput.value = '';
+            folioInput.classList.remove('is-valid', 'is-invalid', 'border-success', 'border-info', 'border-warning');
+            
+            // Remover mensajes de validación
+            const existingFeedback = folioInput.parentNode.querySelector('.invalid-feedback, .valid-feedback');
+            if (existingFeedback) {
+                existingFeedback.remove();
+            }
+        }
     }
 
     // ================================
@@ -121,15 +189,42 @@ class FolioManager {
             // Renderizar formulario de configuración
             this.renderConfigForm(asesor, servicioData);
             
-            // Generar folio automático si está vacío
-            const folioInput = document.getElementById('folioInput');
-            if (!folioInput.value) {
-                this.generateAutoFolio();
-            }
+            // Verificar si ya existe folio asignado y mostrarlo automáticamente
+            await this.loadExistingFolio(servicioData);
             
         } catch (error) {
             console.error('❌ Error cargando configuración del asesor:', error);
             this.showNotification('Error', 'No se pudieron cargar los datos del asesor', 'error');
+        }
+    }
+
+    async loadExistingFolio(servicioData) {
+        const folioInput = document.getElementById('folioInput');
+        if (!folioInput) return;
+        
+        console.log('DEBUG servicioData completo:', servicioData);
+        console.log('DEBUG currentDocType.category:', this.currentDocType.category);
+        
+        let existingFolio = null;
+        
+        // Verificar según el tipo de documento
+        if (this.currentDocType.category === 'aceptacion') {
+            existingFolio = servicioData.folioAceptacion;
+            console.log('DEBUG folioAceptacion encontrado:', existingFolio);
+        } else if (this.currentDocType.category === 'termino') {
+            existingFolio = servicioData.folioTermino;
+            console.log('DEBUG folioTermino encontrado:', existingFolio);
+        }
+        
+        if (existingFolio) {
+            folioInput.value = existingFolio;
+            folioInput.classList.add('border-info');
+            
+            this.showNotification('Folio existente', `Este asesor ya tiene el folio: ${existingFolio}`, 'info');
+        } else {
+            console.log('DEBUG no hay folio existente, generando sugerencia...');
+            // Si no hay folio existente, generar sugerencia automática
+            await this.generateAutoFolio();
         }
     }
 
@@ -153,12 +248,19 @@ class FolioManager {
         }
         
         historyList.innerHTML = historial.map(item => `
-            <div class="history-item fade-in">
+            <div class="history-item fade-in ${item.esPersonalizado ? 'history-personalizado' : ''}">
                 <div class="history-item-header">
                     <span class="history-folio">${item.folio}</span>
                     <span class="history-date">${this.formatDate(item.fecha)}</span>
                 </div>
-                <span class="history-type">${item.tipo}</span>
+                <div class="history-details">
+                    <span class="history-type">${item.tipo}</span>
+                    ${item.esPersonalizado ? 
+                        `<small class="history-asesor text-muted">👤 ${item.asesor}</small>` : 
+                        `<small class="history-asesor text-muted">${item.asesor} (${item.numeroCuenta})</small>`
+                    }
+                </div>
+                ${item.comentario ? `<small class="history-comment text-muted"><i class="bi bi-chat-quote"></i> ${item.comentario}</small>` : ''}
             </div>
         `).join('');
     }
@@ -253,56 +355,60 @@ class FolioManager {
         `;
     }
 
-// ================================
-// GENERACIÓN DE FOLIOS (MÉTODO ACTUALIZADO)
-// ================================
+    // ================================
+    // GENERACIÓN DE FOLIOS
+    // ================================
     async generateAutoFolio() {
         try {
             const folioInput = document.getElementById('folioInput');
             
-            if (!this.currentDocType) {
+            if (!this.currentDocType || !this.currentAsesor) {
                 this.showNotification('Error', 'Selecciona un tipo de documento primero', 'warning');
                 return;
             }
             
-            // Obtener configuración actual
-            const configRef = this.db.collection('configuracion').doc(this.configDoc);
-            const configSnap = await configRef.get();
+            // Generar sugerencia con siguiente consecutivo
+            const suggestedFolio = await this.generateSuggestedFolio();
+            folioInput.value = suggestedFolio;
             
-            if (!configSnap.exists) {
-                throw new Error('No se pudo acceder a la configuración');
-            }
-            
-            const config = configSnap.data();
-            const year = new Date().getFullYear();
-            
-            let counter, prefix;
-            
-            if (this.currentDocType.category === 'aceptacion') {
-                counter = config.foliocartaaceptacion || 1;
-                prefix = 'CI'; // Cambiado de 'CA' a 'CI'
-            } else if (this.currentDocType.category === 'termino') {
-                counter = config.foliocartatermino || 1;
-                prefix = 'CI'; // También cambiado para consistencia
-            } else {
-                counter = config.folioEvaluacion || 1;
-                prefix = 'CI'; // Cambiado de 'EV' a 'CI'
-            }
-            
-            const folio = `${prefix}/${String(counter).padStart(3, '0')}/${year}`;
-            folioInput.value = folio;
+            // Limpiar clases anteriores
+            folioInput.classList.remove('border-info', 'border-warning');
             
             // Animación visual
             folioInput.classList.add('border-success');
             setTimeout(() => folioInput.classList.remove('border-success'), 2000);
             
-            this.showNotification('Folio generado', `Se generó el folio: ${folio}`, 'success');
+            this.showNotification('Folio sugerido', `Se sugiere el folio: ${suggestedFolio}`, 'success');
             
         } catch (error) {
-            console.error('❌ Error generando folio automático:', error);
+            console.error('Error generando folio automático:', error);
             this.showNotification('Error', 'No se pudo generar el folio automático', 'error');
         }
     }
+
+    async generateSuggestedFolio() {
+        // Obtener configuración actual
+        const configRef = this.db.collection('configuracion').doc(this.configDoc);
+        const configSnap = await configRef.get();
+        
+        if (!configSnap.exists) {
+            throw new Error('No se pudo acceder a la configuración');
+        }
+        
+        const config = configSnap.data();
+        const year = new Date().getFullYear();
+        
+        // Usar únicamente la variable 'folio'
+        const counter = (config.folio || 0) + 1; // +1 para el siguiente
+        
+        console.log('DEBUG folio actual:', config.folio, 'siguiente:', counter);
+        
+        // Todos los folios empiezan con "CI"
+        const prefix = 'CI';
+        
+        return `${prefix}/${String(counter).padStart(3, '0')}/${year}`;
+    }
+
     // ================================
     // GUARDADO Y GENERACIÓN PDF
     // ================================
@@ -386,25 +492,32 @@ class FolioManager {
         
         await servicioRef.set(updateData, { merge: true });
         
-        // Actualizar contador en configuración
-        await this.updateFolioCounter();
+        // Solo actualizar contador si el folio usado coincide con el sugerido
+        await this.updateFolioCounterIfNeeded(formData.folio);
     }
 
-    async updateFolioCounter() {
-        const configRef = this.db.collection('configuracion').doc(this.configDoc);
-        
-        let field;
-        if (this.currentDocType.category === 'aceptacion') {
-            field = 'foliocartaaceptacion'; // Corregido a minúsculas sin CamelCase
-        } else if (this.currentDocType.category === 'termino') {
-            field = 'foliocartatermino'; // Corregido a minúsculas sin CamelCase
-        } else {
-            field = 'folioEvaluacion'; // Este se mantiene igual si es diferente
+    async updateFolioCounterIfNeeded(folioUsado) {
+        try {
+            // Generar el folio que habríamos sugerido
+            const folioSugerido = await this.generateSuggestedFolio();
+            
+            // Solo incrementar si el folio usado es el que sugerimos
+            if (folioUsado === folioSugerido) {
+                const configRef = this.db.collection('configuracion').doc(this.configDoc);
+                
+                // Usar únicamente la variable 'folio'
+                await configRef.update({
+                    folio: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                console.log(`Contador 'folio' incrementado porque se usó el folio sugerido: ${folioUsado}`);
+            } else {
+                console.log(`Contador NO incrementado. Folio usado: ${folioUsado}, Folio sugerido: ${folioSugerido}`);
+            }
+            
+        } catch (error) {
+            console.error('Error actualizando contador de folio:', error);
         }
-        
-        await configRef.update({
-            [field]: firebase.firestore.FieldValue.increment(1)
-        });
     }
 
     async generatePDF(formData) {
@@ -463,7 +576,35 @@ class FolioManager {
         // Establecer fecha actual
         document.getElementById('customDate').valueAsDate = new Date();
         
+        // Sugerir siguiente folio consecutivo
+        this.suggestNextFolioForCustom();
+        
         modal.show();
+    }
+
+    async suggestNextFolioForCustom() {
+        try {
+            // Obtener configuración actual
+            const configRef = this.db.collection('configuracion').doc(this.configDoc);
+            const configSnap = await configRef.get();
+            
+            if (configSnap.exists) {
+                const config = configSnap.data();
+                const year = new Date().getFullYear();
+                const counter = (config.folio || 0) + 1;
+                
+                const suggestedFolio = `CI/${String(counter).padStart(3, '0')}/${year}`;
+                
+                // Sugerir el folio en el campo
+                const customFolioInput = document.getElementById('customFolio');
+                if (customFolioInput) {
+                    customFolioInput.value = suggestedFolio;
+                    customFolioInput.placeholder = `Sugerido: ${suggestedFolio}`;
+                }
+            }
+        } catch (error) {
+            console.error('Error sugiriendo folio para personalizado:', error);
+        }
     }
 
     async saveCustomFolio() {
@@ -486,6 +627,9 @@ class FolioManager {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             
+            // Agregar al historial principal para que aparezca en "Historial Reciente"
+            await this.addToMainHistorial(formData);
+            
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('customFolioModal'));
             modal.hide();
@@ -499,6 +643,34 @@ class FolioManager {
             console.error('❌ Error guardando folio personalizado:', error);
             this.showNotification('Error', 'No se pudo guardar el folio personalizado', 'error');
         }
+                // Incrementar el contador global de folios
+        await this.db.collection('configuracion').doc(this.configDoc).update({
+            folio: firebase.firestore.FieldValue.increment(1)
+        });
+        console.log('🔢 Contador "folio" incrementado tras guardar folio personalizado');
+
+        
+    }
+
+    async addToMainHistorial(formData) {
+        const configRef = this.db.collection('configuracion').doc(this.configDoc);
+        
+        const historialEntry = {
+            folio: formData.folio,
+            tipo: 'Folio Personalizado',
+            fecha: new Date().toISOString(),
+            asesor: formData.nombre, // Usar el nombre del folio personalizado
+            numeroCuenta: 'N/A', // No aplica para folios personalizados
+            comentario: formData.comentario,
+            esPersonalizado: true
+        };
+        
+        await configRef.update({
+            historialFolios: firebase.firestore.FieldValue.arrayUnion(historialEntry)
+        });
+        
+        // Recargar historial para mostrar el nuevo registro
+        await this.loadHistorial();
     }
 
     // ================================

@@ -676,11 +676,13 @@ class DocumentPreview {
             // Agregar estilos y contenido
             this.previewContainer.innerHTML = template.styles + html;
             
-            // Ajustar tamaño
-            this.adjustPreviewSize();
-            
             // Añadir efecto fade-in
             this.previewContainer.classList.add('fade-in');
+            
+            // Esperar a que el DOM se actualice antes de ajustar tamaño
+            setTimeout(() => {
+                this.adjustPreviewSize();
+            }, 100);
             
         } catch (error) {
             console.error('Error renderizando vista previa:', error);
@@ -761,19 +763,36 @@ class DocumentPreview {
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         
+        // Resetear transformación antes de calcular
+        this.previewContainer.style.transform = 'none';
+        
         // Ajustar el preview para que se vea bien en el contenedor
         const preview = this.previewContainer.querySelector('.document-preview');
         if (preview) {
-            const scale = Math.min(
-                containerWidth / 850, // Ancho objetivo del documento
-                containerHeight / 1100, // Alto objetivo del documento
-                1 // No hacer zoom mayor a 100%
-            );
+            // Obtener dimensiones reales del documento
+            const previewWidth = preview.offsetWidth;
+            const previewHeight = preview.offsetHeight;
+            
+            // Calcular scale apropiado con margen
+            const scaleX = (containerWidth - 40) / previewWidth; // 40px de margen
+            const scaleY = (containerHeight - 40) / previewHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // No hacer zoom mayor a 100%
             
             if (scale < 1) {
-                preview.style.transform = `scale(${scale})`;
-                preview.style.transformOrigin = 'top left';
-                preview.style.width = `${100 / scale}%`;
+                this.previewContainer.style.transform = `scale(${scale})`;
+                this.previewContainer.style.transformOrigin = 'top center';
+                this.previewContainer.style.width = 'fit-content';
+                this.previewContainer.style.margin = '0 auto';
+            } else {
+                this.previewContainer.style.transform = 'none';
+                this.previewContainer.style.width = '100%';
+                this.previewContainer.style.margin = '0';
+            }
+            
+            // Actualizar indicador de zoom
+            const zoomLevel = document.getElementById('zoomLevel');
+            if (zoomLevel) {
+                zoomLevel.textContent = `${Math.round(scale * 100)}%`;
             }
         }
     }

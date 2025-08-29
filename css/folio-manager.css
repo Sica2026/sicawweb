@@ -626,3 +626,24 @@
     align-items: center;
     justify-content: center;
 }
+.history-personalizado {
+    border-left: 4px solid var(--primary-gold);
+    background: rgba(172, 150, 90, 0.05);
+}
+
+.history-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.history-comment {
+    display: block;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.history-asesor {
+    margin-left: 0.5rem;
+}

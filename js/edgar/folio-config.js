@@ -48,9 +48,8 @@ class FolioConfig {
         this.validators = {
             folio: (value) => {
                 if (!value) return 'El folio es requerido';
-                // Actualizado para aceptar CI como prefijo válido
-                if (!/^CI\/\d{3}\/\d{4}$/.test(value)) {
-                    return 'Formato: CI/000/YYYY (ej: CI/001/2025)';
+                if (!/^[A-Z]{2}\/\d{3}\/\d{4}$/.test(value)) {
+                    return 'Formato: XX/000/YYYY (ej: CA/001/2025)';
                 }
                 return null;
             },
@@ -252,16 +251,11 @@ class FolioConfig {
         const suggestions = [];
         const year = new Date().getFullYear();
         
-        // Si solo tiene letras, sugerir formato completo
+        // Si solo tiene letras, sugerir formato completo - solo CI ahora
         if (/^[A-Z]{1,2}$/.test(value)) {
-            const prefixes = ['CI']; // Simplificado a solo CI
-            prefixes.forEach(prefix => {
-                if (prefix.startsWith(value) || value.length === 2) {
-                    suggestions.push(`${prefix}/001/${year}`);
-                    suggestions.push(`${prefix}/002/${year}`);
-                    suggestions.push(`${prefix}/003/${year}`);
-                }
-            });
+            if ('CI'.startsWith(value) || value.length === 2) {
+                suggestions.push(`CI/001/${year}`);
+            }
         }
         
         // Si tiene formato parcial, completar
@@ -370,20 +364,27 @@ class FolioConfig {
         const previewDocument = document.getElementById('previewDocument');
         const zoomLevel = document.getElementById('zoomLevel');
         
-        if (!previewDocument || !zoomLevel) return;
+        if (!previewDocument || !zoomLevel) {
+            console.log('Elementos de zoom no encontrados, saltando ajuste');
+            return;
+        }
         
-        const currentZoom = parseFloat(previewDocument.style.transform.replace(/scale\(([^)]+)\)/, '$1') || 1);
-        const newZoom = Math.max(0.5, Math.min(2.0, currentZoom * factor));
-        
-        previewDocument.style.transform = `scale(${newZoom})`;
-        previewDocument.style.transformOrigin = 'top left';
-        
-        zoomLevel.textContent = `${Math.round(newZoom * 100)}%`;
-        
-        // Ajustar scroll container si es necesario
-        const previewContainer = document.querySelector('.preview-container');
-        if (previewContainer) {
-            previewContainer.style.overflow = newZoom > 1 ? 'auto' : 'hidden';
+        try {
+            const currentZoom = parseFloat(previewDocument.style.transform.replace(/scale\(([^)]+)\)/, '$1') || 1);
+            const newZoom = Math.max(0.5, Math.min(2.0, currentZoom * factor));
+            
+            previewDocument.style.transform = `scale(${newZoom})`;
+            previewDocument.style.transformOrigin = 'top left';
+            
+            zoomLevel.textContent = `${Math.round(newZoom * 100)}%`;
+            
+            // Ajustar scroll container si es necesario
+            const previewContainer = document.querySelector('.preview-container');
+            if (previewContainer) {
+                previewContainer.style.overflow = newZoom > 1 ? 'auto' : 'hidden';
+            }
+        } catch (error) {
+            console.log('Error ajustando zoom:', error);
         }
     }
 
@@ -479,18 +480,30 @@ class FolioConfig {
             feedback.forEach(fb => fb.remove());
         }
         
-        // Limpiar folio
-        const folioInput = document.getElementById('folioInput');
-        if (folioInput) {
-            folioInput.value = '';
-            this.hideFolioSuggestions(folioInput);
-        }
+        // Limpiar folio completamente
+        this.resetFolioField();
         
         // Resetear zoom
         this.adjustZoom(1);
         
         // Limpiar datos
         this.currentData = {};
+    }
+
+    resetFolioField() {
+        const folioInput = document.getElementById('folioInput');
+        if (folioInput) {
+            folioInput.value = '';
+            folioInput.classList.remove('is-valid', 'is-invalid', 'border-success', 'border-info', 'border-warning', 'border-danger');
+            
+            // Remover todos los tipos de feedback
+            const feedbacks = folioInput.parentNode.querySelectorAll('.invalid-feedback, .valid-feedback, .folio-suggestions');
+            feedbacks.forEach(fb => fb.remove());
+            
+            // Remover cualquier notificación de campo
+            const notifications = folioInput.parentNode.querySelectorAll('.field-notification');
+            notifications.forEach(notif => notif.remove());
+        }
     }
 
     exportFormData() {
