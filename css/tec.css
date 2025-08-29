@@ -1,0 +1,915 @@
+/* Gestión Técnica SICA - Estilos Futuristas */
+
+/* Variables específicas para el módulo técnico */
+:root {
+    /* Colores UNAM con variaciones futuristas */
+    --tec-primary: #1a237e;
+    --tec-secondary: #d4af37;
+    --tec-accent: #00bcd4;
+    --tec-success: #00c853;
+    --tec-warning: #ff8f00;
+    --tec-error: #d32f2f;
+    --tec-info: #1976d2;
+    
+    /* Gradientes futuristas */
+    --tec-gradient-primary: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+    --tec-gradient-secondary: linear-gradient(135deg, #d4af37 0%, #ffd54f 100%);
+    --tec-gradient-accent: linear-gradient(135deg, #00bcd4 0%, #4dd0e1 100%);
+    --tec-gradient-dark: linear-gradient(135deg, #0d1421 0%, #1a237e 100%);
+    
+    /* Sombras futuristas */
+    --tec-shadow-soft: 0 4px 20px rgba(26, 35, 126, 0.1);
+    --tec-shadow-medium: 0 8px 30px rgba(26, 35, 126, 0.15);
+    --tec-shadow-strong: 0 12px 40px rgba(26, 35, 126, 0.2);
+    --tec-shadow-neon: 0 0 20px rgba(0, 188, 212, 0.3);
+    --tec-shadow-gold: 0 0 20px rgba(212, 175, 55, 0.3);
+    
+    /* Espaciados */
+    --tec-border-radius: 16px;
+    --tec-border-radius-lg: 24px;
+    --tec-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark theme variables */
+[data-theme="dark"] {
+    --tec-bg-primary: #0d1421;
+    --tec-bg-secondary: #1a2332;
+    --tec-bg-card: #252d3d;
+    --tec-text-primary: #e8eaed;
+    --tec-text-secondary: #9aa0a6;
+    --tec-border: #3c4043;
+}
+
+/* Light theme variables */
+[data-theme="light"] {
+    --tec-bg-primary: #f8f9fa;
+    --tec-bg-secondary: #ffffff;
+    --tec-bg-card: #ffffff;
+    --tec-text-primary: #202124;
+    --tec-text-secondary: #5f6368;
+    --tec-border: #dadce0;
+}
+
+/* Control Panel */
+.tec-control-panel {
+    background: var(--tec-gradient-dark);
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 var(--tec-border-radius-lg) var(--tec-border-radius-lg);
+    box-shadow: var(--tec-shadow-medium);
+    position: relative;
+    overflow: hidden;
+}
+
+.tec-control-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(0, 188, 212, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.tec-title {
+    color: #ffffff;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.tec-title i {
+    color: var(--tec-accent);
+    filter: drop-shadow(0 0 10px rgba(0, 188, 212, 0.5));
+}
+
+.tec-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 300;
+}
+
+/* Action Buttons */
+.tec-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-tec-primary {
+    background: var(--tec-gradient-secondary);
+    border: none;
+    color: #1a237e;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--tec-border-radius);
+    transition: var(--tec-transition);
+    box-shadow: var(--tec-shadow-soft);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-tec-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-tec-primary:hover::before {
+    left: 100%;
+}
+
+.btn-tec-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--tec-shadow-medium), var(--tec-shadow-gold);
+    color: #1a237e;
+}
+
+.btn-tec-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--tec-border-radius);
+    transition: var(--tec-transition);
+    backdrop-filter: blur(10px);
+}
+
+.btn-tec-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--tec-accent);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: var(--tec-shadow-neon);
+}
+
+/* Filter Panel */
+.tec-filters {
+    margin-bottom: 2rem;
+}
+
+.filter-card {
+    background: var(--tec-bg-card);
+    padding: 1.5rem;
+    border-radius: var(--tec-border-radius);
+    box-shadow: var(--tec-shadow-soft);
+    border: 1px solid var(--tec-border);
+    backdrop-filter: blur(10px);
+    transition: var(--tec-transition);
+}
+
+.filter-card:hover {
+    box-shadow: var(--tec-shadow-medium);
+    transform: translateY(-2px);
+}
+
+.filter-select, .search-input {
+    border: 2px solid var(--tec-border);
+    border-radius: var(--tec-border-radius);
+    padding: 0.75rem 1rem;
+    background: var(--tec-bg-secondary);
+    color: var(--tec-text-primary);
+    transition: var(--tec-transition);
+    font-size: 0.95rem;
+}
+
+.filter-select:focus, .search-input:focus {
+    border-color: var(--tec-accent);
+    box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
+    background: var(--tec-bg-card);
+}
+
+/* Section Styling */
+.tec-section {
+    margin-bottom: 3rem;
+    padding: 0 1rem;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--tec-text-primary);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--tec-gradient-accent);
+    border-radius: 2px;
+}
+
+.section-title i {
+    color: var(--tec-accent);
+    filter: drop-shadow(0 0 5px rgba(0, 188, 212, 0.3));
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: var(--tec-bg-card);
+    padding: 2rem;
+    border-radius: var(--tec-border-radius);
+    border: 1px solid var(--tec-border);
+    transition: var(--tec-transition);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    min-height: 120px;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    transition: var(--tec-transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--tec-shadow-medium);
+}
+
+.stat-card-total::before { background: var(--tec-gradient-primary); }
+.stat-card-pending::before { background: linear-gradient(180deg, #ff8f00, #ffb300); }
+.stat-card-process::before { background: linear-gradient(180deg, #1976d2, #42a5f5); }
+.stat-card-resolved::before { background: linear-gradient(180deg, #00c853, #4caf50); }
+.stat-card-urgent::before { background: linear-gradient(180deg, #d32f2f, #f44336); }
+.stat-card-services::before { background: var(--tec-gradient-secondary); }
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    transition: var(--tec-transition);
+}
+
+.stat-card-total .stat-icon {
+    background: linear-gradient(135deg, rgba(26, 35, 126, 0.1), rgba(57, 73, 171, 0.2));
+    color: var(--tec-primary);
+}
+
+.stat-card-pending .stat-icon {
+    background: linear-gradient(135deg, rgba(255, 143, 0, 0.1), rgba(255, 179, 0, 0.2));
+    color: var(--tec-warning);
+}
+
+.stat-card-process .stat-icon {
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.2));
+    color: var(--tec-info);
+}
+
+.stat-card-resolved .stat-icon {
+    background: linear-gradient(135deg, rgba(0, 200, 83, 0.1), rgba(76, 175, 80, 0.2));
+    color: var(--tec-success);
+}
+
+.stat-card-urgent .stat-icon {
+    background: linear-gradient(135deg, rgba(211, 47, 47, 0.1), rgba(244, 67, 54, 0.2));
+    color: var(--tec-error);
+}
+
+.stat-card-services .stat-icon {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(255, 213, 79, 0.2));
+    color: var(--tec-secondary);
+}
+
+.stat-content h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--tec-text-primary);
+    line-height: 1;
+}
+
+.stat-content p {
+    font-size: 0.95rem;
+    color: var(--tec-text-secondary);
+    margin: 0.25rem 0 0 0;
+    font-weight: 500;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Room Cards */
+.room-card {
+    background: var(--tec-bg-card);
+    border-radius: var(--tec-border-radius-lg);
+    padding: 2rem;
+    border: 1px solid var(--tec-border);
+    transition: var(--tec-transition);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.room-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--tec-gradient-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.room-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--tec-shadow-strong);
+}
+
+.room-card:hover::before {
+    transform: scaleX(1);
+}
+
+.room-card-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.room-card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--tec-text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.room-card-title i {
+    color: var(--tec-accent);
+    font-size: 1.8rem;
+}
+
+.room-card-status {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-operational {
+    background: linear-gradient(135deg, rgba(0, 200, 83, 0.1), rgba(76, 175, 80, 0.2));
+    color: var(--tec-success);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+}
+
+.status-maintenance {
+    background: linear-gradient(135deg, rgba(255, 143, 0, 0.1), rgba(255, 179, 0, 0.2));
+    color: var(--tec-warning);
+    border: 1px solid rgba(255, 143, 0, 0.3);
+}
+
+.status-critical {
+    background: linear-gradient(135deg, rgba(211, 47, 47, 0.1), rgba(244, 67, 54, 0.2));
+    color: var(--tec-error);
+    border: 1px solid rgba(211, 47, 47, 0.3);
+}
+
+.room-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--tec-bg-secondary);
+    border-radius: var(--tec-border-radius);
+    border: 1px solid var(--tec-border);
+    transition: var(--tec-transition);
+}
+
+.metric-item:hover {
+    background: var(--tec-bg-card);
+    transform: translateY(-2px);
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--tec-text-primary);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: var(--tec-text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.room-progress {
+    margin-bottom: 1rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--tec-text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-tec {
+    height: 8px;
+    background: var(--tec-bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--tec-gradient-accent);
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Reports and Services Cards */
+.report-card, .service-card {
+    background: var(--tec-bg-card);
+    border-radius: var(--tec-border-radius);
+    padding: 1.5rem;
+    border: 1px solid var(--tec-border);
+    transition: var(--tec-transition);
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.report-card::before, .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+}
+
+.report-card.urgente::before { background: var(--tec-error); }
+.report-card.moderado::before { background: var(--tec-warning); }
+.report-card.bajo::before { background: var(--tec-success); }
+
+.report-card:hover, .service-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--tec-shadow-medium);
+}
+
+.card-header-tec {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.card-title-tec {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--tec-text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--tec-text-secondary);
+}
+
+.meta-item i {
+    color: var(--tec-accent);
+    font-size: 1rem;
+}
+
+.card-description {
+    color: var(--tec-text-primary);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--tec-border);
+    background: var(--tec-bg-secondary);
+    color: var(--tec-text-secondary);
+    transition: var(--tec-transition);
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    background: var(--tec-accent);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-pendiente {
+    background: linear-gradient(135deg, rgba(255, 143, 0, 0.1), rgba(255, 179, 0, 0.2));
+    color: var(--tec-warning);
+    border: 1px solid rgba(255, 143, 0, 0.3);
+}
+
+.status-en_proceso {
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(66, 165, 245, 0.2));
+    color: var(--tec-info);
+    border: 1px solid rgba(25, 118, 210, 0.3);
+}
+
+.status-resuelto, .status-completado {
+    background: linear-gradient(135deg, rgba(0, 200, 83, 0.1), rgba(76, 175, 80, 0.2));
+    color: var(--tec-success);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+}
+
+.status-cancelado {
+    background: linear-gradient(135deg, rgba(211, 47, 47, 0.1), rgba(244, 67, 54, 0.2));
+    color: var(--tec-error);
+    border: 1px solid rgba(211, 47, 47, 0.3);
+}
+
+.urgency-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.urgency-urgente {
+    background: linear-gradient(135deg, rgba(211, 47, 47, 0.1), rgba(244, 67, 54, 0.2));
+    color: var(--tec-error);
+    border: 1px solid rgba(211, 47, 47, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.urgency-moderado {
+    background: linear-gradient(135deg, rgba(255, 143, 0, 0.1), rgba(255, 179, 0, 0.2));
+    color: var(--tec-warning);
+    border: 1px solid rgba(255, 143, 0, 0.3);
+}
+
+.urgency-bajo {
+    background: linear-gradient(135deg, rgba(0, 200, 83, 0.1), rgba(76, 175, 80, 0.2));
+    color: var(--tec-success);
+    border: 1px solid rgba(0, 200, 83, 0.3);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Modal Styling */
+.modal-tec {
+    border: none;
+    border-radius: var(--tec-border-radius-lg);
+    background: var(--tec-bg-card);
+    box-shadow: var(--tec-shadow-strong);
+    backdrop-filter: blur(20px);
+}
+
+.modal-tec .modal-header {
+    background: var(--tec-gradient-primary);
+    color: white;
+    border-radius: var(--tec-border-radius-lg) var(--tec-border-radius-lg) 0 0;
+    border: none;
+    padding: 1.5rem 2rem;
+}
+
+.modal-tec .modal-title {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-tec .modal-body {
+    padding: 2rem;
+}
+
+.modal-tec .modal-footer {
+    border: none;
+    padding: 1.5rem 2rem;
+    background: var(--tec-bg-secondary);
+    border-radius: 0 0 var(--tec-border-radius-lg) var(--tec-border-radius-lg);
+}
+
+/* View Controls */
+.view-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-controls .btn {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--tec-border);
+    background: var(--tec-bg-secondary);
+    color: var(--tec-text-secondary);
+}
+
+.view-controls .btn.active {
+    background: var(--tec-accent);
+    color: white;
+    border-color: var(--tec-accent);
+}
+
+/* Grid View */
+.reports-grid, .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+/* List View */
+.reports-list, .services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Loading States */
+.loading-shimmer {
+    background: linear-gradient(90deg, var(--tec-bg-secondary) 25%, rgba(255, 255, 255, 0.1) 50%, var(--tec-bg-secondary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--tec-border-radius);
+    height: 120px;
+}
+
+/* Empty States */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--tec-text-secondary);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: var(--tec-accent);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--tec-text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .stat-card {
+        min-height: 100px;
+        padding: 1.5rem;
+        gap: 1rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .stat-content h3 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .tec-title {
+        font-size: 2rem;
+    }
+    
+    .tec-actions {
+        margin-top: 1rem;
+        justify-content: flex-start;
+    }
+    
+    .room-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .reports-grid, .services-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .tec-control-panel {
+        padding: 1.5rem 0;
+    }
+    
+    .tec-title {
+        font-size: 1.8rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .tec-actions {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .filter-card {
+        padding: 1rem;
+    }
+    
+    .room-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .reports-grid, .services-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-tec .modal-body,
+    .modal-tec .modal-footer {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+        min-height: auto;
+        padding: 1.25rem;
+    }
+    
+    .room-card {
+        padding: 1.5rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .card-header-tec {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+}
+
+/* Animation Classes */
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scale-in {
+    animation: scaleIn 0.4s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Notification Enhancements */
+.notification-tec {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 350px;
+    background: var(--tec-bg-card);
+    border-radius: var(--tec-border-radius);
+    box-shadow: var(--tec-shadow-strong);
+    border: 1px solid var(--tec-border);
+    backdrop-filter: blur(20px);
+    animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
