@@ -1,1421 +1,1128 @@
-// Gestión Técnica SICA - JavaScript
-class TecnicalManager {
+/**
+ * TECHNICAL MANAGEMENT SYSTEM
+ * Sistema de Gestión Técnica SICA
+ */
+
+class TechnicalManager {
     constructor() {
-        this.reports = [];
-        this.services = [];
-        this.currentView = 'dashboard';
-        this.currentViewType = 'list';
-        this.filters = {
-            sala: '',
-            estado: '',
-            urgencia: '',
-            search: ''
+        this.currentView = 'reports'; // 'reports' or 'services'
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+        this.currentFilters = {
+            room: 'all',
+            status: 'all',
+            urgency: 'all'
         };
         
-        // Salas disponibles
+        // Colecciones de Firebase
+        this.reportsCollection = [];
+        this.servicesCollection = [];
+        this.db = null;
+        
         this.rooms = [
-            { id: 'sica1', name: 'SICA 1', icon: 'bi-1-circle-fill', type: 'sica' },
-            { id: 'sica2', name: 'SICA 2', icon: 'bi-2-circle-fill', type: 'sica' },
-            { id: 'sica3', name: 'SICA 3', icon: 'bi-3-circle-fill', type: 'sica' },
-            { id: 'sica4', name: 'SICA 4', icon: 'bi-4-circle-fill', type: 'sica' },
-            { id: 'salon1', name: 'Salón Inteligente 1', icon: 'bi-display', type: 'salon' },
-            { id: 'salon2', name: 'Salón Inteligente 2', icon: 'bi-display', type: 'salon' }
+            'SICA 1',
+            'SICA 2', 
+            'SICA 3',
+            'SICA 4',
+            'Salón Inteligente 1',
+            'Salón Inteligente 2'
         ];
         
         this.init();
     }
 
-    async init() {
+    init() {
+        this.setupComponents();
+        this.initializeFirebase();
         this.setupEventListeners();
-        this.setupBreadcrumbs();
-        await this.loadData();
-        this.renderDashboard();
-        this.updateStatistics();
         
-        // Mostrar notificación de bienvenida
-        this.showNotification('Sistema Iniciado', 'Gestión Técnica SICA cargada correctamente', 'success', 'bi-check-circle-fill');
+        // Configurar título (sin breadcrumbs)
+        if (typeof SICAComponents !== 'undefined') {
+            SICAComponents.setPageTitle('Gestión Técnica - SICA');
+        }
+    }
+
+    setupComponents() {
+        console.log('Inicializando componentes del sistema técnico...');
+    }
+
+    async initializeFirebase() {
+        try {
+            // Esperar a que Firebase esté disponible
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                this.db = firebase.firestore();
+                console.log('Firebase conectado correctamente para gestión técnica');
+                
+                // Cargar datos reales
+                await this.loadReportsFromFirebase();
+                await this.loadServicesFromFirebase();
+                
+                this.updateStats();
+                this.renderRoomCards();
+                this.renderTable();
+            } else {
+                throw new Error('Firebase no está disponible');
+            }
+        } catch (error) {
+            console.error('Error inicializando Firebase:', error);
+            this.showNotification('Error', 'No se pudo conectar con la base de datos', 'error');
+            
+            // Mostrar interfaz vacía para desarrollo
+            this.updateStats();
+            this.renderRoomCards();
+            this.renderTable();
+        }
+    }
+
+    async loadReportsFromFirebase() {
+        try {
+            const snapshot = await this.db.collection('reportes_tecnicos')
+                .orderBy('fechaCreacion', 'desc')
+                .get();
+
+            this.reportsCollection = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                this.reportsCollection.push({
+                    id: doc.id,
+                    numeroReporte: data.numeroReporte,
+                    sala: data.sala,
+                    tipoServicio: data.tipoServicio,
+                    descripcion: data.descripcion,
+                    responsable: data.responsable,
+                    estado: data.estado,
+                    urgencia: data.urgencia,
+                    fechaInicio: data.fechaInicio,
+                    fechaTermino: data.fechaTermino,
+                    fechaCreacion: data.fechaCreacion,
+                    fechaActualizacion: data.fechaActualizacion
+                });
+            });
+
+            console.log(`Cargados ${this.reportsCollection.length} reportes desde Firebase`);
+        } catch (error) {
+            console.error('Error cargando reportes:', error);
+            this.reportsCollection = [];
+        }
+    }
+
+    async loadServicesFromFirebase() {
+        try {
+            const snapshot = await this.db.collection('servicios_tecnicos')
+                .orderBy('fechaInicio', 'desc')
+                .get();
+
+            this.servicesCollection = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                this.servicesCollection.push({
+                    id: doc.id,
+                    ...data
+                });
+            });
+
+            console.log(`Cargados ${this.servicesCollection.length} servicios desde Firebase`);
+        } catch (error) {
+            console.error('Error cargando servicios:', error);
+            this.servicesCollection = [];
+        }
     }
 
     setupEventListeners() {
         // Filtros
-        document.getElementById('filterSala').addEventListener('change', (e) => {
-            this.filters.sala = e.target.value;
+        document.getElementById('roomFilter').addEventListener('change', (e) => {
+            this.currentFilters.room = e.target.value;
             this.applyFilters();
         });
-        
-        document.getElementById('filterEstado').addEventListener('change', (e) => {
-            this.filters.estado = e.target.value;
+
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            this.currentFilters.status = e.target.value;
             this.applyFilters();
         });
-        
-        document.getElementById('filterUrgencia').addEventListener('change', (e) => {
-            this.filters.urgencia = e.target.value;
+
+        document.getElementById('urgencyFilter').addEventListener('change', (e) => {
+            this.currentFilters.urgency = e.target.value;
             this.applyFilters();
         });
-        
+
+        // Cambio de vista
+        document.getElementById('reportsView').addEventListener('click', () => {
+            this.switchView('reports');
+        });
+
+        document.getElementById('servicesView').addEventListener('click', () => {
+            this.switchView('services');
+        });
+
+        // Botón principal
+        document.getElementById('newReportBtn').addEventListener('click', () => {
+            this.showNewReportModal();
+        });
+
+        // Actualizar reporte
+        document.getElementById('updateReportBtn').addEventListener('click', () => {
+            this.updateReport();
+        });
+
+        // Guardar reporte
+        document.getElementById('saveReportBtn').addEventListener('click', () => {
+            this.saveReport();
+        });
+
+        // Búsqueda
         document.getElementById('searchInput').addEventListener('input', (e) => {
-            this.filters.search = e.target.value.toLowerCase();
-            this.applyFilters();
+            this.search(e.target.value);
         });
-
-        // Auto-actualización cada 30 segundos
-        setInterval(() => {
-            this.loadData();
-            this.updateCurrentView();
-        }, 30000);
     }
 
-    setupBreadcrumbs() {
-        const breadcrumbs = [
-            { text: "Inicio", link: "../index.html" },
-            { text: "Gestión Técnica", active: true }
-        ];
+    updateStats() {
+        const reports = this.getFilteredReports();
         
-        if (typeof SICAComponents !== 'undefined') {
-            SICAComponents.addBreadcrumbs(breadcrumbs);
-        }
+        const totalReports = reports.length;
+        const pendingReports = reports.filter(r => r.estado === 'pendiente').length;
+        const progressReports = reports.filter(r => r.estado === 'en_proceso').length;
+        const resolvedReports = reports.filter(r => r.estado === 'resuelto').length;
+
+        document.getElementById('totalReports').textContent = totalReports;
+        document.getElementById('pendingReports').textContent = pendingReports;
+        document.getElementById('progressReports').textContent = progressReports;
+        document.getElementById('resolvedReports').textContent = resolvedReports;
     }
 
-    async loadData() {
-        try {
-            // Cargar reportes desde Firebase
-            if (typeof firebase !== 'undefined') {
-                const reportsSnapshot = await firebase.firestore()
-                    .collection('technical_reports')
-                    .orderBy('fechaCreacion', 'desc')
-                    .get();
-                
-                this.reports = reportsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                const servicesSnapshot = await firebase.firestore()
-                    .collection('technical_services')
-                    .orderBy('fechaInicio', 'desc')
-                    .get();
-                
-                this.services = servicesSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-            } else {
-                // Datos de ejemplo para desarrollo
-                this.loadSampleData();
-            }
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            this.loadSampleData();
-        }
-    }
-
-    loadSampleData() {
-        // Datos de ejemplo para desarrollo
-        this.reports = [
-            {
-                id: '1',
-                sala: 'SICA 1',
-                tipo: 'hardware',
-                descripcion: 'Proyector no enciende, se escucha ruido extraño en el ventilador',
-                responsable: 'Juan Pérez',
-                fechaCreacion: new Date('2024-01-15'),
-                fechaResolucion: null,
-                estado: 'pendiente',
-                urgencia: 'urgente',
-                notas: 'Se solicitó revisión técnica especializada. Posible falla en ventilador interno.'
-            },
-            {
-                id: '2',
-                sala: 'SICA 2',
-                tipo: 'software',
-                descripcion: 'Sistema operativo presenta errores al iniciar aplicaciones',
-                responsable: 'María García',
-                fechaCreacion: new Date('2024-01-14'),
-                fechaResolucion: null,
-                estado: 'en_proceso',
-                urgencia: 'moderado',
-                notas: 'Realizando análisis de logs del sistema. Se encontraron conflictos de dependencias.'
-            },
-            {
-                id: '3',
-                sala: 'Salón Inteligente 1',
-                tipo: 'mantenimiento',
-                descripcion: 'Limpieza profunda de equipos y calibración de pantallas',
-                responsable: 'Carlos López',
-                fechaCreacion: new Date('2024-01-12'),
-                fechaResolucion: new Date('2024-01-13'),
-                estado: 'resuelto',
-                urgencia: 'bajo',
-                notas: 'Mantenimiento completado exitosamente. Se calibraron 3 pantallas y se actualizaron drivers de video.'
-            },
-            {
-                id: '4',
-                sala: 'SICA 3',
-                tipo: 'software',
-                descripcion: 'Aplicación de videoconferencia no responde correctamente',
-                responsable: 'Ana Martínez',
-                fechaCreacion: new Date('2024-01-16'),
-                fechaResolucion: null,
-                estado: 'pendiente',
-                urgencia: 'moderado',
-                notas: 'Pendiente de reunión con proveedor de software para diagnóstico remoto.'
-            },
-            {
-                id: '5',
-                sala: 'SICA 4',
-                tipo: 'hardware',
-                descripcion: 'Micrófono inalámbrico presenta interferencias',
-                responsable: 'Roberto Silva',
-                fechaCreacion: new Date('2024-01-11'),
-                fechaResolucion: new Date('2024-01-14'),
-                estado: 'resuelto',
-                urgencia: 'moderado',
-                notas: 'Se cambió frecuencia de operación y se reemplazaron baterías. Sistema funcionando correctamente.'
-            }
-        ];
-
-        this.services = [
-            {
-                id: '1',
-                sala: 'SICA 3',
-                tipo: 'instalacion',
-                descripcion: 'Instalación de nuevo software de presentaciones y configuración',
-                responsable: 'Ana Martínez',
-                fechaInicio: new Date('2024-01-10'),
-                fechaFin: new Date('2024-01-11'),
-                estado: 'completado',
-                evidencias: ['instalacion_software.pdf'],
-                notas: 'Software instalado y configurado según especificaciones. Personal capacitado en uso básico.'
-            },
-            {
-                id: '2',
-                sala: 'SICA 4',
-                tipo: 'mantenimiento',
-                descripcion: 'Mantenimiento preventivo de equipos y actualización de drivers',
-                responsable: 'Roberto Silva',
-                fechaInicio: new Date('2024-01-08'),
-                fechaFin: null,
-                estado: 'en_proceso',
-                evidencias: [],
-                notas: 'Progreso: 60% completado. Pendiente actualización de drivers de video.'
-            }
-        ];
-    }
-
-    renderDashboard() {
-        const roomCardsContainer = document.getElementById('room-cards');
-        if (!roomCardsContainer) return;
-
-        roomCardsContainer.innerHTML = '';
+    renderRoomCards() {
+        const container = document.getElementById('roomsContainer');
+        container.innerHTML = '';
 
         this.rooms.forEach(room => {
-            const roomStats = this.getRoomStatistics(room.name);
-            const roomCard = this.createRoomCard(room, roomStats);
-            roomCardsContainer.appendChild(roomCard);
-        });
+            const roomReports = this.reportsCollection.filter(r => r.sala === room);
+            const roomServices = this.servicesCollection.filter(s => s.sala === room);
+            
+            const pendingReports = roomReports.filter(r => r.estado === 'pendiente').length;
+            const resolvedReports = roomReports.filter(r => r.estado === 'resuelto').length;
+            const urgentReports = roomReports.filter(r => r.urgencia === 'urgente').length;
+            const activeServices = roomServices.filter(s => s.estado !== 'completado').length;
 
-        // Animación de entrada
-        setTimeout(() => {
-            roomCardsContainer.querySelectorAll('.room-card').forEach((card, index) => {
-                setTimeout(() => {
-                    card.classList.add('fade-in-up');
-                }, index * 100);
-            });
-        }, 100);
-    }
-
-    createRoomCard(room, stats) {
-        const card = document.createElement('div');
-        card.className = 'col-lg-4 col-md-6';
-        
-        const statusClass = this.getRoomStatusClass(stats);
-        const completionRate = stats.total > 0 ? Math.round((stats.resueltos / stats.total) * 100) : 100;
-        
-        card.innerHTML = `
-            <div class="room-card" onclick="tecManager.showRoomDetails('${room.name}')">
-                <div class="room-card-header">
-                    <h3 class="room-card-title">
-                        <i class="${room.icon}"></i>
-                        ${room.name}
-                    </h3>
-                    <span class="room-card-status ${statusClass}">
-                        ${this.getRoomStatusText(stats)}
-                    </span>
-                </div>
-                
-                <div class="room-metrics">
-                    <div class="metric-item">
-                        <div class="metric-value">${stats.total}</div>
-                        <div class="metric-label">Total</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value">${stats.pendientes}</div>
-                        <div class="metric-label">Pendientes</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value">${stats.urgentes}</div>
-                        <div class="metric-label">Urgentes</div>
-                    </div>
-                </div>
-                
-                <div class="room-progress">
-                    <div class="progress-label">
-                        <span>Completado</span>
-                        <span>${completionRate}%</span>
-                    </div>
-                    <div class="progress-bar-tec">
-                        <div class="progress-fill" style="width: ${completionRate}%"></div>
-                    </div>
-                </div>
-                
-                <div class="room-actions" onclick="event.stopPropagation()">
-                    <button class="btn btn-outline-primary btn-sm" onclick="tecManager.showReports('${room.name}')">
-                        <i class="bi bi-clipboard-data"></i> Ver Reportes
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        return card;
-    }
-
-    getRoomStatistics(roomName) {
-        const roomReports = this.reports.filter(r => r.sala === roomName);
-        
-        return {
-            total: roomReports.length,
-            pendientes: roomReports.filter(r => r.estado === 'pendiente').length,
-            enProceso: roomReports.filter(r => r.estado === 'en_proceso').length,
-            resueltos: roomReports.filter(r => r.estado === 'resuelto').length,
-            urgentes: roomReports.filter(r => r.urgencia === 'urgente').length
-        };
-    }
-
-    getRoomStatusClass(stats) {
-        if (stats.urgentes > 0) return 'status-critical';
-        if (stats.pendientes > 2) return 'status-maintenance';
-        return 'status-operational';
-    }
-
-    getRoomStatusText(stats) {
-        if (stats.urgentes > 0) return 'Crítico';
-        if (stats.pendientes > 2) return 'Mantenimiento';
-        return 'Operativo';
-    }
-
-    updateStatistics() {
-        const stats = {
-            total: this.reports.length,
-            pendientes: this.reports.filter(r => r.estado === 'pendiente').length,
-            enProceso: this.reports.filter(r => r.estado === 'en_proceso').length,
-            resueltos: this.reports.filter(r => r.estado === 'resuelto').length,
-            urgentes: this.reports.filter(r => r.urgencia === 'urgente').length,
-            servicios: this.services.length
-        };
-
-        // Actualizar elementos con animación
-        this.animateCounter('totalReports', stats.total);
-        this.animateCounter('pendingReports', stats.pendientes);
-        this.animateCounter('processReports', stats.enProceso);
-        this.animateCounter('resolvedReports', stats.resueltos);
-        this.animateCounter('urgentReports', stats.urgentes);
-        this.animateCounter('totalServices', stats.servicios);
-    }
-
-    animateCounter(elementId, finalValue) {
-        const element = document.getElementById(elementId);
-        if (!element) return;
-
-        const duration = 1000;
-        const startValue = parseInt(element.textContent) || 0;
-        const increment = (finalValue - startValue) / (duration / 16);
-        let currentValue = startValue;
-
-        const updateCounter = () => {
-            currentValue += increment;
-            if ((increment > 0 && currentValue >= finalValue) || 
-                (increment < 0 && currentValue <= finalValue)) {
-                element.textContent = finalValue;
-            } else {
-                element.textContent = Math.round(currentValue);
-                requestAnimationFrame(updateCounter);
+            // Determinar estado de la sala
+            let roomStatus = 'operational';
+            if (urgentReports > 0) {
+                roomStatus = 'issues';
+            } else if (pendingReports > 0 || activeServices > 0) {
+                roomStatus = 'maintenance';
             }
-        };
 
-        updateCounter();
-    }
+            const statusLabels = {
+                operational: 'Operativa',
+                maintenance: 'Mantenimiento',
+                issues: 'Con Problemas'
+            };
 
-    showDashboard() {
-        this.currentView = 'dashboard';
-        this.updateBreadcrumb('Gestión Técnica');
-        
-        document.getElementById('dashboard-section').style.display = 'block';
-        document.getElementById('reports-section').style.display = 'none';
-        document.getElementById('services-section').style.display = 'none';
-        
-        this.renderDashboard();
-        this.updateStatistics();
-    }
+            const roomIcon = room.includes('SICA') ? 'bi-display' : 'bi-laptop';
 
-    showReports(roomFilter = '') {
-        this.currentView = 'reports';
-        this.updateBreadcrumb('Reportes Técnicos');
-        
-        if (roomFilter) {
-            this.filters.sala = roomFilter;
-            document.getElementById('filterSala').value = roomFilter;
-        }
-        
-        document.getElementById('dashboard-section').style.display = 'none';
-        document.getElementById('reports-section').style.display = 'block';
-        document.getElementById('services-section').style.display = 'none';
-        
-        this.renderReports();
-    }
-
-    showServices() {
-        this.currentView = 'services';
-        this.updateBreadcrumb('Registro de Servicios');
-        
-        document.getElementById('dashboard-section').style.display = 'none';
-        document.getElementById('reports-section').style.display = 'none';
-        document.getElementById('services-section').style.display = 'block';
-        
-        this.renderServices();
-    }
-
-    showRoomDetails(roomName) {
-        this.showReports(roomName);
-    }
-
-    updateBreadcrumb(currentPage) {
-        const breadcrumbCurrent = document.getElementById('breadcrumb-current');
-        if (breadcrumbCurrent) {
-            breadcrumbCurrent.textContent = currentPage;
-        }
-    }
-
-    renderReports() {
-        const container = document.getElementById('reports-container');
-        if (!container) return;
-
-        const filteredReports = this.getFilteredReports();
-        
-        if (filteredReports.length === 0) {
-            container.innerHTML = this.getEmptyState('reportes', 'bi-clipboard-x');
-            return;
-        }
-
-        const containerClass = this.currentViewType === 'grid' ? 'reports-grid' : 'reports-list';
-        container.innerHTML = `<div class="${containerClass}" id="reports-list"></div>`;
-        
-        const reportsList = document.getElementById('reports-list');
-        
-        filteredReports.forEach((report, index) => {
-            const reportCard = this.createReportCard(report);
-            reportsList.appendChild(reportCard);
-            
-            // Animación escalonada
-            setTimeout(() => {
-                reportCard.classList.add('fade-in-up');
-            }, index * 50);
-        });
-    }
-
-    renderServices() {
-        const container = document.getElementById('services-container');
-        if (!container) return;
-
-        const filteredServices = this.getFilteredServices();
-        
-        if (filteredServices.length === 0) {
-            container.innerHTML = this.getEmptyState('servicios', 'bi-tools');
-            return;
-        }
-
-        container.innerHTML = '<div class="services-list" id="services-list"></div>';
-        const servicesList = document.getElementById('services-list');
-        
-        filteredServices.forEach((service, index) => {
-            const serviceCard = this.createServiceCard(service);
-            servicesList.appendChild(serviceCard);
-            
-            setTimeout(() => {
-                serviceCard.classList.add('fade-in-up');
-            }, index * 50);
-        });
-    }
-
-    createReportCard(report) {
-        const card = document.createElement('div');
-        card.className = `report-card ${report.urgencia}`;
-        
-        const fechaCreacion = new Date(report.fechaCreacion.seconds ? 
-            report.fechaCreacion.seconds * 1000 : report.fechaCreacion).toLocaleDateString();
-        const fechaResolucion = report.fechaResolucion ? 
-            new Date(report.fechaResolucion.seconds ? 
-                report.fechaResolucion.seconds * 1000 : report.fechaResolucion).toLocaleDateString() : 'Pendiente';
-        
-        card.innerHTML = `
-            <div class="card-header-tec">
-                <div>
-                    <h4 class="card-title-tec">
-                        <i class="bi bi-${this.getTypeIcon(report.tipo)}"></i>
-                        ${this.getTypeLabel(report.tipo)} - ${report.sala}
-                    </h4>
-                    <div class="card-meta">
-                        <div class="meta-item">
-                            <i class="bi bi-person"></i>
-                            <span>${report.responsable}</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="bi bi-calendar"></i>
-                            <span>${fechaCreacion}</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="bi bi-check-circle"></i>
-                            <span>${fechaResolucion}</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <span class="status-badge status-${report.estado}">
-                        ${this.getStatusLabel(report.estado)}
-                    </span>
-                    <br>
-                    <span class="urgency-badge urgency-${report.urgencia}">
-                        <i class="bi bi-${this.getUrgencyIcon(report.urgencia)}"></i>
-                        ${this.getUrgencyLabel(report.urgencia)}
-                    </span>
-                </div>
-            </div>
-            
-            <div class="card-description">
-                <strong>Problema:</strong> ${report.descripcion}
-            </div>
-            
-            ${report.notas ? `
-                <div class="card-notes">
-                    <div class="notes-header">
-                        <i class="bi bi-sticky"></i>
-                        <strong>Notas:</strong>
-                    </div>
-                    <div class="notes-content">${report.notas}</div>
-                </div>
-            ` : ''}
-            
-            <div class="card-actions">
-                <button class="btn-icon" onclick="tecManager.editReport('${report.id}')" title="Editar Reporte">
-                    <i class="bi bi-pencil-square"></i>
-                </button>
-                <button class="btn-icon" onclick="tecManager.changeReportStatus('${report.id}')" title="Cambiar Estado">
-                    <i class="bi bi-arrow-repeat"></i>
-                </button>
-                <button class="btn-icon btn-icon-info" onclick="tecManager.viewReportHistory('${report.id}')" title="Ver Historial">
-                    <i class="bi bi-clock-history"></i>
-                </button>
-                <button class="btn-icon btn-icon-danger" onclick="tecManager.deleteReport('${report.id}')" title="Eliminar">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-        `;
-        
-        return card;
-    }
-
-    createServiceCard(service) {
-        const card = document.createElement('div');
-        card.className = 'service-card';
-        
-        const fechaInicio = new Date(service.fechaInicio.seconds ? 
-            service.fechaInicio.seconds * 1000 : service.fechaInicio).toLocaleDateString();
-        const fechaFin = service.fechaFin ? 
-            new Date(service.fechaFin.seconds ? 
-                service.fechaFin.seconds * 1000 : service.fechaFin).toLocaleDateString() : 'En proceso';
-        
-        card.innerHTML = `
-            <div class="card-header-tec">
-                <div>
-                    <h4 class="card-title-tec">
-                        <i class="bi bi-${this.getTypeIcon(service.tipo)}"></i>
-                        ${this.getTypeLabel(service.tipo)} - ${service.sala}
-                    </h4>
-                    <div class="card-meta">
-                        <div class="meta-item">
-                            <i class="bi bi-person"></i>
-                            <span>${service.responsable}</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="bi bi-calendar-check"></i>
-                            <span>${fechaInicio}</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="bi bi-calendar-x"></i>
-                            <span>${fechaFin}</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <span class="status-badge status-${service.estado}">
-                        ${this.getStatusLabel(service.estado)}
-                    </span>
-                </div>
-            </div>
-            
-            <div class="card-description">
-                ${service.descripcion}
-            </div>
-            
-            ${service.evidencias && service.evidencias.length > 0 ? `
-                <div class="service-evidences">
-                    <strong>Evidencias:</strong>
-                    ${service.evidencias.map(ev => `
-                        <span class="evidence-badge">
-                            <i class="bi bi-file-earmark"></i> ${ev}
+            const card = document.createElement('div');
+            card.className = 'col-lg-4 col-md-6';
+            card.innerHTML = `
+                <div class="room-card fade-in">
+                    <div class="room-header">
+                        <h3 class="room-title">
+                            <i class="bi ${roomIcon}"></i>
+                            ${room}
+                        </h3>
+                        <span class="room-status status-${roomStatus}">
+                            ${statusLabels[roomStatus]}
                         </span>
-                    `).join('')}
+                    </div>
+                    <div class="room-stats">
+                        <div class="room-stat">
+                            <p class="room-stat-value stat-urgent">${urgentReports}</p>
+                            <p class="room-stat-label">Urgentes</p>
+                        </div>
+                        <div class="room-stat">
+                            <p class="room-stat-value stat-moderate">${pendingReports}</p>
+                            <p class="room-stat-label">Pendientes</p>
+                        </div>
+                        <div class="room-stat">
+                            <p class="room-stat-value stat-resolved">${resolvedReports}</p>
+                            <p class="room-stat-label">Resueltos</p>
+                        </div>
+                        <div class="room-stat">
+                            <p class="room-stat-value stat-low">${activeServices}</p>
+                            <p class="room-stat-label">Servicios</p>
+                        </div>
+                    </div>
                 </div>
-            ` : ''}
-            
-            <div class="card-actions">
-                <button class="btn-icon" onclick="tecManager.editService('${service.id}')" title="Editar">
-                    <i class="bi bi-pencil-square"></i>
-                </button>
-                <button class="btn-icon" onclick="tecManager.deleteService('${service.id}')" title="Eliminar">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-        `;
-        
-        return card;
+            `;
+
+            // Agregar evento click para filtrar por sala
+            card.addEventListener('click', () => {
+                document.getElementById('roomFilter').value = room;
+                this.currentFilters.room = room;
+                this.applyFilters();
+                // Scroll a la tabla
+                document.querySelector('.data-section').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+
+            container.appendChild(card);
+        });
+    }
+
+    switchView(view) {
+        this.currentView = view;
+        this.currentPage = 1;
+
+        // Actualizar botones
+        const reportsBtn = document.getElementById('reportsView');
+        const servicesBtn = document.getElementById('servicesView');
+
+        if (view === 'reports') {
+            reportsBtn.classList.add('active');
+            servicesBtn.classList.remove('active');
+            document.getElementById('dataTableTitle').innerHTML = 
+                '<i class="bi bi-bug me-2"></i>Reportes Técnicos';
+        } else {
+            servicesBtn.classList.add('active');
+            reportsBtn.classList.remove('active');
+            document.getElementById('dataTableTitle').innerHTML = 
+                '<i class="bi bi-tools me-2"></i>Servicios Técnicos';
+        }
+
+        this.renderTable();
+    }
+
+    renderTable() {
+        const tableHead = document.getElementById('tableHead');
+        const tableBody = document.getElementById('tableBody');
+
+        if (this.currentView === 'reports') {
+            tableHead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Sala</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Responsable</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Urgencia</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+
+            const reports = this.getFilteredReports();
+            const paginatedReports = this.getPaginatedData(reports);
+
+            if (paginatedReports.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">No hay reportes disponibles</p>
+                            <button class="btn btn-sica" onclick="document.getElementById('newReportBtn').click()">
+                                <i class="bi bi-plus-circle me-2"></i>Crear Primer Reporte
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableBody.innerHTML = paginatedReports.map(report => `
+                    <tr>
+                        <td><strong>${report.numeroReporte || report.id}</strong></td>
+                        <td><span class="badge bg-primary">${report.sala}</span></td>
+                        <td><span class="badge bg-secondary">${this.formatServiceType(report.tipoServicio)}</span></td>
+                        <td class="text-truncate" style="max-width: 200px;" title="${report.descripcion}">
+                            ${report.descripcion}
+                        </td>
+                        <td>${report.responsable}</td>
+                        <td>${this.formatDate(report.fechaInicio || report.fechaCreacion)}</td>
+                        <td><span class="status-badge status-${report.estado}">${this.formatStatus(report.estado)}</span></td>
+                        <td><span class="urgency-badge urgency-${report.urgencia}">${this.formatUrgency(report.urgencia)}</span></td>
+                        <td>
+                            <button class="action-btn btn-view" onclick="techManager.viewItem('report', '${report.id}')" title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="action-btn btn-edit" onclick="techManager.editItem('report', '${report.id}')" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="action-btn btn-delete" onclick="techManager.deleteItem('report', '${report.id}')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+        } else {
+            tableHead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Sala</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Responsable</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estado</th>
+                    <th>Evidencia</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+
+            const services = this.getFilteredServices();
+            const paginatedServices = this.getPaginatedData(services);
+
+            if (paginatedServices.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center py-4">
+                            <i class="bi bi-tools text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">No hay servicios registrados</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableBody.innerHTML = paginatedServices.map(service => `
+                    <tr>
+                        <td><strong>${service.numeroServicio || service.id}</strong></td>
+                        <td><span class="badge bg-primary">${service.sala}</span></td>
+                        <td><span class="badge bg-secondary">${this.formatServiceType(service.tipoServicio)}</span></td>
+                        <td class="text-truncate" style="max-width: 200px;" title="${service.descripcion}">
+                            ${service.descripcion}
+                        </td>
+                        <td>${service.responsable}</td>
+                        <td>${this.formatDate(service.fechaInicio)}</td>
+                        <td>${service.fechaTermino ? this.formatDate(service.fechaTermino) : '<span class="text-muted">-</span>'}</td>
+                        <td><span class="status-badge status-${service.estado}">${this.formatStatus(service.estado)}</span></td>
+                        <td>
+                            ${service.evidencia ? 
+                                `<i class="bi bi-file-earmark-pdf text-danger" title="${service.evidencia}"></i>` : 
+                                '<span class="text-muted">-</span>'
+                            }
+                        </td>
+                        <td>
+                            <button class="action-btn btn-view" onclick="techManager.viewItem('service', '${service.id}')" title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="action-btn btn-edit" onclick="techManager.editItem('service', '${service.id}')" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="action-btn btn-delete" onclick="techManager.deleteItem('service', '${service.id}')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        this.renderPagination();
     }
 
     getFilteredReports() {
-        return this.reports.filter(report => {
-            if (this.filters.sala && report.sala !== this.filters.sala) return false;
-            if (this.filters.estado && report.estado !== this.filters.estado) return false;
-            if (this.filters.urgencia && report.urgencia !== this.filters.urgencia) return false;
-            if (this.filters.search && 
-                !report.descripcion.toLowerCase().includes(this.filters.search) &&
-                !report.responsable.toLowerCase().includes(this.filters.search)) return false;
-            
-            return true;
+        return this.reportsCollection.filter(report => {
+            const roomMatch = this.currentFilters.room === 'all' || report.sala === this.currentFilters.room;
+            const statusMatch = this.currentFilters.status === 'all' || report.estado === this.currentFilters.status;
+            const urgencyMatch = this.currentFilters.urgency === 'all' || report.urgencia === this.currentFilters.urgency;
+            return roomMatch && statusMatch && urgencyMatch;
         });
     }
 
     getFilteredServices() {
-        return this.services.filter(service => {
-            if (this.filters.sala && service.sala !== this.filters.sala) return false;
-            if (this.filters.search && 
-                !service.descripcion.toLowerCase().includes(this.filters.search) &&
-                !service.responsable.toLowerCase().includes(this.filters.search)) return false;
-            
-            return true;
+        return this.servicesCollection.filter(service => {
+            const roomMatch = this.currentFilters.room === 'all' || service.sala === this.currentFilters.room;
+            const statusMatch = this.currentFilters.status === 'all' || service.estado === this.currentFilters.status;
+            return roomMatch && statusMatch;
         });
+    }
+
+    getPaginatedData(data) {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return data.slice(start, end);
+    }
+
+    renderPagination() {
+        const data = this.currentView === 'reports' ? this.getFilteredReports() : this.getFilteredServices();
+        const totalPages = Math.ceil(data.length / this.itemsPerPage);
+        const pagination = document.getElementById('tablePagination');
+
+        if (totalPages <= 1) {
+            pagination.innerHTML = `
+                <div class="pagination-info">
+                    Mostrando ${data.length} elementos
+                </div>
+            `;
+            return;
+        }
+
+        const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+        const end = Math.min(this.currentPage * this.itemsPerPage, data.length);
+
+        pagination.innerHTML = `
+            <div class="pagination-info">
+                Mostrando ${start}-${end} de ${data.length} elementos
+            </div>
+            <div class="pagination-controls">
+                <button class="page-btn" ${this.currentPage === 1 ? 'disabled' : ''} onclick="techManager.goToPage(${this.currentPage - 1})">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                ${this.generatePageButtons(totalPages)}
+                <button class="page-btn" ${this.currentPage === totalPages ? 'disabled' : ''} onclick="techManager.goToPage(${this.currentPage + 1})">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    generatePageButtons(totalPages) {
+        let buttons = '';
+        const maxButtons = 5;
+        let start = Math.max(1, this.currentPage - Math.floor(maxButtons / 2));
+        let end = Math.min(totalPages, start + maxButtons - 1);
+
+        if (end - start < maxButtons - 1) {
+            start = Math.max(1, end - maxButtons + 1);
+        }
+
+        for (let i = start; i <= end; i++) {
+            buttons += `
+                <button class="page-btn ${i === this.currentPage ? 'active' : ''}" onclick="techManager.goToPage(${i})">
+                    ${i}
+                </button>
+            `;
+        }
+
+        return buttons;
+    }
+
+    goToPage(page) {
+        this.currentPage = page;
+        this.renderTable();
     }
 
     applyFilters() {
+        this.currentPage = 1;
+        this.updateStats();
+        this.renderRoomCards();
+        this.renderTable();
+    }
+
+    search(query) {
+        if (!query) {
+            this.renderTable();
+            return;
+        }
+
+        const searchLower = query.toLowerCase();
+        let filteredData;
+
         if (this.currentView === 'reports') {
-            this.renderReports();
-        } else if (this.currentView === 'services') {
-            this.renderServices();
+            filteredData = this.getFilteredReports().filter(report => 
+                (report.numeroReporte && report.numeroReporte.toLowerCase().includes(searchLower)) ||
+                (report.sala && report.sala.toLowerCase().includes(searchLower)) ||
+                (report.descripcion && report.descripcion.toLowerCase().includes(searchLower)) ||
+                (report.responsable && report.responsable.toLowerCase().includes(searchLower))
+            );
         } else {
-            this.renderDashboard();
+            filteredData = this.getFilteredServices().filter(service => 
+                (service.numeroServicio && service.numeroServicio.toLowerCase().includes(searchLower)) ||
+                (service.sala && service.sala.toLowerCase().includes(searchLower)) ||
+                (service.descripcion && service.descripcion.toLowerCase().includes(searchLower)) ||
+                (service.responsable && service.responsable.toLowerCase().includes(searchLower))
+            );
         }
-        this.updateStatistics();
-    }
 
-    clearFilters() {
-        this.filters = { sala: '', estado: '', urgencia: '', search: '' };
+        const tableBody = document.getElementById('tableBody');
         
-        document.getElementById('filterSala').value = '';
-        document.getElementById('filterEstado').value = '';
-        document.getElementById('filterUrgencia').value = '';
-        document.getElementById('searchInput').value = '';
-        
-        this.applyFilters();
-    }
+        if (filteredData.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="100%" class="text-center py-4">
+                        <i class="bi bi-search text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No se encontraron resultados para "${query}"</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
 
-    toggleView(viewType) {
-        this.currentViewType = viewType;
-        
-        document.getElementById('gridViewBtn').classList.toggle('active', viewType === 'grid');
-        document.getElementById('listViewBtn').classList.toggle('active', viewType === 'list');
-        
+        // Renderizar resultados de búsqueda
         if (this.currentView === 'reports') {
-            this.renderReports();
+            tableBody.innerHTML = filteredData.map(report => `
+                <tr>
+                    <td><strong>${report.numeroReporte || report.id}</strong></td>
+                    <td><span class="badge bg-primary">${report.sala}</span></td>
+                    <td><span class="badge bg-secondary">${this.formatServiceType(report.tipoServicio)}</span></td>
+                    <td class="text-truncate" style="max-width: 200px;" title="${report.descripcion}">
+                        ${this.highlightSearchTerm(report.descripcion, query)}
+                    </td>
+                    <td>${this.highlightSearchTerm(report.responsable, query)}</td>
+                    <td>${this.formatDate(report.fechaInicio || report.fechaCreacion)}</td>
+                    <td><span class="status-badge status-${report.estado}">${this.formatStatus(report.estado)}</span></td>
+                    <td><span class="urgency-badge urgency-${report.urgencia}">${this.formatUrgency(report.urgencia)}</span></td>
+                    <td>
+                        <button class="action-btn btn-view" onclick="techManager.viewItem('report', '${report.id}')" title="Ver detalles">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="action-btn btn-edit" onclick="techManager.editItem('report', '${report.id}')" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="action-btn btn-delete" onclick="techManager.deleteItem('report', '${report.id}')" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tableBody.innerHTML = filteredData.map(service => `
+                <tr>
+                    <td><strong>${service.numeroServicio || service.id}</strong></td>
+                    <td><span class="badge bg-primary">${service.sala}</span></td>
+                    <td><span class="badge bg-secondary">${this.formatServiceType(service.tipoServicio)}</span></td>
+                    <td class="text-truncate" style="max-width: 200px;" title="${service.descripcion}">
+                        ${this.highlightSearchTerm(service.descripcion, query)}
+                    </td>
+                    <td>${this.highlightSearchTerm(service.responsable, query)}</td>
+                    <td>${this.formatDate(service.fechaInicio)}</td>
+                    <td>${service.fechaTermino ? this.formatDate(service.fechaTermino) : '<span class="text-muted">-</span>'}</td>
+                    <td><span class="status-badge status-${service.estado}">${this.formatStatus(service.estado)}</span></td>
+                    <td>
+                        ${service.evidencia ? 
+                            `<i class="bi bi-file-earmark-pdf text-danger" title="${service.evidencia}"></i>` : 
+                            '<span class="text-muted">-</span>'
+                        }
+                    </td>
+                    <td>
+                        <button class="action-btn btn-view" onclick="techManager.viewItem('service', '${service.id}')" title="Ver detalles">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="action-btn btn-edit" onclick="techManager.editItem('service', '${service.id}')" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="action-btn btn-delete" onclick="techManager.deleteItem('service', '${service.id}')" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
         }
+    }
+
+    highlightSearchTerm(text, searchTerm) {
+        if (!searchTerm || !text) return text || '';
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    // Modals y formularios
+    showNewReportModal() {
+        const modal = new bootstrap.Modal(document.getElementById('newReportModal'));
+        this.clearForm('newReportForm');
+        // Establecer fecha de inicio por defecto
+        document.getElementById('reportStartDate').value = new Date().toISOString().split('T')[0];
+        // Establecer estado pendiente por defecto
+        document.getElementById('reportStatus').value = 'pendiente';
+        modal.show();
     }
 
     async saveReport() {
-        try {
-            const formData = this.getReportFormData();
-            if (!this.validateReportForm(formData)) return;
-
-            const reportData = {
-                ...formData,
-                fechaCreacion: new Date(),
-                fechaResolucion: null,
-                estado: 'pendiente'
-            };
-
-            if (typeof firebase !== 'undefined') {
-                await firebase.firestore()
-                    .collection('technical_reports')
-                    .add(reportData);
-            } else {
-                // Agregar a datos locales para desarrollo
-                reportData.id = 'temp_' + Date.now();
-                this.reports.unshift(reportData);
-            }
-
-            this.hideModal('reportModal');
-            this.clearReportForm();
-            this.showNotification('Éxito', 'Reporte creado correctamente', 'success', 'bi-check-circle-fill');
-            
-            await this.loadData();
-            this.updateCurrentView();
-            this.updateStatistics();
-        } catch (error) {
-            console.error('Error guardando reporte:', error);
-            this.showNotification('Error', 'Error al crear el reporte', 'error', 'bi-exclamation-triangle-fill');
-        }
-    }
-
-    async saveService() {
-        try {
-            const formData = this.getServiceFormData();
-            if (!this.validateServiceForm(formData)) return;
-
-            const serviceData = {
-                ...formData,
-                evidencias: await this.uploadFiles(formData.files)
-            };
-
-            if (typeof firebase !== 'undefined') {
-                await firebase.firestore()
-                    .collection('technical_services')
-                    .add(serviceData);
-            } else {
-                serviceData.id = 'temp_' + Date.now();
-                this.services.unshift(serviceData);
-            }
-
-            this.hideModal('serviceModal');
-            this.clearServiceForm();
-            this.showNotification('Éxito', 'Servicio registrado correctamente', 'success', 'bi-check-circle-fill');
-            
-            await this.loadData();
-            this.updateCurrentView();
-        } catch (error) {
-            console.error('Error guardando servicio:', error);
-            this.showNotification('Error', 'Error al registrar el servicio', 'error', 'bi-exclamation-triangle-fill');
-        }
-    }
-
-    getReportFormData() {
-        return {
-            sala: document.getElementById('reportSala').value,
-            tipo: document.getElementById('reportTipo').value,
-            descripcion: document.getElementById('reportDescripcion').value,
-            responsable: document.getElementById('reportResponsable').value,
-            urgencia: document.getElementById('reportUrgencia').value,
-            notas: document.getElementById('reportNotas').value
-        };
-    }
-
-    getServiceFormData() {
-        const files = document.getElementById('serviceFiles').files;
-        return {
-            sala: document.getElementById('serviceSala').value,
-            tipo: document.getElementById('serviceTipo').value,
-            descripcion: document.getElementById('serviceDescripcion').value,
-            responsable: document.getElementById('serviceResponsable').value,
-            estado: document.getElementById('serviceEstado').value,
-            fechaInicio: new Date(document.getElementById('serviceFechaInicio').value),
-            fechaFin: document.getElementById('serviceFechaFin').value ? 
-                new Date(document.getElementById('serviceFechaFin').value) : null,
-            files: files
-        };
-    }
-
-    validateReportForm(data) {
-        if (!data.sala || !data.tipo || !data.descripcion || !data.responsable || !data.urgencia) {
-            this.showNotification('Error', 'Todos los campos son requeridos', 'warning', 'bi-exclamation-triangle-fill');
-            return false;
-        }
-        return true;
-    }
-
-    validateServiceForm(data) {
-        if (!data.sala || !data.tipo || !data.descripcion || !data.responsable || !data.estado || !data.fechaInicio) {
-            this.showNotification('Error', 'Los campos obligatorios son requeridos', 'warning', 'bi-exclamation-triangle-fill');
-            return false;
-        }
-        return true;
-    }
-
-    async uploadFiles(files) {
-        const fileNames = [];
-        
-        if (typeof firebase !== 'undefined' && files && files.length > 0) {
-            try {
-                for (let file of files) {
-                    const fileName = `services/${Date.now()}_${file.name}`;
-                    const storageRef = firebase.storage().ref(fileName);
-                    await storageRef.put(file);
-                    fileNames.push(fileName);
-                }
-            } catch (error) {
-                console.error('Error subiendo archivos:', error);
-            }
-        }
-        
-        return fileNames;
-    }
-
-    clearReportForm() {
-        document.getElementById('reportForm').reset();
-    }
-
-    clearServiceForm() {
-        document.getElementById('serviceForm').reset();
-    }
-
-    hideModal(modalId) {
-        const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
-        if (modal) modal.hide();
-    }
-
-    async editReport(reportId) {
-        const report = this.reports.find(r => r.id === reportId);
-        if (!report) {
-            this.showNotification('Error', 'Reporte no encontrado', 'error', 'bi-exclamation-triangle-fill');
+        const form = document.getElementById('newReportForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
             return;
         }
 
-        this.currentEditingReport = report;
-        this.populateEditForm(report);
-        this.showModal('editReportModal');
+        this.showLoading();
+
+        try {
+            // Generar ID único para el reporte
+            const reportNumber = await this.getNextReportNumber();
+            
+            const reportData = {
+                numeroReporte: `RPT-${String(reportNumber).padStart(3, '0')}`,
+                sala: document.getElementById('reportRoom').value,
+                tipoServicio: document.getElementById('reportType').value,
+                descripcion: document.getElementById('reportDescription').value,
+                responsable: document.getElementById('reportResponsible').value,
+                estado: document.getElementById('reportStatus').value,
+                urgencia: document.getElementById('reportUrgency').value,
+                fechaInicio: document.getElementById('reportStartDate').value,
+                fechaTermino: document.getElementById('reportEndDate').value || null
+            };
+
+            // Guardar en Firebase
+            const reportId = await this.saveReportToFirebase(reportData);
+            
+            // Recargar datos desde Firebase
+            await this.loadReportsFromFirebase();
+            
+            this.hideLoading();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newReportModal'));
+            modal.hide();
+            
+            this.showNotification('¡Éxito!', 'Reporte creado correctamente', 'success');
+            this.updateStats();
+            this.renderRoomCards();
+            if (this.currentView === 'reports') {
+                this.renderTable();
+            }
+            
+        } catch (error) {
+            this.hideLoading();
+            console.error('Error guardando reporte:', error);
+            this.showNotification('Error', 'No se pudo guardar el reporte', 'error');
+        }
     }
 
-    populateEditForm(report) {
-        const modal = document.getElementById('editReportModal');
-        const modalBody = modal.querySelector('.modal-body');
-        
-        const fechaCreacion = new Date(report.fechaCreacion.seconds ? 
-            report.fechaCreacion.seconds * 1000 : report.fechaCreacion);
-        const fechaResolucion = report.fechaResolucion ? 
-            new Date(report.fechaResolucion.seconds ? 
-                report.fechaResolucion.seconds * 1000 : report.fechaResolucion) : null;
+    async saveReportToFirebase(reportData) {
+        try {
+            const docRef = await this.db.collection('reportes_tecnicos').add({
+                ...reportData,
+                fechaCreacion: firebase.firestore.Timestamp.now(),
+                fechaActualizacion: firebase.firestore.Timestamp.now()
+            });
 
-        modalBody.innerHTML = `
-            <form id="editReportForm">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Sala</label>
-                        <select class="form-control form-control-sica" id="editReportSala" required>
-                            <option value="">Seleccionar sala</option>
-                            <option value="SICA 1" ${report.sala === 'SICA 1' ? 'selected' : ''}>SICA 1</option>
-                            <option value="SICA 2" ${report.sala === 'SICA 2' ? 'selected' : ''}>SICA 2</option>
-                            <option value="SICA 3" ${report.sala === 'SICA 3' ? 'selected' : ''}>SICA 3</option>
-                            <option value="SICA 4" ${report.sala === 'SICA 4' ? 'selected' : ''}>SICA 4</option>
-                            <option value="Salón Inteligente 1" ${report.sala === 'Salón Inteligente 1' ? 'selected' : ''}>Salón Inteligente 1</option>
-                            <option value="Salón Inteligente 2" ${report.sala === 'Salón Inteligente 2' ? 'selected' : ''}>Salón Inteligente 2</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Tipo de Servicio</label>
-                        <select class="form-control form-control-sica" id="editReportTipo" required>
-                            <option value="">Seleccionar tipo</option>
-                            <option value="mantenimiento" ${report.tipo === 'mantenimiento' ? 'selected' : ''}>Mantenimiento</option>
-                            <option value="instalacion" ${report.tipo === 'instalacion' ? 'selected' : ''}>Instalación</option>
-                            <option value="software" ${report.tipo === 'software' ? 'selected' : ''}>Software</option>
-                            <option value="hardware" ${report.tipo === 'hardware' ? 'selected' : ''}>Hardware</option>
-                            <option value="limpieza" ${report.tipo === 'limpieza' ? 'selected' : ''}>Limpieza</option>
-                            <option value="otro" ${report.tipo === 'otro' ? 'selected' : ''}>Otro</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Responsable</label>
-                        <input type="text" class="form-control form-control-sica" id="editReportResponsable" value="${report.responsable}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Estado</label>
-                        <select class="form-control form-control-sica" id="editReportEstado" required>
-                            <option value="pendiente" ${report.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="en_proceso" ${report.estado === 'en_proceso' ? 'selected' : ''}>En Proceso</option>
-                            <option value="resuelto" ${report.estado === 'resuelto' ? 'selected' : ''}>Resuelto</option>
-                            <option value="cancelado" ${report.estado === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Nivel de Urgencia</label>
-                        <select class="form-control form-control-sica" id="editReportUrgencia" required>
-                            <option value="urgente" ${report.urgencia === 'urgente' ? 'selected' : ''}>Urgente</option>
-                            <option value="moderado" ${report.urgencia === 'moderado' ? 'selected' : ''}>Moderado</option>
-                            <option value="bajo" ${report.urgencia === 'bajo' ? 'selected' : ''}>Bajo</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Fecha de Creación</label>
-                        <input type="date" class="form-control form-control-sica" id="editReportFechaCreacion" 
-                               value="${fechaCreacion.toISOString().split('T')[0]}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-sica">Fecha de Resolución</label>
-                        <input type="date" class="form-control form-control-sica" id="editReportFechaResolucion" 
-                               value="${fechaResolucion ? fechaResolucion.toISOString().split('T')[0] : ''}"
-                               ${report.estado === 'resuelto' ? 'required' : ''}>
-                        <div class="form-text">Solo requerido si el estado es "Resuelto"</div>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label-sica">Descripción del Problema</label>
-                        <textarea class="form-control form-control-sica" id="editReportDescripcion" rows="4" required>${report.descripcion}</textarea>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label-sica">Notas Adicionales</label>
-                        <textarea class="form-control form-control-sica" id="editReportNotas" rows="3" placeholder="Agregar notas, observaciones o comentarios adicionales...">${report.notas || ''}</textarea>
-                        <div class="form-text">Opcional: Comentarios sobre el progreso, solución aplicada, o información relevante</div>
-                    </div>
-                </div>
-            </form>
-        `;
+            console.log('Reporte guardado con ID:', docRef.id);
+            return docRef.id;
+        } catch (error) {
+            console.error('Error guardando reporte:', error);
+            throw error;
+        }
+    }
 
-        // Agregar evento para manejar el campo de fecha de resolución automáticamente
-        const estadoSelect = document.getElementById('editReportEstado');
-        const fechaResolucionInput = document.getElementById('editReportFechaResolucion');
-        
-        estadoSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'resuelto') {
-                fechaResolucionInput.required = true;
-                if (!fechaResolucionInput.value) {
-                    fechaResolucionInput.value = new Date().toISOString().split('T')[0];
-                }
-                fechaResolucionInput.parentElement.querySelector('.form-text').textContent = 'Requerido para reportes resueltos';
+    async getNextReportNumber() {
+        try {
+            const snapshot = await this.db.collection('reportes_tecnicos')
+                .orderBy('numeroReporte', 'desc')
+                .limit(1)
+                .get();
+
+            if (snapshot.empty) {
+                return 1;
             } else {
-                fechaResolucionInput.required = false;
-                fechaResolucionInput.parentElement.querySelector('.form-text').textContent = 'Solo requerido si el estado es "Resuelto"';
+                const lastReport = snapshot.docs[0].data();
+                const lastNumber = parseInt(lastReport.numeroReporte.split('-')[1]);
+                return lastNumber + 1;
             }
-        });
+        } catch (error) {
+            console.error('Error obteniendo próximo número:', error);
+            return Date.now(); // Fallback usando timestamp
+        }
+    }
+
+    editItem(type, id) {
+        if (type === 'report') {
+            this.showEditReportModal(id);
+        } else {
+            this.showNotification('Información', 'Función de edición de servicios en desarrollo', 'info');
+        }
+    }
+
+    showEditReportModal(reportId) {
+        const report = this.reportsCollection.find(r => r.id === reportId);
+        if (!report) {
+            this.showNotification('Error', 'Reporte no encontrado', 'error');
+            return;
+        }
+
+        // Llenar el formulario con los datos actuales
+        document.getElementById('editReportId').value = report.id;
+        document.getElementById('editReportIdDisplay').value = report.numeroReporte || report.id;
+        document.getElementById('editReportRoom').value = report.sala;
+        document.getElementById('editReportType').value = this.formatServiceType(report.tipoServicio);
+        document.getElementById('editReportResponsible').value = report.responsable;
+        document.getElementById('editReportUrgency').value = this.formatUrgency(report.urgencia);
+        document.getElementById('editReportStatus').value = report.estado;
+        document.getElementById('editReportStartDate').value = report.fechaInicio;
+        document.getElementById('editReportEndDate').value = report.fechaTermino || '';
+        document.getElementById('editReportDescription').value = report.descripcion;
+
+        const modal = new bootstrap.Modal(document.getElementById('editReportModal'));
+        modal.show();
     }
 
     async updateReport() {
-        try {
-            const formData = this.getEditReportFormData();
-            if (!this.validateEditReportForm(formData)) return;
-
-            const updatedReport = {
-                ...formData,
-                id: this.currentEditingReport.id,
-                fechaCreacion: new Date(formData.fechaCreacion),
-                fechaResolucion: formData.fechaResolucion ? new Date(formData.fechaResolucion) : null
-            };
-
-            if (typeof firebase !== 'undefined') {
-                await firebase.firestore()
-                    .collection('technical_reports')
-                    .doc(this.currentEditingReport.id)
-                    .update({
-                        sala: updatedReport.sala,
-                        tipo: updatedReport.tipo,
-                        descripcion: updatedReport.descripcion,
-                        responsable: updatedReport.responsable,
-                        estado: updatedReport.estado,
-                        urgencia: updatedReport.urgencia,
-                        fechaCreacion: updatedReport.fechaCreacion,
-                        fechaResolucion: updatedReport.fechaResolucion,
-                        notas: updatedReport.notas || '',
-                        fechaActualizacion: new Date()
-                    });
-            } else {
-                // Actualizar en datos locales para desarrollo
-                const reportIndex = this.reports.findIndex(r => r.id === this.currentEditingReport.id);
-                if (reportIndex !== -1) {
-                    this.reports[reportIndex] = { ...this.reports[reportIndex], ...updatedReport, fechaActualizacion: new Date() };
-                }
-            }
-
-            this.hideModal('editReportModal');
-            this.currentEditingReport = null;
-            this.showNotification('Éxito', 'Reporte actualizado correctamente', 'success', 'bi-check-circle-fill');
-            
-            await this.loadData();
-            this.updateCurrentView();
-            this.updateStatistics();
-        } catch (error) {
-            console.error('Error actualizando reporte:', error);
-            this.showNotification('Error', 'Error al actualizar el reporte', 'error', 'bi-exclamation-triangle-fill');
-        }
-    }
-
-    getEditReportFormData() {
-        return {
-            sala: document.getElementById('editReportSala').value,
-            tipo: document.getElementById('editReportTipo').value,
-            descripcion: document.getElementById('editReportDescripcion').value,
-            responsable: document.getElementById('editReportResponsable').value,
-            estado: document.getElementById('editReportEstado').value,
-            urgencia: document.getElementById('editReportUrgencia').value,
-            fechaCreacion: document.getElementById('editReportFechaCreacion').value,
-            fechaResolucion: document.getElementById('editReportFechaResolucion').value,
-            notas: document.getElementById('editReportNotas').value
-        };
-    }
-
-    validateEditReportForm(data) {
-        if (!data.sala || !data.tipo || !data.descripcion || !data.responsable || 
-            !data.estado || !data.urgencia || !data.fechaCreacion) {
-            this.showNotification('Error', 'Los campos obligatorios son requeridos', 'warning', 'bi-exclamation-triangle-fill');
-            return false;
-        }
-
-        if (data.estado === 'resuelto' && !data.fechaResolucion) {
-            this.showNotification('Error', 'La fecha de resolución es requerida para reportes resueltos', 'warning', 'bi-exclamation-triangle-fill');
-            return false;
-        }
-
-        if (data.fechaResolucion && new Date(data.fechaResolucion) < new Date(data.fechaCreacion)) {
-            this.showNotification('Error', 'La fecha de resolución no puede ser anterior a la fecha de creación', 'warning', 'bi-exclamation-triangle-fill');
-            return false;
-        }
-
-        return true;
-    }
-
-    async viewReportHistory(reportId) {
-        const report = this.reports.find(r => r.id === reportId);
-        if (!report) {
-            this.showNotification('Error', 'Reporte no encontrado', 'error', 'bi-exclamation-triangle-fill');
+        const form = document.getElementById('editReportForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
             return;
         }
 
-        // Crear modal de historial dinámicamente
-        const historyModal = this.createHistoryModal(report);
-        document.body.appendChild(historyModal);
+        this.showLoading();
+
+        const reportId = document.getElementById('editReportId').value;
         
-        const modal = new bootstrap.Modal(historyModal);
-        modal.show();
-        
-        // Remover modal cuando se cierre
-        historyModal.addEventListener('hidden.bs.modal', () => {
-            historyModal.remove();
-        });
+        try {
+            // Validar que si el estado es "resuelto", debe tener fecha de término
+            const newStatus = document.getElementById('editReportStatus').value;
+            const endDate = document.getElementById('editReportEndDate').value;
+
+            if (newStatus === 'resuelto' && !endDate) {
+                this.hideLoading();
+                this.showNotification('Advertencia', 'Debes agregar una fecha de término para marcar el reporte como resuelto', 'warning');
+                return;
+            }
+
+            const updateData = {
+                estado: newStatus,
+                fechaTermino: endDate || null,
+                descripcion: document.getElementById('editReportDescription').value
+            };
+
+            await this.updateReportInFirebase(reportId, updateData);
+            await this.loadReportsFromFirebase();
+
+            this.hideLoading();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editReportModal'));
+            modal.hide();
+            
+            this.showNotification('¡Éxito!', 'Reporte actualizado correctamente', 'success');
+            this.updateStats();
+            this.renderRoomCards();
+            if (this.currentView === 'reports') {
+                this.renderTable();
+            }
+            
+        } catch (error) {
+            this.hideLoading();
+            console.error('Error actualizando reporte:', error);
+            this.showNotification('Error', 'No se pudo actualizar el reporte', 'error');
+        }
     }
 
-    createHistoryModal(report) {
-        const modal = document.createElement('div');
-        modal.className = 'modal fade';
-        modal.id = 'historyModal';
-        modal.tabIndex = -1;
-        
-        const fechaCreacion = new Date(report.fechaCreacion.seconds ? 
-            report.fechaCreacion.seconds * 1000 : report.fechaCreacion);
-        const fechaResolucion = report.fechaResolucion ? 
-            new Date(report.fechaResolucion.seconds ? 
-                report.fechaResolucion.seconds * 1000 : report.fechaResolucion) : null;
-        const fechaActualizacion = report.fechaActualizacion ? 
-            new Date(report.fechaActualizacion.seconds ? 
-                report.fechaActualizacion.seconds * 1000 : report.fechaActualizacion) : null;
+    async updateReportInFirebase(reportId, updateData) {
+        try {
+            await this.db.collection('reportes_tecnicos').doc(reportId).update({
+                ...updateData,
+                fechaActualizacion: firebase.firestore.Timestamp.now()
+            });
 
-        // Generar historial simulado basado en los datos del reporte
-        const historyItems = this.generateReportHistory(report, fechaCreacion, fechaResolucion, fechaActualizacion);
-        
-        modal.innerHTML = `
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content modal-tec">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-clock-history"></i>
-                            Historial del Reporte - ${report.sala}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            console.log('Reporte actualizado:', reportId);
+        } catch (error) {
+            console.error('Error actualizando reporte:', error);
+            throw error;
+        }
+    }
+
+    viewItem(type, id) {
+        let item;
+        if (type === 'report') {
+            item = this.reportsCollection.find(r => r.id === id);
+        } else {
+            item = this.servicesCollection.find(s => s.id === id);
+        }
+
+        if (!item) return;
+
+        const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+        const modalTitle = document.getElementById('detailModalTitle');
+        const modalBody = document.getElementById('detailModalBody');
+
+        modalTitle.innerHTML = `
+            <i class="bi bi-${type === 'report' ? 'bug' : 'tools'} text-gold me-2"></i>
+            Detalles - ${item.numeroReporte || item.numeroServicio || item.id}
+        `;
+
+        if (type === 'report') {
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">ID del Reporte</label>
+                        <p class="form-control-static">${item.numeroReporte || item.id}</p>
                     </div>
-                    <div class="modal-body">
-                        <div class="report-summary mb-4">
-                            <h6 class="text-primary">
-                                <i class="bi bi-${this.getTypeIcon(report.tipo)}"></i>
-                                ${this.getTypeLabel(report.tipo)} - ${report.sala}
-                            </h6>
-                            <p class="mb-2"><strong>Responsable:</strong> ${report.responsable}</p>
-                            <p class="mb-2"><strong>Estado Actual:</strong> 
-                                <span class="status-badge status-${report.estado}">
-                                    ${this.getStatusLabel(report.estado)}
-                                </span>
-                            </p>
-                            <p class="mb-0"><strong>Urgencia:</strong> 
-                                <span class="urgency-badge urgency-${report.urgencia}">
-                                    <i class="bi bi-${this.getUrgencyIcon(report.urgencia)}"></i>
-                                    ${this.getUrgencyLabel(report.urgencia)}
-                                </span>
-                            </p>
-                        </div>
-                        
-                        <h6 class="mb-3">
-                            <i class="bi bi-list-ol"></i>
-                            Cronología de Actividades
-                        </h6>
-                        
-                        <div class="history-timeline">
-                            ${historyItems.map(item => `
-                                <div class="history-item">
-                                    <div class="history-item-header">
-                                        <div class="history-item-title">
-                                            <i class="bi bi-${item.icon}"></i>
-                                            ${item.title}
-                                        </div>
-                                        <div class="history-item-date">
-                                            ${item.date}
-                                        </div>
-                                    </div>
-                                    <div class="history-item-content">
-                                        ${item.description}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Sala</label>
+                        <p class="form-control-static"><span class="badge bg-primary">${item.sala}</span></p>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-lg"></i>
-                            Cerrar
-                        </button>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Tipo de Servicio</label>
+                        <p class="form-control-static">${this.formatServiceType(item.tipoServicio)}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Urgencia</label>
+                        <p class="form-control-static">
+                            <span class="urgency-badge urgency-${item.urgencia}">${this.formatUrgency(item.urgencia)}</span>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Responsable</label>
+                        <p class="form-control-static">${item.responsable}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Estado</label>
+                        <p class="form-control-static">
+                            <span class="status-badge status-${item.estado}">${this.formatStatus(item.estado)}</span>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Fecha de Inicio</label>
+                        <p class="form-control-static">${this.formatDate(item.fechaInicio)}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Fecha de Término</label>
+                        <p class="form-control-static">${item.fechaTermino ? this.formatDate(item.fechaTermino) : '<span class="text-muted">Pendiente</span>'}</p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label-sica">Descripción del Problema</label>
+                        <p class="form-control-static">${item.descripcion}</p>
                     </div>
                 </div>
-            </div>
-        `;
-        
-        return modal;
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">ID del Servicio</label>
+                        <p class="form-control-static">${item.numeroServicio || item.id}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Sala</label>
+                        <p class="form-control-static"><span class="badge bg-primary">${item.sala}</span></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Tipo de Servicio</label>
+                        <p class="form-control-static">${this.formatServiceType(item.tipoServicio)}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Estado</label>
+                        <p class="form-control-static">
+                            <span class="status-badge status-${item.estado}">${this.formatStatus(item.estado)}</span>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Responsable</label>
+                        <p class="form-control-static">${item.responsable}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Evidencia</label>
+                        <p class="form-control-static">${item.evidencia ? `<i class="bi bi-file-earmark-pdf text-danger me-2"></i>${item.evidencia}` : '<span class="text-muted">Sin evidencia</span>'}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Fecha de Inicio</label>
+                        <p class="form-control-static">${this.formatDate(item.fechaInicio)}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label-sica">Fecha de Finalización</label>
+                        <p class="form-control-static">${item.fechaTermino ? this.formatDate(item.fechaTermino) : '<span class="text-muted">En proceso</span>'}</p>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label-sica">Descripción del Servicio</label>
+                        <p class="form-control-static">${item.descripcion}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        modal.show();
     }
 
-    generateReportHistory(report, fechaCreacion, fechaResolucion, fechaActualizacion) {
-        const history = [];
-        
-        // Evento de creación
-        history.push({
-            icon: 'plus-circle-fill',
-            title: 'Reporte Creado',
-            date: fechaCreacion.toLocaleString(),
-            description: `Reporte de ${this.getTypeLabel(report.tipo).toLowerCase()} creado por ${report.responsable}. Descripción: "${report.descripcion}"`
-        });
-        
-        // Si hay notas iniciales
-        if (report.notas) {
-            history.push({
-                icon: 'sticky-fill',
-                title: 'Notas Agregadas',
-                date: fechaCreacion.toLocaleString(),
-                description: `Notas iniciales: "${report.notas}"`
-            });
+    async deleteItem(type, id) {
+        if (!confirm(`¿Estás seguro de que deseas eliminar este ${type === 'report' ? 'reporte' : 'servicio'}?`)) {
+            return;
         }
-        
-        // Estados intermedios (simulados basados en el estado actual)
-        if (report.estado === 'en_proceso' || report.estado === 'resuelto') {
-            const processingDate = new Date(fechaCreacion.getTime() + (24 * 60 * 60 * 1000)); // +1 día
-            history.push({
-                icon: 'gear-wide',
-                title: 'Iniciado Proceso de Resolución',
-                date: processingDate.toLocaleString(),
-                description: 'El reporte ha sido asignado y se ha iniciado el proceso de resolución.'
-            });
-        }
-        
-        // Si fue actualizado
-        if (fechaActualizacion && fechaActualizacion > fechaCreacion) {
-            history.push({
-                icon: 'pencil-square',
-                title: 'Reporte Actualizado',
-                date: fechaActualizacion.toLocaleString(),
-                description: 'Se actualizó la información del reporte.'
-            });
-        }
-        
-        // Si está resuelto
-        if (report.estado === 'resuelto' && fechaResolucion) {
-            history.push({
-                icon: 'check-circle-fill',
-                title: 'Reporte Resuelto',
-                date: fechaResolucion.toLocaleString(),
-                description: 'El reporte ha sido marcado como resuelto. El problema ha sido solucionado exitosamente.'
-            });
-        }
-        
-        // Si está cancelado
-        if (report.estado === 'cancelado') {
-            const cancelDate = fechaActualizacion || new Date();
-            history.push({
-                icon: 'x-circle-fill',
-                title: 'Reporte Cancelado',
-                date: cancelDate.toLocaleString(),
-                description: 'El reporte ha sido cancelado.'
-            });
-        }
-        
-        return history.reverse(); // Mostrar más reciente primero
-    }
 
-    async changeReportStatus(reportId) {
+        this.showLoading();
+
         try {
-            const report = this.reports.find(r => r.id === reportId);
-            if (!report) return;
-
-            const newStatus = this.getNextStatus(report.estado);
-            
-            if (typeof firebase !== 'undefined') {
-                await firebase.firestore()
-                    .collection('technical_reports')
-                    .doc(reportId)
-                    .update({
-                        estado: newStatus,
-                        fechaResolucion: newStatus === 'resuelto' ? new Date() : null
-                    });
+            if (type === 'report') {
+                await this.deleteReportFromFirebase(id);
+                await this.loadReportsFromFirebase();
+                this.showNotification('¡Eliminado!', 'Reporte eliminado correctamente', 'success');
             } else {
-                report.estado = newStatus;
-                report.fechaResolucion = newStatus === 'resuelto' ? new Date() : null;
+                await this.deleteServiceFromFirebase(id);
+                await this.loadServicesFromFirebase();
+                this.showNotification('¡Eliminado!', 'Servicio eliminado correctamente', 'success');
             }
 
-            this.showNotification('Éxito', 'Estado actualizado correctamente', 'success', 'bi-check-circle-fill');
-            await this.loadData();
-            this.updateCurrentView();
-            this.updateStatistics();
+            this.hideLoading();
+            this.updateStats();
+            this.renderRoomCards();
+            this.renderTable();
+
         } catch (error) {
-            console.error('Error actualizando estado:', error);
-            this.showNotification('Error', 'Error al actualizar el estado', 'error', 'bi-exclamation-triangle-fill');
+            this.hideLoading();
+            console.error('Error eliminando item:', error);
+            this.showNotification('Error', 'No se pudo eliminar el elemento', 'error');
         }
     }
 
-    getNextStatus(currentStatus) {
-        const statusFlow = {
-            'pendiente': 'en_proceso',
-            'en_proceso': 'resuelto',
-            'resuelto': 'pendiente'
-        };
-        return statusFlow[currentStatus] || 'pendiente';
-    }
-
-    async deleteReport(reportId) {
-        if (!confirm('¿Estás seguro de eliminar este reporte?')) return;
-
+    async deleteReportFromFirebase(reportId) {
         try {
-            if (typeof firebase !== 'undefined') {
-                await firebase.firestore()
-                    .collection('technical_reports')
-                    .doc(reportId)
-                    .delete();
-            } else {
-                this.reports = this.reports.filter(r => r.id !== reportId);
-            }
-
-            this.showNotification('Éxito', 'Reporte eliminado correctamente', 'success', 'bi-check-circle-fill');
-            await this.loadData();
-            this.updateCurrentView();
-            this.updateStatistics();
+            await this.db.collection('reportes_tecnicos').doc(reportId).delete();
+            console.log('Reporte eliminado:', reportId);
         } catch (error) {
             console.error('Error eliminando reporte:', error);
-            this.showNotification('Error', 'Error al eliminar el reporte', 'error', 'bi-exclamation-triangle-fill');
+            throw error;
         }
     }
 
-    async editService(serviceId) {
-        console.log('Editando servicio:', serviceId);
-        this.showNotification('Información', 'Función de edición en desarrollo', 'info', 'bi-info-circle-fill');
-    }
-
-    async deleteService(serviceId) {
-        if (!confirm('¿Estás seguro de eliminar este servicio?')) return;
-
+    async deleteServiceFromFirebase(serviceId) {
         try {
-            if (typeof firebase !== 'undefined') {
-                await firebase.firestore()
-                    .collection('technical_services')
-                    .doc(serviceId)
-                    .delete();
-            } else {
-                this.services = this.services.filter(s => s.id !== serviceId);
-            }
-
-            this.showNotification('Éxito', 'Servicio eliminado correctamente', 'success', 'bi-check-circle-fill');
-            await this.loadData();
-            this.updateCurrentView();
+            await this.db.collection('servicios_tecnicos').doc(serviceId).delete();
+            console.log('Servicio eliminado:', serviceId);
         } catch (error) {
             console.error('Error eliminando servicio:', error);
-            this.showNotification('Error', 'Error al eliminar el servicio', 'error', 'bi-exclamation-triangle-fill');
+            throw error;
         }
     }
 
-    updateCurrentView() {
-        if (this.currentView === 'dashboard') {
-            this.renderDashboard();
-        } else if (this.currentView === 'reports') {
-            this.renderReports();
-        } else if (this.currentView === 'services') {
-            this.renderServices();
+    // Utilidades
+    formatServiceType(type) {
+        const types = {
+            mantenimiento: 'Mantenimiento',
+            instalacion: 'Instalación',
+            software: 'Software',
+            hardware: 'Hardware',
+            limpieza: 'Limpieza',
+            otro: 'Otro'
+        };
+        return types[type] || type;
+    }
+
+    formatStatus(status) {
+        const statuses = {
+            pendiente: 'Pendiente',
+            en_proceso: 'En Proceso',
+            resuelto: 'Resuelto',
+            cancelado: 'Cancelado',
+            completado: 'Completado'
+        };
+        return statuses[status] || status;
+    }
+
+    formatUrgency(urgency) {
+        const urgencies = {
+            urgente: 'Urgente',
+            moderado: 'Moderado',
+            bajo: 'Bajo'
+        };
+        return urgencies[urgency] || urgency;
+    }
+
+    formatDate(dateInput) {
+        if (!dateInput) return '';
+        
+        let date;
+        if (dateInput.toDate && typeof dateInput.toDate === 'function') {
+            // Firestore Timestamp
+            date = dateInput.toDate();
+        } else if (typeof dateInput === 'string') {
+            // String date
+            date = new Date(dateInput);
+        } else if (dateInput instanceof Date) {
+            // Date object
+            date = dateInput;
+        } else {
+            return '';
         }
-        this.updateStatistics();
+
+        return date.toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     }
 
-    getEmptyState(type, icon) {
-        return `
-            <div class="empty-state">
-                <i class="bi ${icon}"></i>
-                <h3>No hay ${type} disponibles</h3>
-                <p>Los ${type} aparecerán aquí cuando estén disponibles.</p>
-            </div>
-        `;
+    clearForm(formId) {
+        const form = document.getElementById(formId);
+        form.reset();
+        
+        // Remover clases de validación
+        form.querySelectorAll('.is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+        form.querySelectorAll('.invalid-feedback').forEach(el => {
+            el.remove();
+        });
     }
 
-    getTypeIcon(type) {
-        const icons = {
-            'mantenimiento': 'tools',
-            'instalacion': 'download',
-            'software': 'code-square',
-            'hardware': 'cpu',
-            'limpieza': 'brush',
-            'otro': 'question-circle'
-        };
-        return icons[type] || 'question-circle';
+    showLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.classList.add('show');
     }
 
-    getTypeLabel(type) {
-        const labels = {
-            'mantenimiento': 'Mantenimiento',
-            'instalacion': 'Instalación',
-            'software': 'Software',
-            'hardware': 'Hardware',
-            'limpieza': 'Limpieza',
-            'otro': 'Otro'
-        };
-        return labels[type] || 'Otro';
-    }
-
-    getStatusLabel(status) {
-        const labels = {
-            'pendiente': 'Pendiente',
-            'en_proceso': 'En Proceso',
-            'resuelto': 'Resuelto',
-            'cancelado': 'Cancelado',
-            'completado': 'Completado'
-        };
-        return labels[status] || status;
-    }
-
-    getUrgencyLabel(urgency) {
-        const labels = {
-            'urgente': 'Urgente',
-            'moderado': 'Moderado',
-            'bajo': 'Bajo'
-        };
-        return labels[urgency] || urgency;
-    }
-
-    getUrgencyIcon(urgency) {
-        const icons = {
-            'urgente': 'exclamation-triangle-fill',
-            'moderado': 'exclamation-circle',
-            'bajo': 'info-circle'
-        };
-        return icons[urgency] || 'info-circle';
+    hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.classList.remove('show');
     }
 
     showNotification(title, message, type = 'info', icon = 'bi-info-circle') {
-        // Usar el sistema de notificaciones existente si está disponible
-        if (typeof window.modernNav !== 'undefined') {
-            window.modernNav.showModernNotification(title, message, type, icon);
-        } else if (typeof SICAComponents !== 'undefined') {
+        // Usar el sistema de notificaciones base si está disponible
+        if (typeof SICAComponents !== 'undefined' && SICAComponents.notify) {
             SICAComponents.notify(title, message, type, icon);
         } else {
-            // Notificación personalizada
-            this.createCustomNotification(title, message, type, icon);
+            // Fallback a alert nativo
+            console.log(`${type.toUpperCase()}: ${title} - ${message}`);
+            if (type === 'error') {
+                alert(`Error: ${message}`);
+            }
         }
     }
-
-    createCustomNotification(title, message, type, icon) {
-        const notification = document.createElement('div');
-        notification.className = `notification-tec alert alert-${type}`;
-        notification.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="bi ${icon} me-2"></i>
-                <div>
-                    <strong>${title}</strong>
-                    <div>${message}</div>
-                </div>
-                <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 5000);
-    }
 }
 
-// Funciones globales para eventos
-function showDashboard() {
-    if (window.tecManager) {
-        window.tecManager.showDashboard();
-    }
-}
-
-function showReports() {
-    if (window.tecManager) {
-        window.tecManager.showReports();
-    }
-}
-
-function showServices() {
-    if (window.tecManager) {
-        window.tecManager.showServices();
-    }
-}
-
-function clearFilters() {
-    if (window.tecManager) {
-        window.tecManager.clearFilters();
-    }
-}
-
-function toggleView(viewType) {
-    if (window.tecManager) {
-        window.tecManager.toggleView(viewType);
-    }
-}
-
-function saveReport() {
-    if (window.tecManager) {
-        window.tecManager.saveReport();
-    }
-}
-
-function saveService() {
-    if (window.tecManager) {
-        window.tecManager.saveService();
-    }
-}
-
-function updateReport() {
-    if (window.tecManager) {
-        window.tecManager.updateReport();
-    }
-}
-
-// Inicialización cuando el DOM esté listo
+// Inicializar el sistema cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar a que los componentes base se carguen
-    setTimeout(() => {
-        window.tecManager = new TecnicalManager();
-    }, 500);
+    // Verificar autenticación de administrador
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().onAuthStateChanged((user) => {
+            const authCheck = document.getElementById('authCheck');
+            const mainContent = document.getElementById('main-content');
+            
+            if (user) {
+                // Usuario autenticado - asumir que es admin si está logueado
+                console.log('Usuario autenticado como admin:', user.email);
+                authCheck.style.display = 'none';
+                mainContent.style.display = 'block';
+                window.techManager = new TechnicalManager();
+            } else {
+                // Usuario no autenticado, redirigir a login
+                console.log('Usuario no autenticado, redirigiendo...');
+                window.location.href = '../index.html';
+            }
+        });
+    } else {
+        // Firebase no disponible, modo desarrollo
+        console.warn('Firebase no disponible - Modo desarrollo');
+        document.getElementById('authCheck').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+        window.techManager = new TechnicalManager();
+    }
 });
 
-// Manejo de errores global
-window.addEventListener('error', function(e) {
-    console.error('Error en Gestión Técnica:', e.error);
-});
-
-// Exportar para uso en módulos
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = TecnicalManager;
+// Función para verificar permisos de administrador (versión simplificada)
+async function checkAdminPermissions(user) {
+    try {
+        // Para desarrollo: si el usuario está logueado, es admin
+        return true;
+        
+        /* Para producción, descomentar esto:
+        if (typeof firebase.firestore !== 'undefined') {
+            const db = firebase.firestore();
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                return userData.role === 'admin' || userData.isAdmin === true;
+            }
+        }
+        
+        // Fallback: verificar por email
+        const adminEmails = [
+            'admin@sica.unam.mx',
+            'administrador@sica.unam.mx',
+            // Agregar más emails de administradores aquí
+        ];
+        
+        return adminEmails.includes(user.email);
+        */
+    } catch (error) {
+        console.error('Error verificando permisos:', error);
+        return true; // En desarrollo, permitir acceso
+    }
 }
+
+// Exportar para uso global
+window.TechnicalManager = TechnicalManager;

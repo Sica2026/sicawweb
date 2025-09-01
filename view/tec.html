@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Gestión Técnica - SICA UNAM</title>
+    <title id="page-title">Gestión Técnica - SICA</title>
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -20,39 +21,33 @@
     <!-- Navigation Component -->
     <div id="navbar-component"></div>
 
-    <!-- Breadcrumbs -->
-    <nav aria-label="breadcrumb" class="breadcrumb-nav">
-        <div class="container-fluid">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
-                <li class="breadcrumb-item"><a href="#" onclick="showDashboard()">Panel</a></li>
-                <li class="breadcrumb-item active" aria-current="page" id="breadcrumb-current">Gestión Técnica</li>
-            </ol>
+    <!-- Admin Authentication Check -->
+    <div id="authCheck" class="loading-overlay show">
+        <div class="loading-spinner">
+            <div class="spinner-border text-gold" role="status">
+                <span class="visually-hidden">Verificando acceso...</span>
+            </div>
+            <p class="loading-text">Verificando permisos de administrador...</p>
         </div>
-    </nav>
+    </div>
 
     <!-- Main Content Area -->
-    <main class="main-content" id="main-content">
-        <!-- Control Panel -->
-        <div class="tec-control-panel">
+    <main class="main-content tech-dashboard" id="main-content" style="display: none;">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
             <div class="container-fluid">
                 <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h1 class="tec-title">
-                            <i class="bi bi-gear-wide-connected"></i>
-                            Gestión Técnica SICA
+                    <div class="col-md-6">
+                        <h1 class="dashboard-title">
+                            <i class="bi bi-tools text-gold me-3"></i>
+                            Centro de Gestión Técnica
                         </h1>
-                        <p class="tec-subtitle">Control integral de servicios y mantenimiento</p>
+                        <p class="dashboard-subtitle">Monitoreo y control de salas SICA</p>
                     </div>
-                    <div class="col-md-4 text-end">
-                        <div class="tec-actions">
-                            <button class="btn btn-tec-primary" data-bs-toggle="modal" data-bs-target="#reportModal">
-                                <i class="bi bi-plus-circle-fill"></i>
-                                Nuevo Reporte
-                            </button>
-                            <button class="btn btn-tec-secondary" data-bs-toggle="modal" data-bs-target="#serviceModal">
-                                <i class="bi bi-clipboard-plus"></i>
-                                Registrar Servicio
+                    <div class="col-md-6 text-end">
+                        <div class="dashboard-controls">
+                            <button class="btn btn-sica me-2" id="newReportBtn">
+                                <i class="bi bi-plus-circle me-2"></i>Nuevo Reporte
                             </button>
                         </div>
                     </div>
@@ -60,14 +55,67 @@
             </div>
         </div>
 
-        <!-- Filter Panel -->
-        <div class="tec-filters">
+        <!-- Stats Overview -->
+        <div class="stats-overview">
             <div class="container-fluid">
-                <div class="filter-card">
-                    <div class="row g-3">
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="stat-card stat-total">
+                            <div class="stat-icon">
+                                <i class="bi bi-clipboard-data"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalReports">0</h3>
+                                <p>Reportes Totales</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="stat-card stat-pending">
+                            <div class="stat-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="pendingReports">0</h3>
+                                <p>Pendientes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="stat-card stat-progress">
+                            <div class="stat-icon">
+                                <i class="bi bi-gear-fill"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="progressReports">0</h3>
+                                <p>En Proceso</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="stat-card stat-resolved">
+                            <div class="stat-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="resolvedReports">0</h3>
+                                <p>Resueltos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="container-fluid">
+                <div class="filters-card">
+                    <div class="row align-items-center">
                         <div class="col-md-3">
-                            <select class="form-select filter-select" id="filterSala">
-                                <option value="">Todas las salas</option>
+                            <label class="form-label-sica">Filtrar por Sala</label>
+                            <select class="form-control form-control-sica" id="roomFilter">
+                                <option value="all">Todas las Salas</option>
                                 <option value="SICA 1">SICA 1</option>
                                 <option value="SICA 2">SICA 2</option>
                                 <option value="SICA 3">SICA 3</option>
@@ -77,8 +125,9 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <select class="form-select filter-select" id="filterEstado">
-                                <option value="">Todos los estados</option>
+                            <label class="form-label-sica">Estado</label>
+                            <select class="form-control form-control-sica" id="statusFilter">
+                                <option value="all">Todos los Estados</option>
                                 <option value="pendiente">Pendiente</option>
                                 <option value="en_proceso">En Proceso</option>
                                 <option value="resuelto">Resuelto</option>
@@ -86,18 +135,22 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <select class="form-select filter-select" id="filterUrgencia">
-                                <option value="">Todas las urgencias</option>
+                            <label class="form-label-sica">Urgencia</label>
+                            <select class="form-control form-control-sica" id="urgencyFilter">
+                                <option value="all">Todos los Niveles</option>
                                 <option value="urgente">Urgente</option>
                                 <option value="moderado">Moderado</option>
                                 <option value="bajo">Bajo</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <div class="input-group">
-                                <input type="text" class="form-control search-input" id="searchInput" placeholder="Buscar...">
-                                <button class="btn btn-outline-secondary" type="button" onclick="clearFilters()">
-                                    <i class="bi bi-x-lg"></i>
+                            <label class="form-label-sica">Vista</label>
+                            <div class="btn-group view-toggle" role="group">
+                                <button type="button" class="btn btn-sica-outline active" id="reportsView">
+                                    <i class="bi bi-bug me-1"></i>Reportes
+                                </button>
+                                <button type="button" class="btn btn-sica-outline" id="servicesView">
+                                    <i class="bi bi-tools me-1"></i>Servicios
                                 </button>
                             </div>
                         </div>
@@ -106,148 +159,66 @@
             </div>
         </div>
 
-        <!-- Dashboard Section -->
-        <section id="dashboard-section" class="tec-section">
+        <!-- Rooms Grid -->
+        <div class="rooms-grid" id="roomsGrid">
             <div class="container-fluid">
-                <h2 class="section-title">
-                    <i class="bi bi-speedometer2"></i>
-                    Tablero Principal
-                </h2>
-                
-                <!-- Statistics Cards -->
-                <div class="row g-4 mb-5">
-                    <div class="col-xl-2 col-lg-4 col-md-6">
-                        <div class="stat-card stat-card-total">
-                            <div class="stat-icon">
-                                <i class="bi bi-clipboard-data"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="totalReports">0</h3>
-                                <p>Total Reportes</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-2 col-lg-4 col-md-6">
-                        <div class="stat-card stat-card-pending">
-                            <div class="stat-icon">
-                                <i class="bi bi-hourglass-split"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="pendingReports">0</h3>
-                                <p>Pendientes</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-2 col-lg-4 col-md-6">
-                        <div class="stat-card stat-card-process">
-                            <div class="stat-icon">
-                                <i class="bi bi-gear-wide"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="processReports">0</h3>
-                                <p>En Proceso</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-2 col-lg-4 col-md-6">
-                        <div class="stat-card stat-card-resolved">
-                            <div class="stat-icon">
-                                <i class="bi bi-check-circle-fill"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="resolvedReports">0</h3>
-                                <p>Resueltos</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-2 col-lg-4 col-md-6">
-                        <div class="stat-card stat-card-urgent">
-                            <div class="stat-icon">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="urgentReports">0</h3>
-                                <p>Urgentes</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-2 col-lg-4 col-md-6">
-                        <div class="stat-card stat-card-services">
-                            <div class="stat-icon">
-                                <i class="bi bi-tools"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="totalServices">0</h3>
-                                <p>Servicios</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Room Cards -->
-                <div class="row g-4" id="room-cards">
-                    <!-- Room cards will be generated dynamically -->
+                <div class="row" id="roomsContainer">
+                    <!-- Las tarjetas de salas se generarán dinámicamente -->
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Reports Section -->
-        <section id="reports-section" class="tec-section" style="display: none;">
+        <!-- Reports/Services Table -->
+        <div class="data-section">
             <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="section-title">
-                        <i class="bi bi-clipboard-data"></i>
-                        Reportes Técnicos
-                    </h2>
-                    <div class="view-controls">
-                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleView('grid')" id="gridViewBtn">
-                            <i class="bi bi-grid-3x3-gap"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm active" onclick="toggleView('list')" id="listViewBtn">
-                            <i class="bi bi-list-ul"></i>
-                        </button>
+                <div class="data-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0" id="dataTableTitle">Reportes Técnicos</h4>
+                        <div class="search-box">
+                            <input type="text" class="form-control form-control-sica" id="searchInput" placeholder="Buscar...">
+                            <i class="bi bi-search search-icon"></i>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sica" id="dataTable">
+                            <thead id="tableHead">
+                                <!-- Headers se generarán dinámicamente -->
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-pagination" id="tablePagination">
+                        <!-- Paginación se generará dinámicamente -->
                     </div>
                 </div>
-                
-                <div id="reports-container">
-                    <!-- Reports will be generated dynamically -->
-                </div>
             </div>
-        </section>
-
-        <!-- Services Section -->
-        <section id="services-section" class="tec-section" style="display: none;">
-            <div class="container-fluid">
-                <h2 class="section-title">
-                    <i class="bi bi-tools"></i>
-                    Registro de Servicios
-                </h2>
-                
-                <div id="services-container">
-                    <!-- Services will be generated dynamically -->
-                </div>
-            </div>
-        </section>
+        </div>
     </main>
 
-    <!-- Report Modal -->
-    <div class="modal fade" id="reportModal" tabindex="-1">
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modals -->
+    <!-- New Report Modal -->
+    <div class="modal fade" id="newReportModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content modal-tec">
+            <div class="modal-content modal-futuristic">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-plus-circle-fill"></i>
+                        <i class="bi bi-bug text-gold me-2"></i>
                         Nuevo Reporte Técnico
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="reportForm">
-                        <div class="row g-3">
-                            <div class="col-md-6">
+                    <form id="newReportForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label-sica">Sala</label>
-                                <select class="form-control form-control-sica" id="reportSala" required>
-                                    <option value="">Seleccionar sala</option>
+                                <select class="form-control form-control-sica" id="reportRoom" required>
+                                    <option value="">Seleccionar Sala</option>
                                     <option value="SICA 1">SICA 1</option>
                                     <option value="SICA 2">SICA 2</option>
                                     <option value="SICA 3">SICA 3</option>
@@ -256,10 +227,10 @@
                                     <option value="Salón Inteligente 2">Salón Inteligente 2</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label-sica">Tipo de Servicio</label>
-                                <select class="form-control form-control-sica" id="reportTipo" required>
-                                    <option value="">Seleccionar tipo</option>
+                                <select class="form-control form-control-sica" id="reportType" required>
+                                    <option value="">Seleccionar Tipo</option>
                                     <option value="mantenimiento">Mantenimiento</option>
                                     <option value="instalacion">Instalación</option>
                                     <option value="software">Software</option>
@@ -268,118 +239,48 @@
                                     <option value="otro">Otro</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Responsable</label>
-                                <input type="text" class="form-control form-control-sica" id="reportResponsable" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Nivel de Urgencia</label>
-                                <select class="form-control form-control-sica" id="reportUrgencia" required>
-                                    <option value="">Seleccionar urgencia</option>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Urgencia</label>
+                                <select class="form-control form-control-sica" id="reportUrgency" required>
+                                    <option value="">Seleccionar Urgencia</option>
                                     <option value="urgente">Urgente</option>
                                     <option value="moderado">Moderado</option>
                                     <option value="bajo">Bajo</option>
                                 </select>
                             </div>
-                            <div class="col-12">
-                                <label class="form-label-sica">Descripción del Problema</label>
-                                <textarea class="form-control form-control-sica" id="reportDescripcion" rows="4" required></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label-sica">Notas Iniciales</label>
-                                <textarea class="form-control form-control-sica" id="reportNotas" rows="3" placeholder="Observaciones, detalles adicionales o comentarios iniciales..."></textarea>
-                                <div class="form-text">Opcional: Información adicional que pueda ser útil para la resolución</div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-tec-primary" onclick="saveReport()">
-                        <i class="bi bi-check-lg"></i>
-                        Guardar Reporte
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Service Modal -->
-    <div class="modal fade" id="serviceModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content modal-tec">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-clipboard-plus"></i>
-                        Registrar Servicio
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="serviceForm">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Sala</label>
-                                <select class="form-control form-control-sica" id="serviceSala" required>
-                                    <option value="">Seleccionar sala</option>
-                                    <option value="SICA 1">SICA 1</option>
-                                    <option value="SICA 2">SICA 2</option>
-                                    <option value="SICA 3">SICA 3</option>
-                                    <option value="SICA 4">SICA 4</option>
-                                    <option value="Salón Inteligente 1">Salón Inteligente 1</option>
-                                    <option value="Salón Inteligente 2">Salón Inteligente 2</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Tipo de Servicio</label>
-                                <select class="form-control form-control-sica" id="serviceTipo" required>
-                                    <option value="">Seleccionar tipo</option>
-                                    <option value="mantenimiento">Mantenimiento</option>
-                                    <option value="instalacion">Instalación</option>
-                                    <option value="software">Software</option>
-                                    <option value="hardware">Hardware</option>
-                                    <option value="limpieza">Limpieza</option>
-                                    <option value="otro">Otro</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label-sica">Responsable</label>
-                                <input type="text" class="form-control form-control-sica" id="serviceResponsable" required>
+                                <input type="text" class="form-control form-control-sica" id="reportResponsible" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label-sica">Estado</label>
-                                <select class="form-control form-control-sica" id="serviceEstado" required>
-                                    <option value="">Seleccionar estado</option>
+                                <select class="form-control form-control-sica" id="reportStatus" required>
+                                    <option value="">Seleccionar Estado</option>
                                     <option value="pendiente">Pendiente</option>
                                     <option value="en_proceso">En Proceso</option>
-                                    <option value="completado">Completado</option>
+                                    <option value="resuelto">Resuelto</option>
+                                    <option value="cancelado">Cancelado</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label-sica">Fecha de Inicio</label>
-                                <input type="date" class="form-control form-control-sica" id="serviceFechaInicio" required>
+                                <input type="date" class="form-control form-control-sica" id="reportStartDate" required>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Fecha de Conclusión</label>
-                                <input type="date" class="form-control form-control-sica" id="serviceFechaFin">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Fecha de Término</label>
+                                <input type="date" class="form-control form-control-sica" id="reportEndDate">
                             </div>
-                            <div class="col-12">
-                                <label class="form-label-sica">Descripción del Servicio</label>
-                                <textarea class="form-control form-control-sica" id="serviceDescripcion" rows="4" required></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label-sica">Documentación/Evidencias</label>
-                                <input type="file" class="form-control form-control-sica" id="serviceFiles" multiple accept="image/*,application/pdf">
-                                <div class="form-text">Puedes subir imágenes o documentos PDF como evidencia</div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label-sica">Descripción del Problema</label>
+                                <textarea class="form-control form-control-sica" id="reportDescription" rows="4" required></textarea>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-tec-primary" onclick="saveService()">
-                        <i class="bi bi-check-lg"></i>
-                        Guardar Servicio
+                    <button type="button" class="btn btn-sica-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sica" id="saveReportBtn">
+                        <i class="bi bi-save me-2"></i>Guardar Reporte
                     </button>
                 </div>
             </div>
@@ -388,34 +289,104 @@
 
     <!-- Edit Report Modal -->
     <div class="modal fade" id="editReportModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content modal-tec">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-futuristic">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-pencil-square"></i>
+                        <i class="bi bi-pencil text-gold me-2"></i>
                         Editar Reporte Técnico
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- El contenido del formulario se genera dinámicamente -->
+                    <form id="editReportForm">
+                        <input type="hidden" id="editReportId" />
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">ID del Reporte</label>
+                                <input type="text" class="form-control form-control-sica" id="editReportIdDisplay" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Sala</label>
+                                <input type="text" class="form-control form-control-sica" id="editReportRoom" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Tipo de Servicio</label>
+                                <input type="text" class="form-control form-control-sica" id="editReportType" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Responsable</label>
+                                <input type="text" class="form-control form-control-sica" id="editReportResponsible" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Urgencia</label>
+                                <input type="text" class="form-control form-control-sica" id="editReportUrgency" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Estado</label>
+                                <select class="form-control form-control-sica" id="editReportStatus" required>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="en_proceso">En Proceso</option>
+                                    <option value="resuelto">Resuelto</option>
+                                    <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Fecha de Inicio</label>
+                                <input type="date" class="form-control form-control-sica" id="editReportStartDate" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Fecha de Término</label>
+                                <input type="date" class="form-control form-control-sica" id="editReportEndDate">
+                                <small class="form-text text-muted">Opcional - Solo si el reporte está resuelto</small>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label-sica">Descripción del Problema</label>
+                                <textarea class="form-control form-control-sica" id="editReportDescription" rows="4" required></textarea>
+                            </div>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg"></i>
-                        Cancelar
-                    </button>
-                    <button type="button" class="btn btn-tec-primary" onclick="updateReport()">
-                        <i class="bi bi-check-lg"></i>
-                        Actualizar Reporte
+                    <button type="button" class="btn btn-sica-outline" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sica" id="updateReportBtn">
+                        <i class="bi bi-check-circle me-2"></i>Actualizar Reporte
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer Component -->
-    <div id="footer-component"></div>
+    <!-- Detail Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-futuristic">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalTitle">Detalles</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailModalBody">
+                    <!-- Contenido se carga dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sica-outline" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-sica" id="editItemBtn" style="display: none;">
+                        <i class="bi bi-pencil me-2"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-gold" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="loading-text">Procesando...</p>
+        </div>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

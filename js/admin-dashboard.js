@@ -1036,7 +1036,11 @@ window.AdminDownloadsManager = AdminDownloadsManager;
             // Redirigir a la página de descargas
             window.location.href = '../view/folio-manager.html';
         },
-        'generateReport': () => generateReport()
+        'generateReport': () => generateReport(),
+        // 👇 AGREGAR ESTA LÍNEA
+        'technicianPanel': () => {
+    window.location.href = '../view/tec.html'; // ✅ Ruta correcta
+}
     };
     
     Object.entries(actions).forEach(([id, handler]) => {
