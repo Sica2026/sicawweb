@@ -323,7 +323,7 @@ class CartaAceptacionFQPDF {
             " horas totales."
         ];
 
-        yPos = this.drawRichText(doc, 25, yPos, 165, runsCuerpo, 6) + 15;
+        yPos = this.drawRichText(doc, 25, yPos, 165, runsCuerpo, 6) + 5;
 
         // ========================================
         // DESPEDIDA
@@ -332,7 +332,7 @@ class CartaAceptacionFQPDF {
         const despedida = "Sin otro particular, agradezco la atención prestada a la presente, reciba un cordial saludo.";
         const lineasDespedida = doc.splitTextToSize(despedida, 165);
         doc.text(lineasDespedida, 25, yPos);
-        yPos += lineasDespedida.length * 6 + 20;
+        yPos += lineasDespedida.length * 6 + 12;
 
         // ========================================
         // ATENTAMENTE
