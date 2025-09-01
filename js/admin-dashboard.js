@@ -1042,7 +1042,8 @@ window.AdminDownloadsManager = AdminDownloadsManager;
     window.location.href = '../view/tec.html'; // ✅ Ruta correcta
 }
     };
-    
+      
+
     Object.entries(actions).forEach(([id, handler]) => {
         const element = document.getElementById(id);
         if (element) {
