@@ -13,7 +13,7 @@
     <!-- Admin Folios Styles -->
     <link href="../css/folio-manager.css" rel="stylesheet">
 </head>
-<body>
+<body class="admin-authenticated">
     <!-- Header Component -->
     <div id="header-component"></div>
 
@@ -289,5 +289,19 @@
     <script src="../js/edgar/folio-search.js"></script>
     <script src="../js/edgar/folio-config.js"></script>
     <script src="../js/edgar/document-preview.js"></script>
+
+    <script>
+    // Solo verifica si hay usuario autenticado con Firebase
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // Si hay usuario, inicializar el sistema
+        if (window.folioManager) {
+            await window.folioManager.init();
+        }
+    });
+    </script>
 </body>
 </html>

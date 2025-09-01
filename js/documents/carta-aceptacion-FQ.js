@@ -194,8 +194,15 @@ class CartaAceptacionFQPDF {
 
     // Descompone una fecha "YYYY-MM-DD" a partes con nombre de mes en español
     descomponerFecha(fechaString) {
-        const f = new Date(fechaString);
+        // Parsear la fecha manualmente para evitar problemas de zona horaria
+        const partes = fechaString.split('-');
+        const anio = parseInt(partes[0]);
+        const mes = parseInt(partes[1]) - 1; // Los meses en JS van de 0-11
+        const dia = parseInt(partes[2]);
+        
+        const f = new Date(anio, mes, dia);
         const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        
         return {
             dia: f.getDate(),
             mes: meses[f.getMonth()],
@@ -352,10 +359,8 @@ class CartaAceptacionFQPDF {
 
         // ========================================
         // FECHA Y LUGAR FINAL
-        // ========================================
         doc.setFont("times", "normal");
-        const hoyISO = new Date().toISOString().split('T')[0];
-        const fechaDoc = datos.fechaAceptacion || hoyISO;
+        const fechaDoc = datos.fechaInicio || datos.fechaAceptacion || new Date().toISOString().split('T')[0];
         const { dia, mes, anio } = this.descomponerFecha(fechaDoc);
         
         const fechaFinal = `Cd. Universitaria, CDMX a ${dia} de ${mes} de ${anio}.`;

@@ -752,80 +752,102 @@ class ModernNavigation {
         });
     }
     
-handleAdminAction(action, button) {
-    this.addSelectionEffect(button);
-    
-    const adminActions = {
-        'formularios': {
-            title: 'Formularios y Avisos',
-            message: 'Accediendo al centro de comunicaciones...',
-            icon: 'bi-file-earmark-text',
-            route: 'formularios-avisos.html'
-        },
-        'asesores': {
-            title: 'Gestión de Asesores',
-            message: 'Cargando panel de asesores...',
-            icon: 'bi-people',
-            route: 'gestion-asesores.html'
-        },
-        'pago-horas': {
-            title: 'Pago de Horas',
-            message: 'Accediendo al sistema de pagos...',
-            icon: 'bi-cash-coin',
-            route: 'pago-horas.html'
-        },
-        'reportes': {
-            title: 'Reportes Administrativos',
-            message: 'Accediendo al módulo de reportes...',
-            icon: 'bi-graph-up',
-            route: 'reportes-admin.html'
-        },
-        'mas': {
-            title: 'Más Opciones',
-            message: 'Cargando opciones adicionales...',
-            icon: 'bi-three-dots',
-            route: 'admin-mas.html'
-        },
-        'logout': {
-            title: 'Cerrar Sesión',
-            message: 'Cerrando sesión de administrador...',
-            icon: 'bi-box-arrow-right',
-            route: null
-        }
-    };
-    
-    const actionData = adminActions[action];
-    
-    if (actionData) {
-        this.showModernNotification(
-            actionData.title,
-            actionData.message,
-            action === 'logout' ? 'warning' : 'info',
-            actionData.icon
-        );
+    // ✅ FUNCIÓN ACTUALIZADA CON INCIDENCIAS
+    handleAdminAction(action, button) {
+        this.addSelectionEffect(button);
         
-        if (action === 'logout') {
-            // Cerrar sesión
-            if (window.firebaseAuth) {
-                window.firebaseAuth.signOut().then(() => {
-                    window.location.href = '../index.html';
-                });
-            } else {
-                window.location.href = '../index.html';
+        const adminActions = {
+            'formularios': {
+                title: 'Formularios y Avisos',
+                message: 'Accediendo al centro de comunicaciones...',
+                icon: 'bi-file-earmark-text',
+                route: 'formularios-avisos.html'
+            },
+            'asesores': {
+                title: 'Gestión de Asesores',
+                message: 'Cargando panel de asesores...',
+                icon: 'bi-people',
+                route: 'gestion-asesores.html'
+            },
+            'pago-horas': {
+                title: 'Pago de Horas',
+                message: 'Accediendo al sistema de pagos...',
+                icon: 'bi-cash-coin',
+                route: 'pago-horas.html'
+            },
+            'reportes': {
+                title: 'Reportes Administrativos',
+                message: 'Accediendo al módulo de reportes...',
+                icon: 'bi-graph-up',
+                route: 'reportes-admin.html'
+            },
+            // ✅ NUEVA OPCIÓN DE INCIDENCIAS
+            'incidencias': {
+                title: 'Gestión de Incidencias',
+                message: 'Accediendo al sistema de incidencias...',
+                icon: 'bi-exclamation-triangle',
+                route: 'admin-incidencias.html'
+            },
+            'mas': {
+                title: 'Más Opciones',
+                message: 'Cargando opciones adicionales...',
+                icon: 'bi-three-dots',
+                route: 'admin-mas.html'
+            },
+            'logout': {
+                title: 'Cerrar Sesión',
+                message: 'Cerrando sesión de administrador...',
+                icon: 'bi-box-arrow-right',
+                route: null
             }
-        } else {
-            // Redirigir a la página
-            setTimeout(() => {
-                window.location.href = actionData.route;
-            }, 1000);
+        };
+        
+        const actionData = adminActions[action];
+        
+        if (actionData) {
+            this.showModernNotification(
+                actionData.title,
+                actionData.message,
+                action === 'logout' ? 'warning' : action === 'incidencias' ? 'warning' : 'info',
+                actionData.icon
+            );
+            
+            console.log(`🔧 Ejecutando acción de administrador: ${action}`);
+            
+            if (action === 'logout') {
+                // Cerrar sesión
+                if (window.firebaseAuth) {
+                    window.firebaseAuth.signOut().then(() => {
+                        window.location.href = '../index.html';
+                    });
+                } else {
+                    window.location.href = '../index.html';
+                }
+            } else {
+                // Redirigir a la página correspondiente
+                setTimeout(() => {
+                    const currentPath = window.location.pathname;
+                    const isInViewFolder = currentPath.includes('/view/') || currentPath.includes('view/');
+                    
+                    let targetPage;
+                    
+                    if (isInViewFolder) {
+                        targetPage = actionData.route;
+                    } else {
+                        targetPage = `view/${actionData.route}`;
+                    }
+                    
+                    console.log(`📍 Navegando a: ${targetPage}`);
+                    window.location.href = targetPage;
+                }, 1000);
+            }
         }
+        
+        // Cerrar panel después de la selección
+        setTimeout(() => {
+            this.closeAllPanels();
+        }, 1000);
     }
-    
-    // Cerrar panel
-    setTimeout(() => {
-        this.closeAllPanels();
-    }, 1000);
-}
 
     // Método para habilitar/deshabilitar sonidos
     toggleSounds() {

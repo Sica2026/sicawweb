@@ -149,6 +149,13 @@
                         <div class="tab-count" id="paymentsCount">0</div>
                         <div class="nav-indicator"></div>
                     </button>
+                    <!-- NUEVO TAB PARA INCIDENCIAS -->
+                    <button class="nav-tab" data-panel="incidencias" id="incidenciasTab">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span>Incidencias</span>
+                        <div class="tab-count" id="incidenciasCount">0</div>
+                        <div class="nav-indicator"></div>
+                    </button>
                     <button class="nav-tab" data-panel="analytics" id="analyticsTab">
                         <i class="bi bi-bar-chart"></i>
                         <span>Análisis</span>
@@ -178,6 +185,11 @@
                                 <button class="quick-action" data-action="view-reports">
                                     <i class="bi bi-file-earmark-text"></i>
                                     <span>Ver Reportes</span>
+                                </button>
+                                <!-- NUEVA ACCIÓN PARA INCIDENCIAS -->
+                                <button class="quick-action" data-action="view-incidencias">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <span>Ver Incidencias</span>
                                 </button>
                                 <button class="quick-action" data-action="export-all">
                                     <i class="bi bi-download"></i>
@@ -218,6 +230,13 @@
                 <div class="content-panel" id="paymentsPanel">
                     <div id="paymentsContainer">
                         <!-- Payments content will be loaded by payments module -->
+                    </div>
+                </div>
+
+                <!-- NUEVO PANEL PARA INCIDENCIAS -->
+                <div class="content-panel" id="incidenciasPanel">
+                    <div id="incidenciasContainer">
+                        <!-- Incidencias content will be loaded by incidencias module -->
                     </div>
                 </div>
 
@@ -263,6 +282,8 @@
     <script src="../js/modules/stats-manager.js"></script>
     <script src="../js/modules/reports-manager.js"></script>
     <script src="../js/modules/payments-manager.js"></script>
+    <!-- NUEVO SCRIPT PARA INCIDENCIAS -->
+    <script src="../js/modules/incidencias-manager.js"></script>
     <script src="../js/modules/analytics-manager.js"></script>
 
     <!-- Main App Initializer -->

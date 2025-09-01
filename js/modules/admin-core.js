@@ -1,7 +1,7 @@
 /**
  * =================================================================
  * ADMIN CORE - Main Controller & Application State Management
- * Archivo: admin-core.js
+ * Archivo: admin-core.js (ACTUALIZADO con módulo Incidencias)
  * =================================================================
  */
 
@@ -74,6 +74,12 @@ class AdminCore {
         if (typeof PaymentsManager !== 'undefined') {
             this.modules.payments = new PaymentsManager(this);
             console.log('💰 PaymentsManager initialized');
+        }
+        
+        // Initialize IncidenciasManager - NUEVO MÓDULO
+        if (typeof IncidenciasManager !== 'undefined') {
+            this.modules.incidencias = new IncidenciasManager(this);
+            console.log('🚨 IncidenciasManager initialized');
         }
         
         // Initialize AnalyticsManager
@@ -170,9 +176,9 @@ class AdminCore {
             }
         }
         
-        // Numbers 1-4 for dashboard navigation
-        if (this.currentPanel === 'dashboard' && ['1', '2', '3', '4'].includes(event.key)) {
-            const panels = ['overview', 'reports', 'payments', 'analytics'];
+        // Numbers 1-5 for dashboard navigation (actualizado para incluir incidencias)
+        if (this.currentPanel === 'dashboard' && ['1', '2', '3', '4', '5'].includes(event.key)) {
+            const panels = ['overview', 'reports', 'payments', 'incidencias', 'analytics'];
             const panelIndex = parseInt(event.key) - 1;
             if (panels[panelIndex]) {
                 this.switchDashboardPanel(panels[panelIndex]);
@@ -254,6 +260,11 @@ class AdminCore {
                         await this.modules.payments.loadData();
                     }
                     break;
+                case 'incidencias': // NUEVO PANEL
+                    if (this.modules.incidencias) {
+                        await this.modules.incidencias.loadData();
+                    }
+                    break;
                 case 'analytics':
                     if (this.modules.analytics) {
                         await this.modules.analytics.loadData();
@@ -284,21 +295,21 @@ class AdminCore {
     }
 
     /**
-     * Load recent activity data
+     * Load recent activity data (actualizado para incluir incidencias)
      */
     async loadRecentActivity() {
         try {
             const activityList = document.getElementById('recentActivityList');
             if (!activityList || !this.currentAdvisor) return;
 
+            const activities = [];
+
             // Get recent reports
             const reportsSnapshot = await this.db.collection('reportesasesores')
                 .where('numeroCuenta', '==', this.currentAdvisor.numeroCuenta)
                 .orderBy('fecha', 'desc')
-                .limit(5)
+                .limit(3)
                 .get();
-
-            const activities = [];
 
             reportsSnapshot.docs.forEach(doc => {
                 const data = doc.data();
@@ -317,7 +328,7 @@ class AdminCore {
             const paymentsSnapshot = await this.db.collection('pago_horas')
                 .where('numeroCuenta', '==', this.currentAdvisor.numeroCuenta)
                 .orderBy('fecha', 'desc')
-                .limit(3)
+                .limit(2)
                 .get();
 
             paymentsSnapshot.docs.forEach(doc => {
@@ -329,6 +340,26 @@ class AdminCore {
                     time: this.formatDate(data.fecha),
                     icon: 'bi-cash-coin',
                     iconClass: 'success'
+                };
+                activities.push(activity);
+            });
+
+            // Get recent incidencias - NUEVA FUNCIONALIDAD
+            const incidenciasSnapshot = await this.db.collection('incidencias')
+                .where('asesorCuenta', '==', this.currentAdvisor.numeroCuenta)
+                .orderBy('fecha', 'desc')
+                .limit(2)
+                .get();
+
+            incidenciasSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const activity = {
+                    type: 'incidencia',
+                    title: 'Incidencia reportada',
+                    description: `${data.motivoFalta || 'Sin motivo'} - ${data.horasAcumuladas || 0}h`,
+                    time: this.formatDate(data.fecha),
+                    icon: 'bi-exclamation-triangle-fill',
+                    iconClass: 'warning'
                 };
                 activities.push(activity);
             });
@@ -438,114 +469,117 @@ class AdminCore {
     /**
      * Change advisor (go back to search)
      */
-changeAdvisor() {
-    console.log('🔄 Changing advisor - starting cleanup');
-    
-    // 1. Store current advisor account BEFORE clearing it
-    const currentAdvisorAccount = this.currentAdvisor?.numeroCuenta;
-    
-    // 2. Clear current advisor
-    this.currentAdvisor = null;
-    
-    // 3. Clear all module data BEFORE showing search panel
-    Object.values(this.modules).forEach(module => {
-        if (typeof module.clearData === 'function') {
-            try {
-                module.clearData();
-                console.log(`✅ Cleared data for module: ${module.constructor.name}`);
-            } catch (error) {
-                console.error(`❌ Error clearing module data:`, error);
+    changeAdvisor() {
+        console.log('🔄 Changing advisor - starting cleanup');
+        
+        // 1. Store current advisor account BEFORE clearing it
+        const currentAdvisorAccount = this.currentAdvisor?.numeroCuenta;
+        
+        // 2. Clear current advisor
+        this.currentAdvisor = null;
+        
+        // 3. Clear all module data BEFORE showing search panel
+        Object.values(this.modules).forEach(module => {
+            if (typeof module.clearData === 'function') {
+                try {
+                    module.clearData();
+                    console.log(`✅ Cleared data for module: ${module.constructor.name}`);
+                } catch (error) {
+                    console.error(`❌ Error clearing module data:`, error);
+                }
             }
-        }
-    });
-
-    // 4. Clear relevant caches
-    if (currentAdvisorAccount) {
-        const cacheKeysToDelete = [
-            `advisor_${currentAdvisorAccount}`,
-            `reports_${currentAdvisorAccount}`,
-            `payments_${currentAdvisorAccount}`,
-            `stats_${currentAdvisorAccount}`,
-            `analytics_${currentAdvisorAccount}`
-        ];
-        
-        cacheKeysToDelete.forEach(key => {
-            this.cache.delete(key);
         });
-    }
 
-    // 5. Reset search input and clear results
-    const searchInput = document.getElementById('advisorSearch');
-    if (searchInput) {
-        searchInput.value = '';
-    }
-
-    // 6. Clear stats displays
-    this.clearStats();
-
-    // 7. Clear tables (using new system element IDs)
-    const reportsContainer = document.getElementById('reportsContainer');
-    const paymentsContainer = document.getElementById('paymentsContainer');
-    const analyticsContainer = document.getElementById('analyticsContainer');
-    const statsContainer = document.getElementById('statsContainer');
-    
-    if (reportsContainer) reportsContainer.innerHTML = '';
-    if (paymentsContainer) paymentsContainer.innerHTML = '';
-    if (analyticsContainer) analyticsContainer.innerHTML = '';
-    if (statsContainer) statsContainer.innerHTML = '';
-
-    // 8. Reset filters
-    this.resetFilters();
-
-    // 9. Show search panel with proper transition
-    const searchPanel = document.getElementById('searchPanel');
-    const dashboardPanel = document.getElementById('dashboardPanel');
-    
-    if (dashboardPanel && searchPanel) {
-        // Animate out the dashboard
-        dashboardPanel.style.transition = 'all 0.3s ease';
-        dashboardPanel.style.opacity = '0';
-        dashboardPanel.style.transform = 'translateY(-20px)';
-        
-        setTimeout(() => {
-            // Hide dashboard and show search
-            dashboardPanel.style.display = 'none';
-            searchPanel.style.display = 'block';
-            searchPanel.style.opacity = '0';
-            searchPanel.style.transform = 'translateY(20px)';
+        // 4. Clear relevant caches
+        if (currentAdvisorAccount) {
+            const cacheKeysToDelete = [
+                `advisor_${currentAdvisorAccount}`,
+                `reports_${currentAdvisorAccount}`,
+                `payments_${currentAdvisorAccount}`,
+                `incidencias_${currentAdvisorAccount}`, // NUEVA CACHE
+                `stats_${currentAdvisorAccount}`,
+                `analytics_${currentAdvisorAccount}`
+            ];
             
-            // Update current panel
-            this.currentPanel = 'search';
-            
-            // Animate in the search panel
-            requestAnimationFrame(() => {
-                searchPanel.style.transition = 'all 0.3s ease';
-                searchPanel.style.opacity = '1';
-                searchPanel.style.transform = 'translateY(0)';
+            cacheKeysToDelete.forEach(key => {
+                this.cache.delete(key);
             });
-        }, 300);
-    }
+        }
 
-    // 10. IMPORTANTE: Reinitializar el SearchManager
-    if (this.modules.search) {
-        // Force reload of advisors list
-        console.log('🔄 Reloading advisors list...');
-        setTimeout(() => {
-            this.modules.search.loadAsesoresList(true); // Force reload
-        }, 500); // Wait for UI transition to complete
-    }
-
-    // 11. Focus search input after transition
-    setTimeout(() => {
+        // 5. Reset search input and clear results
         const searchInput = document.getElementById('advisorSearch');
         if (searchInput) {
-            searchInput.focus();
+            searchInput.value = '';
         }
-    }, 800);
 
-    console.log('✅ Advisor change completed');
-    this.showNotification('Selección cambiada', 'Busca otro asesor para continuar', 'info');
-}
+        // 6. Clear stats displays
+        this.clearStats();
+
+        // 7. Clear tables (using new system element IDs)
+        const reportsContainer = document.getElementById('reportsContainer');
+        const paymentsContainer = document.getElementById('paymentsContainer');
+        const incidenciasContainer = document.getElementById('incidenciasContainer'); // NUEVO CONTAINER
+        const analyticsContainer = document.getElementById('analyticsContainer');
+        const statsContainer = document.getElementById('statsContainer');
+        
+        if (reportsContainer) reportsContainer.innerHTML = '';
+        if (paymentsContainer) paymentsContainer.innerHTML = '';
+        if (incidenciasContainer) incidenciasContainer.innerHTML = ''; // LIMPIAR INCIDENCIAS
+        if (analyticsContainer) analyticsContainer.innerHTML = '';
+        if (statsContainer) statsContainer.innerHTML = '';
+
+        // 8. Reset filters
+        this.resetFilters();
+
+        // 9. Show search panel with proper transition
+        const searchPanel = document.getElementById('searchPanel');
+        const dashboardPanel = document.getElementById('dashboardPanel');
+        
+        if (dashboardPanel && searchPanel) {
+            // Animate out the dashboard
+            dashboardPanel.style.transition = 'all 0.3s ease';
+            dashboardPanel.style.opacity = '0';
+            dashboardPanel.style.transform = 'translateY(-20px)';
+            
+            setTimeout(() => {
+                // Hide dashboard and show search
+                dashboardPanel.style.display = 'none';
+                searchPanel.style.display = 'block';
+                searchPanel.style.opacity = '0';
+                searchPanel.style.transform = 'translateY(20px)';
+                
+                // Update current panel
+                this.currentPanel = 'search';
+                
+                // Animate in the search panel
+                requestAnimationFrame(() => {
+                    searchPanel.style.transition = 'all 0.3s ease';
+                    searchPanel.style.opacity = '1';
+                    searchPanel.style.transform = 'translateY(0)';
+                });
+            }, 300);
+        }
+
+        // 10. IMPORTANTE: Reinitializar el SearchManager
+        if (this.modules.search) {
+            // Force reload of advisors list
+            console.log('🔄 Reloading advisors list...');
+            setTimeout(() => {
+                this.modules.search.loadAsesoresList(true); // Force reload
+            }, 500); // Wait for UI transition to complete
+        }
+
+        // 11. Focus search input after transition
+        setTimeout(() => {
+            const searchInput = document.getElementById('advisorSearch');
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }, 800);
+
+        console.log('✅ Advisor change completed');
+        this.showNotification('Selección cambiada', 'Busca otro asesor para continuar', 'info');
+    }
 
     /**
      * Refresh all current data
@@ -578,60 +612,70 @@ changeAdvisor() {
     }
 
     clearStats() {
-    const statElements = [
-        'adminHorasTrabajadas',
-        'adminHorasAdeudo', 
-        'adminTotalPagoHoras',
-        'adminDiasTrabajados',
-        'adminTotalReportes',
-        'adminTotalPagos',
-        'horasTrabajadas',
-        'horasAdeudo',
-        'totalPagoHoras',
-        'diasTrabajados'
-    ];
-    
-    statElements.forEach(statId => {
-        const element = document.getElementById(statId);
-        if (element) {
-            element.textContent = statId.includes('Total') ? '0' : '0h';
-        }
-    });
-}
-
-resetFilters() {
-    const filters = [
-        'adminMesFilter',
-        'adminEstadoFilter', 
-        'adminMesPagoFilter',
-        'adminSalaFilter',
-        'reportsMonthFilter',
-        'reportsStatusFilter',
-        'reportsTypeFilter',
-        'paymentsMonthFilter',
-        'paymentsSalaFilter',
-        'paymentsAuthorizerFilter'
-    ];
-    
-    filters.forEach(filterId => {
-        const filter = document.getElementById(filterId);
-        if (filter) {
-            filter.value = '';
-        }
-    });
-}
-
-switchView(viewType) {
-    // This method exists for compatibility with the old system
-    // In the new system, use switchDashboardPanel instead
-    console.log(`switchView called with: ${viewType}`);
-    
-    if (viewType === 'reportes') {
-        this.switchDashboardPanel('reports');
-    } else if (viewType === 'pago') {
-        this.switchDashboardPanel('payments');
+        const statElements = [
+            'adminHorasTrabajadas',
+            'adminHorasAdeudo', 
+            'adminTotalPagoHoras',
+            'adminDiasTrabajados',
+            'adminTotalReportes',
+            'adminTotalPagos',
+            'adminTotalIncidencias', // NUEVO ELEMENTO
+            'horasTrabajadas',
+            'horasAdeudo',
+            'totalPagoHoras',
+            'diasTrabajados'
+        ];
+        
+        statElements.forEach(statId => {
+            const element = document.getElementById(statId);
+            if (element) {
+                element.textContent = statId.includes('Total') ? '0' : '0h';
+            }
+        });
     }
-}
+
+    resetFilters() {
+        const filters = [
+            'adminMesFilter',
+            'adminEstadoFilter', 
+            'adminMesPagoFilter',
+            'adminSalaFilter',
+            'adminMesIncidenciaFilter', // NUEVO FILTRO
+            'adminMotivoIncidenciaFilter', // NUEVO FILTRO
+            'reportsMonthFilter',
+            'reportsStatusFilter',
+            'reportsTypeFilter',
+            'paymentsMonthFilter',
+            'paymentsSalaFilter',
+            'paymentsAuthorizerFilter',
+            'incidenciasMonthFilter', // NUEVOS FILTROS DE INCIDENCIAS
+            'incidenciasMotivoFilter',
+            'incidenciasSalaFilter',
+            'incidenciasReporterFilter'
+        ];
+        
+        filters.forEach(filterId => {
+            const filter = document.getElementById(filterId);
+            if (filter) {
+                filter.value = '';
+            }
+        });
+    }
+
+    switchView(viewType) {
+        // This method exists for compatibility with the old system
+        // In the new system, use switchDashboardPanel instead
+        console.log(`switchView called with: ${viewType}`);
+        
+        if (viewType === 'reportes') {
+            this.switchDashboardPanel('reports');
+        } else if (viewType === 'pago') {
+            this.switchDashboardPanel('payments');
+        } else if (viewType === 'incidencias') { // NUEVA VISTA
+            this.switchDashboardPanel('incidencias');
+        }
+    }
+
     /**
      * Export current view data
      */
@@ -653,6 +697,11 @@ switchView(viewType) {
                 case 'payments':
                     if (this.modules.payments && this.modules.payments.exportData) {
                         await this.modules.payments.exportData();
+                    }
+                    break;
+                case 'incidencias': // NUEVA EXPORTACIÓN
+                    if (this.modules.incidencias && this.modules.incidencias.exportData) {
+                        await this.modules.incidencias.exportData();
                     }
                     break;
                 case 'analytics':
@@ -699,6 +748,9 @@ switchView(viewType) {
         switch (actionType) {
             case 'view-reports':
                 this.switchDashboardPanel('reports');
+                break;
+            case 'view-incidencias': // NUEVA ACCIÓN
+                this.switchDashboardPanel('incidencias');
                 break;
             case 'export-all':
                 this.exportCurrentData();

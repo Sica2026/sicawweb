@@ -190,12 +190,12 @@ class CartaAceptacionPrepaPDF {
 
     // Descompone una fecha "YYYY-MM-DD" a partes con nombre de mes en español
     descomponerFecha(fechaString) {
-        const f = new Date(fechaString);
+        const [anio, mes, dia] = fechaString.split('-').map(Number);
         const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
         return {
-            dia: f.getDate(),
-            mes: meses[f.getMonth()],
-            anio: f.getFullYear()
+            dia: dia,
+            mes: meses[mes - 1],
+            anio: anio
         };
     }
 
@@ -253,9 +253,8 @@ class CartaAceptacionPrepaPDF {
         // ========================================
         // FECHA EN ENCABEZADO (alineada a la derecha)
         // ========================================
-        const hoyISO = new Date().toISOString().split('T')[0];
-        const fechaDoc = datos.fechaAceptacion || hoyISO;
-        const { dia, mes, anio } = this.descomponerFecha(fechaDoc);
+        const fechaDoc = datos.fechaInicio;
+        const { dia, mes, anio } = this.descomponerFecha(fechaDoc)
         
         const fechaTexto = `Ciudad de México a ${dia} de ${mes} de ${anio}`;
         const fechaWidth = doc.getTextWidth(fechaTexto);
@@ -320,7 +319,7 @@ class CartaAceptacionPrepaPDF {
             " horas totales."
         ];
 
-        yPos = this.drawRichText(doc, 25, yPos, 165, runsCuerpo, 6) + 15;
+        yPos = this.drawRichText(doc, 25, yPos, 165, runsCuerpo, 6) + 5;
 
         // ========================================
         // DESPEDIDA
@@ -329,7 +328,7 @@ class CartaAceptacionPrepaPDF {
         const despedida = "Sin otro particular, agradezco la atención prestada a la presente, reciba un cordial saludo.";
         const lineasDespedida = doc.splitTextToSize(despedida, 165);
         doc.text(lineasDespedida, 25, yPos);
-        yPos += lineasDespedida.length * 6 + 20;
+        yPos += lineasDespedida.length * 6 + 12;
 
         // ========================================
         // ATENTAMENTE
@@ -351,7 +350,8 @@ class CartaAceptacionPrepaPDF {
         // FECHA Y LUGAR FINAL
         // ========================================
         doc.setFont("times", "normal");
-        const fechaFinal = `Cd. Universitaria, CDMX ${dia} de ${mes} de ${anio}.`;
+        const { dia: diaInicio, mes: mesInicio, anio: anioInicio } = this.descomponerFecha(datos.fechaInicio);
+        const fechaFinal = `Cd. Universitaria, CDMX ${diaInicio} de ${mesInicio} de ${anioInicio}.`;
         const fechaFinalWidth = doc.getTextWidth(fechaFinal);
         doc.text(fechaFinal, (216 - fechaFinalWidth) / 2, yPos);
         yPos += 35; // Espacio para las firmas

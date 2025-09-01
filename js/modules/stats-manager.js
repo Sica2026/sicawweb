@@ -1,7 +1,7 @@
 /**
  * =================================================================
  * STATS MANAGER - Advanced Statistics & Analytics Engine
- * Archivo: stats-manager.js (Core para futuras expansiones)
+ * Archivo: stats-manager.js (COMPLETO con fórmula de eficiencia ponderada)
  * =================================================================
  */
 
@@ -15,7 +15,10 @@ class StatsManager {
             horasTrabajadas: 0,
             horasPendientes: 0,
             horasPagadas: 0,
+            horasProgramadas: 0, // NUEVO
             diasTrabajados: 0,
+            totalIncidencias: 0,
+            horasIncidencias: 0,
             promedioDiario: 0,
             eficiencia: 0,
             tendencias: {},
@@ -60,14 +63,15 @@ class StatsManager {
             }
 
             // Load data in parallel
-            const [reportsData, paymentsData, servicioSocialData] = await Promise.all([
+            const [reportsData, paymentsData, incidenciasData, servicioSocialData] = await Promise.all([
                 this.loadReportsData(numeroCuenta),
                 this.loadPaymentsData(numeroCuenta),
+                this.loadIncidenciasData(numeroCuenta),
                 this.loadServicioSocialHours(numeroCuenta)
             ]);
 
             // Calculate comprehensive statistics
-            await this.calculateAdvancedStats(reportsData, paymentsData);
+            await this.calculateAdvancedStats(reportsData, paymentsData, incidenciasData);
             
             // Add service social data to stats
             this.currentStats.servicioSocial = servicioSocialData;
@@ -122,18 +126,49 @@ class StatsManager {
     }
 
     /**
-     * Calculate advanced statistics with multiple metrics
+     * Load incidencias data
      */
-    async calculateAdvancedStats(reportsData, paymentsData) {
+    async loadIncidenciasData(numeroCuenta) {
+        try {
+            const incidenciasSnapshot = await this.db.collection('incidencias')
+                .where('asesorCuenta', '==', numeroCuenta)
+                .orderBy('fecha', 'desc')
+                .get();
+
+            return incidenciasSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                timestamp: this.parseDate(doc.data().fecha)
+            }));
+        } catch (error) {
+            console.error('Error loading incidencias data:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Calculate advanced statistics with weighted efficiency - ACTUALIZADO
+     */
+    async calculateAdvancedStats(reportsData, paymentsData, incidenciasData = []) {
         // Basic calculations
         this.currentStats.horasTrabajadas = this.calculateTotalHours(reportsData);
         this.currentStats.horasPendientes = this.calculatePendingHoursImproved(reportsData);
         this.currentStats.horasPagadas = this.calculatePaidHours(paymentsData);
         this.currentStats.diasTrabajados = this.calculateWorkingDays(reportsData);
 
+        // Incidencias calculations
+        this.currentStats.totalIncidencias = incidenciasData.length;
+        this.currentStats.horasIncidencias = this.calculateIncidenciasHours(incidenciasData);
+
+        // NUEVO: Obtener horas programadas desde colección horarios
+        const currentAdvisor = this.adminCore.getCurrentAdvisor();
+        if (currentAdvisor) {
+            this.currentStats.horasProgramadas = await this.calculateScheduledHours(currentAdvisor.numeroCuenta);
+        }
+
         // Advanced metrics
         this.currentStats.promedioDiario = this.calculateDailyAverage(reportsData);
-        this.currentStats.eficiencia = this.calculateEfficiency(reportsData);
+        this.currentStats.eficiencia = await this.calculateWeightedEfficiency(); // NUEVA FUNCIÓN
         this.currentStats.puntualidad = this.calculatePunctuality(reportsData);
         this.currentStats.consistencia = this.calculateConsistency(reportsData);
 
@@ -143,10 +178,149 @@ class StatsManager {
         this.currentStats.proyecciones = this.calculateProjections(reportsData);
 
         // Performance indicators
-        this.currentStats.kpis = this.calculateKPIs(reportsData, paymentsData);
+        this.currentStats.kpis = this.calculateKPIs(reportsData, paymentsData, incidenciasData);
         
         // Quality metrics
         this.currentStats.calidad = this.calculateQualityMetrics(reportsData);
+    }
+
+    /**
+     * Calculate scheduled hours from horarios collection - NUEVA FUNCIÓN
+     */
+    async calculateScheduledHours(numeroCuenta) {
+        try {
+            // Consultar horarios definitivos del asesor
+            const horariosSnapshot = await this.db.collection('horarios')
+                .where('numeroCuenta', '==', numeroCuenta)
+                .where('tipoBloque', '==', 'definitivo')
+                .get();
+
+            let totalHorasSemanales = 0;
+
+            horariosSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                const dias = data.dias || [];
+                const horas = data.horas || 0;
+                
+                // Calcular horas semanales: cantidad de días × horas por día
+                const horasSemanales = dias.length * horas;
+                totalHorasSemanales += horasSemanales;
+                
+                console.log(`Horario: ${dias.join(', ')} - ${horas}h cada día = ${horasSemanales}h/semana`);
+            });
+
+            // Calcular período de trabajo (semanas desde el primer reporte)
+            const semanasTotal = this.calculateWorkingWeeks();
+            const horasProgramadasTotal = totalHorasSemanales * semanasTotal;
+
+            console.log(`Total: ${totalHorasSemanales}h/semana × ${semanasTotal} semanas = ${horasProgramadasTotal}h programadas`);
+            
+            return horasProgramadasTotal;
+            
+        } catch (error) {
+            console.error('Error calculating scheduled hours:', error);
+            // Fallback: asumir 40h/semana si no se puede calcular
+            const semanasTotal = this.calculateWorkingWeeks();
+            return 40 * semanasTotal;
+        }
+    }
+
+    /**
+     * Calculate working weeks from first report to now - NUEVA FUNCIÓN
+     */
+    calculateWorkingWeeks() {
+        if (this.currentStats.diasTrabajados === 0) return 1;
+        
+        // Estimar semanas basado en días trabajados (asumiendo ~5 días por semana)
+        const semanasEstimadas = Math.max(1, Math.ceil(this.currentStats.diasTrabajados / 5));
+        
+        // Máximo 52 semanas (1 año)
+        return Math.min(52, semanasEstimadas);
+    }
+
+    /**
+     * Calculate weighted efficiency using the new formula - NUEVA FUNCIÓN
+     * Eficiencia = (HT / (HT + α·HE + β·HA + γ·HI)) × 100
+     */
+    async calculateWeightedEfficiency() {
+        const HT = this.currentStats.horasTrabajadas; // Horas Trabajadas
+        const HE = this.calculateExtraHours(); // Horas Extra/Pagadas
+        const HA = this.currentStats.horasPendientes; // Horas que Debe
+        const HI = this.currentStats.horasIncidencias; // Horas de Incidencias
+        
+        // Coeficientes de peso
+        const α = 0.5;  // Las extras cuentan, pero no tan negativo
+        const β = 1.0;  // Las horas que debe cuentan completo
+        const γ = 1.5;  // Las incidencias son más graves
+        
+        // Denominador ponderado
+        const denominador = HT + (α * HE) + (β * HA) + (γ * HI);
+        
+        // Evitar división por cero
+        if (denominador <= 0) return 100;
+        
+        // Calcular eficiencia
+        const eficiencia = (HT / denominador) * 100;
+        
+        // Asegurar que esté entre 0 y 100
+        const eficienciaFinal = Math.max(0, Math.min(100, eficiencia));
+        
+        console.log(`Eficiencia Calculada:
+            HT (Trabajadas): ${HT}h
+            HE (Extra): ${HE}h × ${α} = ${HE * α}
+            HA (Debe): ${HA}h × ${β} = ${HA * β}  
+            HI (Incidencias): ${HI}h × ${γ} = ${HI * γ}
+            Denominador: ${denominador}
+            Eficiencia: ${eficienciaFinal.toFixed(1)}%`);
+        
+        return this.roundToDecimal(eficienciaFinal, 1);
+    }
+
+    /**
+     * Calculate extra hours - NUEVA FUNCIÓN
+     */
+    calculateExtraHours() {
+        const horasTrabajadas = this.currentStats.horasTrabajadas;
+        const horasProgramadas = this.currentStats.horasProgramadas || 0;
+        
+        // Si trabajó más de lo programado, esas son horas extra
+        const horasExtra = Math.max(0, horasTrabajadas - horasProgramadas);
+        
+        return horasExtra;
+    }
+
+    /**
+     * Calculate incidencias hours - CORREGIDO
+     */
+    calculateIncidenciasHours(incidenciasData) {
+        return incidenciasData.reduce((total, incidencia) => {
+            // Priorizar horasEnMinutos si existe, sino parsear horasAcumuladas
+            const horas = incidencia.horasEnMinutos ? 
+                incidencia.horasEnMinutos / 60 : 
+                this.parseHorasIncidencia(incidencia.horasAcumuladas);
+            return total + horas;
+        }, 0);
+    }
+
+    /**
+     * Parse horas incidencia - NUEVA FUNCIÓN
+     */
+    parseHorasIncidencia(horasStr) {
+        if (!horasStr) return 0;
+        
+        // Si es un número, asumimos que son horas
+        if (!isNaN(horasStr)) {
+            return parseFloat(horasStr);
+        }
+        
+        // Formato "4h 0m" o similar
+        const horasMatch = horasStr.match(/(\d+)h/);
+        const minutosMatch = horasStr.match(/(\d+)m/);
+        
+        const horas = horasMatch ? parseInt(horasMatch[1]) : 0;
+        const minutos = minutosMatch ? parseInt(minutosMatch[1]) : 0;
+        
+        return horas + (minutos / 60);
     }
 
     /**
@@ -286,27 +460,6 @@ class StatsManager {
     }
 
     /**
-     * Calculate efficiency score (0-100%)
-     */
-    calculateEfficiency(reportsData) {
-        let totalExpected = 0;
-        let totalActual = 0;
-
-        reportsData.forEach(report => {
-            if (report.estado !== 'ausente') {
-                const expected = this.calculateExpectedHours(report);
-                const actual = this.parseTimeToMinutes(report.horasValidas || '0h 0m');
-                
-                totalExpected += expected;
-                totalActual += actual;
-            }
-        });
-
-        const efficiency = totalExpected > 0 ? (totalActual / totalExpected) * 100 : 0;
-        return Math.min(100, this.roundToDecimal(efficiency, 1));
-    }
-
-    /**
      * Calculate punctuality score
      */
     calculatePunctuality(reportsData) {
@@ -385,7 +538,7 @@ class StatsManager {
 
         const totalHours = this.calculateTotalHours(periodData);
         const workingDays = this.calculateWorkingDays(periodData);
-        const efficiency = this.calculateEfficiency(periodData);
+        const efficiency = this.currentStats.eficiencia; // Use current efficiency
 
         // Calculate trend direction
         const firstHalf = periodData.slice(Math.floor(periodData.length / 2));
@@ -434,7 +587,7 @@ class StatsManager {
                 horasTrabajadas: this.calculateTotalHours(reports),
                 diasTrabajados: this.calculateWorkingDays(reports),
                 promedioDiario: this.calculateDailyAverage(reports),
-                eficiencia: this.calculateEfficiency(reports),
+                eficiencia: this.currentStats.eficiencia, // Use current efficiency
                 puntualidad: this.calculatePunctuality(reports)
             }))
             .sort((a, b) => b.mes.localeCompare(a.mes))
@@ -461,9 +614,9 @@ class StatsManager {
     }
 
     /**
-     * Calculate Key Performance Indicators
+     * Calculate Key Performance Indicators - ACTUALIZADO
      */
-    calculateKPIs(reportsData, paymentsData) {
+    calculateKPIs(reportsData, paymentsData, incidenciasData = []) {
         const totalReports = reportsData.length;
         const presentDays = reportsData.filter(r => r.estado === 'presente').length;
         const lateDays = reportsData.filter(r => r.estado === 'tardanza').length;
@@ -475,8 +628,18 @@ class StatsManager {
             eficiencia: this.currentStats.eficiencia,
             consistencia: this.currentStats.consistencia,
             cumplimiento: this.calculateCompliance(reportsData),
-            productividad: this.calculateProductivity(reportsData, paymentsData)
+            productividad: this.calculateProductivity(reportsData, paymentsData),
+            incidenciasRate: this.calculateIncidenciasRate(incidenciasData, totalReports)
         };
+    }
+
+    /**
+     * Calculate incidencias rate
+     */
+    calculateIncidenciasRate(incidenciasData, totalReports) {
+        if (totalReports === 0) return 0;
+        const incidenciasCount = incidenciasData.length;
+        return this.roundToDecimal((incidenciasCount / totalReports) * 100, 1);
     }
 
     /**
@@ -515,7 +678,7 @@ class StatsManager {
     }
 
     /**
-     * Render statistics cards in the UI
+     * Render statistics cards in the UI - ACTUALIZADO
      */
     renderStatsCards() {
         const container = document.getElementById('statsContainer');
@@ -549,6 +712,16 @@ class StatsManager {
             );
         }
         
+        // Tarjeta de incidencias - CORREGIDO
+        cardsHTML += this.createStatCard(
+            'incidencias', 
+            'Horas Incidencias', 
+            stats.horasIncidencias, 
+            'h', 
+            'bi-exclamation-triangle-fill', 
+            this.getIncidenciasTrend()
+        );
+        
         cardsHTML += `
             ${this.createStatCard('performance', 'Eficiencia', stats.eficiencia, '%', 'bi-speedometer2', 'stable')}
             ${this.createStatCard('attendance', 'Días Trabajados', stats.diasTrabajados, '', 'bi-calendar-event-fill', stats.tendencias?.ultimo_mes?.tendencia)}
@@ -561,17 +734,33 @@ class StatsManager {
     }
 
     /**
+     * Get incidencias trend - ACTUALIZADO
+     */
+    getIncidenciasTrend() {
+        // Análisis de tendencia basado en horas de incidencias
+        if (this.currentStats.horasIncidencias === 0) return 'stable';
+        if (this.currentStats.horasIncidencias > 10) return 'increasing'; // Más de 10 horas es preocupante
+        if (this.currentStats.horasIncidencias > 5) return 'warning'; // 5-10 horas es moderado
+        return 'stable';
+    }
+
+    /**
      * Create individual stat card HTML
      */
     createStatCard(type, label, value, unit, icon, trend) {
         const trendClass = trend === 'increasing' ? 'positive' : trend === 'decreasing' ? 'negative' : 'neutral';
         const trendIcon = trend === 'increasing' ? 'bi-arrow-up' : trend === 'decreasing' ? 'bi-arrow-down' : 'bi-dash';
         
-        // Clase CSS específica para Servicio Social
-        const cardClass = type === 'servicio-social' ? 'servicio-social' : type;
+        // Clase CSS específica para cada tipo
+        let cardClass = type;
+        if (type === 'servicio-social') cardClass = 'servicio-social';
+        if (type === 'incidencias') cardClass = 'incidencias';
+        
+        // Color especial para incidencias cuando hay muchas horas
+        const incidenciasWarning = type === 'incidencias' && value > 5 ? 'warning' : '';
         
         return `
-            <div class="stat-card ${cardClass}">
+            <div class="stat-card ${cardClass} ${incidenciasWarning}">
                 <div class="stat-header">
                     <div class="stat-icon">
                         <i class="${icon}"></i>
@@ -651,7 +840,7 @@ class StatsManager {
     }
 
     /**
-     * Calculate progress bar width based on type and value
+     * Calculate progress bar width based on type and value - ACTUALIZADO
      */
     calculateProgressWidth(type, value) {
         switch (type) {
@@ -663,6 +852,8 @@ class StatsManager {
                 return Math.min(100, (value / 40) * 100);
             case 'servicio-social':
                 return Math.min(100, (value / 480) * 100);
+            case 'incidencias': // CORREGIDO: Progress bar basado en horas
+                return Math.min(100, (value / 20) * 100); // 20 horas = 100%
             case 'attendance':
                 return Math.min(100, (value / this.config.diasHabilesMes) * 100);
             default:
@@ -759,14 +950,17 @@ class StatsManager {
     }
 
     /**
-     * Clear all data
+     * Clear all data - ACTUALIZADO
      */
     clearData() {
         this.currentStats = {
             horasTrabajadas: 0,
             horasPendientes: 0,
             horasPagadas: 0,
+            horasProgramadas: 0, // NUEVO
             diasTrabajados: 0,
+            totalIncidencias: 0,
+            horasIncidencias: 0,
             promedioDiario: 0,
             eficiencia: 0,
             tendencias: {},
@@ -819,17 +1013,20 @@ class StatsManager {
     }
 
     /**
-     * Export stats data
+     * Export stats data - ACTUALIZADO
      */
     exportData() {
         const statsData = [
             ['Métrica', 'Valor', 'Unidad'],
             ['Horas Trabajadas', this.currentStats.horasTrabajadas, 'horas'],
+            ['Horas Programadas', this.currentStats.horasProgramadas, 'horas'], // NUEVO
             ['Horas Pendientes', this.currentStats.horasPendientes, 'horas'],
             ['Horas Pagadas', this.currentStats.horasPagadas, 'horas'],
             ['Días Trabajados', this.currentStats.diasTrabajados, 'días'],
+            ['Total Incidencias', this.currentStats.totalIncidencias, 'incidencias'],
+            ['Horas de Incidencias', this.currentStats.horasIncidencias, 'horas'],
             ['Promedio Diario', this.currentStats.promedioDiario, 'horas/día'],
-            ['Eficiencia', this.currentStats.eficiencia, '%'],
+            ['Eficiencia Ponderada', this.currentStats.eficiencia, '%'], // ACTUALIZADO
             ['Puntualidad', this.currentStats.puntualidad || 0, '%'],
             ['Consistencia', this.currentStats.consistencia || 0, '%']
         ];

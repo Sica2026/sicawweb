@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Gestión de Incidencias - SICA Admin</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/admin-incidencias.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+
+        <!-- Page Header -->
+        <div class="container-fluid mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="page-title">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-3"></i>
+                        Gestión de Incidencias
+                    </h1>
+                    <p class="text-muted">Sistema de registro y seguimiento de faltas al reglamento</p>
+                </div>
+                <button class="btn btn-sica btn-lg" data-bs-toggle="modal" data-bs-target="#nuevaIncidenciaModal">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Nueva Incidencia
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="container-fluid mb-4">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card-modern stats-card stats-total">
+                        <div class="stats-icon">
+                            <i class="bi bi-clipboard-data"></i>
+                        </div>
+                        <div class="stats-info">
+                            <h3 id="totalIncidencias">0</h3>
+                            <p>Total Incidencias</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card-modern stats-card stats-today">
+                        <div class="stats-icon">
+                            <i class="bi bi-calendar-day"></i>
+                        </div>
+                        <div class="stats-info">
+                            <h3 id="incidenciasHoy">0</h3>
+                            <p>Hoy</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card-modern stats-card stats-hours">
+                        <div class="stats-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stats-info">
+                            <h3 id="totalHoras">0h</h3>
+                            <p>Horas Acumuladas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card-modern stats-card stats-critical">
+                        <div class="stats-icon">
+                            <i class="bi bi-exclamation-diamond"></i>
+                        </div>
+                        <div class="stats-info">
+                            <h3 id="incidenciasCriticas">0</h3>
+                            <p>Críticas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="container-fluid mb-4">
+            <div class="card-modern">
+                <div class="p-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label-sica">Filtrar por Asesor</label>
+                            <input type="text" id="filtroAsesor" class="form-control form-control-sica" placeholder="Buscar asesor...">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label-sica">Sala</label>
+                            <select id="filtroSala" class="form-select form-control-sica">
+                                <option value="">Todas las salas</option>
+                                <option value="SICA 1">SICA 1</option>
+                                <option value="SICA 2">SICA 2</option>
+                                <option value="SICA 3">SICA 3</option>
+                                <option value="Salón Inteligente 1">Salón Inteligente 1</option>
+                                <option value="Salón Inteligente 2">Salón Inteligente 2</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label-sica">Fecha Desde</label>
+                            <input type="date" id="filtroFechaDesde" class="form-control form-control-sica">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label-sica">Fecha Hasta</label>
+                            <input type="date" id="filtroFechaHasta" class="form-control form-control-sica">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-sica-outline me-2" onclick="aplicarFiltros()">
+                                <i class="bi bi-filter me-1"></i>Filtrar
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incidencias Table -->
+        <div class="container-fluid">
+            <div class="card-modern">
+                <div class="table-responsive">
+                    <table class="table table-sica">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Asesor</th>
+                                <th>Sala</th>
+                                <th>Horario</th>
+                                <th>Motivo</th>
+                                <th>Horas</th>
+                                <th>Reportado por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaIncidencias">
+                            <!-- Datos cargados dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-3 text-center" id="noResults" style="display: none;">
+                    <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No se encontraron incidencias</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal Nueva/Editar Incidencia -->
+    <div class="modal fade" id="nuevaIncidenciaModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-futuristic">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        <span id="modalTitulo">Nueva Incidencia</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formIncidencia">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Asesor *</label>
+                                <div class="position-relative">
+                                    <input type="text" id="inputAsesor" class="form-control form-control-sica" 
+                                           placeholder="Buscar asesor..." autocomplete="off" required>
+                                    <div id="sugerenciasAsesor" class="sugerencias-dropdown"></div>
+                                </div>
+                                <input type="hidden" id="asesorSeleccionado">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Sala *</label>
+                                <select id="sala" class="form-select form-control-sica" required>
+                                    <option value="">Seleccionar sala</option>
+                                    <option value="SICA 1">SICA 1</option>
+                                    <option value="SICA 2">SICA 2</option>
+                                    <option value="SICA 3">SICA 3</option>
+                                    <option value="Salón Inteligente 1">Salón Inteligente 1</option>
+                                    <option value="Salón Inteligente 2">Salón Inteligente 2</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label-sica">Fecha *</label>
+                                <input type="date" id="fecha" class="form-control form-control-sica" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label-sica">Hora Inicio *</label>
+                                <select id="horaInicio" class="form-select form-control-sica" required>
+                                    <option value="">Seleccionar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label-sica">Hora Final *</label>
+                                <select id="horaFinal" class="form-select form-control-sica" required>
+                                    <option value="">Seleccionar</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-sica">Motivo de la Falta *</label>
+                            <select id="motivoFalta" class="form-select form-control-sica" required>
+                                <option value="">Seleccionar motivo</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Horas Acumuladas</label>
+                                <input type="text" id="horasAcumuladas" class="form-control form-control-sica" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Reportado por *</label>
+                                <input type="text" id="reportadoPor" class="form-control form-control-sica" 
+                                       placeholder="Nombre de quien reporta" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sica" onclick="guardarIncidencia()">
+                        <span id="btnTexto">Guardar Incidencia</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script src="../js/admin-incidencias.js"></script>
+</body>
+</html>
