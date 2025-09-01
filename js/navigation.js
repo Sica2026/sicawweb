@@ -786,7 +786,14 @@ class ModernNavigation {
                 title: 'Gestión de Incidencias',
                 message: 'Accediendo al sistema de incidencias...',
                 icon: 'bi-exclamation-triangle',
-                route: 'admin-incidencias.html'
+                route: 'gestion-incidencias.html'
+            },
+            // ✅ NUEVA OPCIÓN DE NOTICIAS
+            'noticias': {
+                title: 'Gestión de Noticias',
+                message: 'Accediendo al sistema de noticias...',
+                icon: 'bi-newspaper',
+                route: 'gestion-noticias.html'
             },
             'mas': {
                 title: 'Más Opciones',
@@ -808,7 +815,7 @@ class ModernNavigation {
             this.showModernNotification(
                 actionData.title,
                 actionData.message,
-                action === 'logout' ? 'warning' : action === 'incidencias' ? 'warning' : 'info',
+                action === 'logout' ? 'warning' : action === 'incidencias' ? 'warning' : action === 'noticias' ? 'info' : 'info',
                 actionData.icon
             );
             

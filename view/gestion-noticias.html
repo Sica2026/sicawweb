@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Gestión de Noticias - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/gestion-noticias.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <!-- Header Section -->
+        <section class="news-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="header-content">
+                            <h1 class="display-5 fw-bold mb-3">
+                                <i class="bi bi-newspaper header-icon"></i>
+                                Gestión de Noticias
+                            </h1>
+                            <p class="lead text-muted">
+                                Administra las noticias y actualizaciones que se muestran en el portal principal
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <button class="btn btn-sica btn-lg shadow-sica" data-bs-toggle="modal" data-bs-target="#newsModal">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Nueva Noticia
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Cards -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="row g-4">
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="stats-card">
+                            <div class="stats-content">
+                                <div class="stats-icon bg-primary-gradient">
+                                    <i class="bi bi-newspaper"></i>
+                                </div>
+                                <div class="stats-info">
+                                    <h3 class="stats-number" id="total-news">0</h3>
+                                    <p class="stats-label">Total Noticias</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="stats-card">
+                            <div class="stats-content">
+                                <div class="stats-icon bg-success-gradient">
+                                    <i class="bi bi-eye"></i>
+                                </div>
+                                <div class="stats-info">
+                                    <h3 class="stats-number" id="published-news">0</h3>
+                                    <p class="stats-label">Publicadas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="stats-card">
+                            <div class="stats-content">
+                                <div class="stats-icon bg-warning-gradient">
+                                    <i class="bi bi-clock"></i>
+                                </div>
+                                <div class="stats-info">
+                                    <h3 class="stats-number" id="draft-news">0</h3>
+                                    <p class="stats-label">Borradores</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6">
+                        <div class="stats-card">
+                            <div class="stats-content">
+                                <div class="stats-icon bg-info-gradient">
+                                    <i class="bi bi-calendar-event"></i>
+                                </div>
+                                <div class="stats-info">
+                                    <h3 class="stats-number" id="recent-news">0</h3>
+                                    <p class="stats-label">Esta Semana</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- News Management Section -->
+        <section class="management-section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <!-- Filters and Search -->
+                        <div class="filters-card card-modern mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-6">
+                                        <div class="search-wrapper">
+                                            <i class="bi bi-search search-icon"></i>
+                                            <input type="text" class="form-control form-control-sica ps-5" 
+                                                   id="searchInput" placeholder="Buscar noticias...">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="d-flex gap-3">
+                                            <select class="form-select form-control-sica" id="statusFilter">
+                                                <option value="">Todos los estados</option>
+                                                <option value="published">Publicado</option>
+                                                <option value="draft">Borrador</option>
+                                            </select>
+                                            <select class="form-select form-control-sica" id="categoryFilter">
+                                                <option value="">Todas las categorías</option>
+                                                <option value="general">General</option>
+                                                <option value="actualizacion">Actualización</option>
+                                                <option value="mantenimiento">Mantenimiento</option>
+                                                <option value="evento">Evento</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- News List -->
+                        <div class="news-list-card card-modern">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-list-ul me-2"></i>
+                                    Lista de Noticias
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="newsContainer" class="news-container">
+                                    <!-- Loading State -->
+                                    <div id="loadingState" class="loading-state">
+                                        <div class="loading-spinner"></div>
+                                        <p>Cargando noticias...</p>
+                                    </div>
+                                    <!-- News items will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- News Modal -->
+    <div class="modal fade" id="newsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-modern">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        <span id="modalTitle">Nueva Noticia</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newsForm">
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label-sica required">Título</label>
+                                <input type="text" class="form-control form-control-sica" 
+                                       id="newsTitle" placeholder="Ingresa el título de la noticia" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-sica required">Categoría</label>
+                                <select class="form-select form-control-sica" id="newsCategory" required>
+                                    <option value="">Seleccionar categoría</option>
+                                    <option value="general">General</option>
+                                    <option value="actualizacion">Actualización</option>
+                                    <option value="mantenimiento">Mantenimiento</option>
+                                    <option value="evento">Evento</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-sica">Ícono</label>
+                                <select class="form-select form-control-sica" id="newsIcon">
+                                    <option value="bi-newspaper">Periódico</option>
+                                    <option value="bi-calendar-event">Evento</option>
+                                    <option value="bi-pc-display">Computadora</option>
+                                    <option value="bi-shield-check">Seguridad</option>
+                                    <option value="bi-book">Libro</option>
+                                    <option value="bi-tools">Herramientas</option>
+                                    <option value="bi-people">Personas</option>
+                                    <option value="bi-info-circle">Información</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label-sica required">Descripción</label>
+                                <textarea class="form-control form-control-sica" id="newsDescription" 
+                                          rows="4" placeholder="Describe brevemente la noticia" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label-sica">Contenido Completo (Opcional)</label>
+                                <textarea class="form-control form-control-sica" id="newsContent" 
+                                          rows="6" placeholder="Contenido detallado de la noticia"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-sica">Estado</label>
+                                <select class="form-select form-control-sica" id="newsStatus">
+                                    <option value="draft">Borrador</option>
+                                    <option value="published">Publicado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-sica">Prioridad</label>
+                                <select class="form-select form-control-sica" id="newsPriority">
+                                    <option value="normal">Normal</option>
+                                    <option value="high">Alta</option>
+                                    <option value="urgent">Urgente</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-sica" id="saveNewsBtn">
+                        <i class="bi bi-check-circle me-2"></i>Guardar Noticia
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-modern">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">¿Estás seguro de que deseas eliminar esta noticia? Esta acción no se puede deshacer.</p>
+                    <div class="news-preview mt-3 p-3 bg-light rounded">
+                        <h6 id="deleteNewsTitle" class="mb-1"></h6>
+                        <small id="deleteNewsDate" class="text-muted"></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="bi bi-trash me-2"></i>Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/gestion-noticias.js"></script>
+</body>
+</html>

@@ -307,6 +307,15 @@ loadFavicon() {
                                                 <span>Incidencias</span>
                                             </div>
                                         </button>
+                                        <!-- ✅ NUEVO BOTÓN NOTICIAS -->
+                                        <button class="option-btn" data-admin-action="noticias">
+                                            <div class="option-content">
+                                                <div class="option-icon">
+                                                    <i class="bi bi-newspaper"></i>
+                                                </div>
+                                                <span>Noticias</span>
+                                            </div>
+                                        </button>
                                         <button class="option-btn" data-admin-action="mas">
                                             <div class="option-content">
                                                 <div class="option-icon">
