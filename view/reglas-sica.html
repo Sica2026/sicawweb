@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Reglas de Servicio - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/reglas-sica.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Hero Section -->
+            <div class="hero-section mb-5">
+                <div class="hero-content">
+                    <div class="hero-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h1 class="hero-title">Reglas de Servicio SICA</h1>
+                    <p class="hero-subtitle">Normativas y sanciones para el correcto funcionamiento del servicio</p>
+                </div>
+                <div class="hero-decoration">
+                    <div class="decoration-circle circle-1"></div>
+                    <div class="decoration-circle circle-2"></div>
+                    <div class="decoration-circle circle-3"></div>
+                </div>
+            </div>
+
+            <!-- Important Note -->
+            <div class="important-note-container mb-5">
+                <div class="important-note">
+                    <div class="note-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="note-content">
+                        <h3>Nota Importante</h3>
+                        <p>Cada reporte corresponde a <strong>media hora de servicio</strong>. Las sanciones se acumulan según el tiempo de incumplimiento.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Grid -->
+            <div class="rules-container">
+                <div class="rules-grid" id="rulesGrid">
+                    <!-- Las reglas se cargarán dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="contact-section mt-5">
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="contact-content">
+                        <h3>¿Tienes dudas?</h3>
+                        <p>Para cualquier consulta sobre estas reglas o su aplicación, acércate a tu administrador.</p>
+                        <button class="btn btn-sica" onclick="showContactInfo()">
+                            <i class="bi bi-chat-dots"></i>
+                            Contactar Administrador
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/reglas-sica.js"></script>
+</body>
+</html>

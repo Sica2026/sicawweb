@@ -23,6 +23,8 @@
     <!-- Main Content Area -->
     <main class="main-content" id="main-content">
         <!-- News Section -->
+<!-- News Section -->
+<!-- News Section -->
         <section class="news-section mt-5">
             <div class="container">
                 <div class="row">
@@ -32,89 +34,15 @@
                         </h2>
                     </div>
                 </div>
-                <div class="row g-4">
-                    <!-- News Card 1 -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="news-card card-modern">
-                            <div class="news-header">
-                                <i class="bi bi-calendar-event news-icon"></i>
-                                <div class="news-date">5 Jul 2025</div>
+                <!-- Contenedor donde se cargarán las noticias dinámicamente -->
+                <div class="row g-4" id="dynamic-news-container">
+                    <!-- Las noticias se cargarán aquí automáticamente -->
+                    <div class="col-12">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Preparando noticias...</span>
                             </div>
-                            <div class="news-body">
-                                <h5 class="news-title">Nuevos Horarios de Servicio</h5>
-                                <p class="news-description">Se han actualizado los horarios de atención de la sala de cómputo para el semestre actual.</p>
-                                <a href="#" class="news-link">Leer más</a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- News Card 2 -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="news-card card-modern">
-                            <div class="news-header">
-                                <i class="bi bi-pc-display news-icon"></i>
-                                <div class="news-date">3 Jul 2025</div>
-                            </div>
-                            <div class="news-body">
-                                <h5 class="news-title">Actualización de Software</h5>
-                                <p class="news-description">Todos los equipos han sido actualizados con las últimas versiones de software académico.</p>
-                                <a href="#" class="news-link">Leer más</a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- News Card 3 -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="news-card card-modern">
-                            <div class="news-header">
-                                <i class="bi bi-shield-check news-icon"></i>
-                                <div class="news-date">1 Jul 2025</div>
-                            </div>
-                            <div class="news-body">
-                                <h5 class="news-title">Medidas de Seguridad</h5>
-                                <p class="news-description">Recordatorio sobre las medidas de seguridad e higiene vigentes en la sala.</p>
-                                <a href="#" class="news-link">Leer más</a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- News Card 4 -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="news-card card-modern">
-                            <div class="news-header">
-                                <i class="bi bi-book news-icon"></i>
-                                <div class="news-date">28 Jun 2025</div>
-                            </div>
-                            <div class="news-body">
-                                <h5 class="news-title">Recursos Académicos</h5>
-                                <p class="news-description">Nuevos recursos digitales disponibles para apoyo académico de los estudiantes.</p>
-                                <a href="#" class="news-link">Leer más</a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- News Card 5 -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="news-card card-modern">
-                            <div class="news-header">
-                                <i class="bi bi-tools news-icon"></i>
-                                <div class="news-date">25 Jun 2025</div>
-                            </div>
-                            <div class="news-body">
-                                <h5 class="news-title">Mantenimiento Programado</h5>
-                                <p class="news-description">Información sobre las fechas de mantenimiento preventivo de los equipos.</p>
-                                <a href="#" class="news-link">Leer más</a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- News Card 6 -->
-                    <div class="col-lg-4 col-md-6">
-                        <div class="news-card card-modern">
-                            <div class="news-header">
-                                <i class="bi bi-people news-icon"></i>
-                                <div class="news-date">22 Jun 2025</div>
-                            </div>
-                            <div class="news-body">
-                                <h5 class="news-title">Capacitación Disponible</h5>
-                                <p class="news-description">Sesiones de capacitación gratuitas para el uso de software especializado.</p>
-                                <a href="#" class="news-link">Leer más</a>
-                            </div>
+                            <p class="text-muted">Cargando las últimas noticias del sistema...</p>
                         </div>
                     </div>
                 </div>
@@ -127,7 +55,13 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- Base Components JS -->
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
     <script src="js/components.js"></script>
     <!-- Base Navigation JS -->
     <script src="js/navigation.js"></script>

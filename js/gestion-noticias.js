@@ -1,582 +1,595 @@
-// Gestión de Noticias - JavaScript
+// Admin Noticias - JavaScript Simple y Directo
 
-class GestionNoticias {
+class AdminNoticias {
     constructor() {
-        this.newsCollection = 'noticias';
-        this.currentEditId = null;
-        this.newsData = [];
-        this.filteredNews = [];
-        
-        // Referencias DOM
-        this.newsContainer = document.getElementById('newsContainer');
-        this.searchInput = document.getElementById('searchInput');
-        this.statusFilter = document.getElementById('statusFilter');
-        this.categoryFilter = document.getElementById('categoryFilter');
-        this.newsForm = document.getElementById('newsForm');
-        this.newsModal = new bootstrap.Modal(document.getElementById('newsModal'));
-        this.deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        
-        // Stats elements
-        this.totalNewsEl = document.getElementById('total-news');
-        this.publishedNewsEl = document.getElementById('published-news');
-        this.draftNewsEl = document.getElementById('draft-news');
-        this.recentNewsEl = document.getElementById('recent-news');
-        
-        // Bind methods
-        this.init = this.init.bind(this);
-        this.loadNews = this.loadNews.bind(this);
-        this.renderNews = this.renderNews.bind(this);
-        this.handleSearch = this.handleSearch.bind(this);
-        this.handleFilter = this.handleFilter.bind(this);
-        this.saveNews = this.saveNews.bind(this);
-        this.editNews = this.editNews.bind(this);
-        this.deleteNews = this.deleteNews.bind(this);
-        
+        this.noticias = [];
+        this.noticiaEditando = null;
         this.init();
     }
 
-    async init() {
-        try {
-            // Setup event listeners
-            this.setupEventListeners();
-            
-            // Load initial data
-            await this.loadNews();
-            
-            // Update stats
-            this.updateStats();
-            
-            console.log('Gestión de Noticias initialized successfully');
-        } catch (error) {
-            console.error('Error initializing Gestión de Noticias:', error);
-            this.showNotification('Error', 'Error al inicializar la aplicación', 'error');
-        }
+    init() {
+        console.log('Inicializando Admin Noticias...');
+        
+        // Setup event listeners
+        this.setupEventListeners();
+        
+        // Cargar noticias
+        this.cargarNoticias();
     }
 
     setupEventListeners() {
-        // Search and filters
-        this.searchInput?.addEventListener('input', this.handleSearch);
-        this.statusFilter?.addEventListener('change', this.handleFilter);
-        this.categoryFilter?.addEventListener('change', this.handleFilter);
-
-        // Form submission
-        document.getElementById('saveNewsBtn')?.addEventListener('click', this.saveNews);
-
-        // Modal events
-        document.getElementById('newsModal')?.addEventListener('hidden.bs.modal', () => {
-            this.resetForm();
-            this.currentEditId = null;
-            document.getElementById('modalTitle').textContent = 'Nueva Noticia';
-        });
-
-        // Delete confirmation
-        document.getElementById('confirmDeleteBtn')?.addEventListener('click', () => {
-            if (this.currentDeleteId) {
-                this.confirmDelete(this.currentDeleteId);
-            }
-        });
-
-        // Real-time form validation
-        document.getElementById('newsTitle')?.addEventListener('input', this.validateForm);
-        document.getElementById('newsCategory')?.addEventListener('change', this.validateForm);
-        document.getElementById('newsDescription')?.addEventListener('input', this.validateForm);
-    }
-
-    async loadNews() {
-        try {
-            this.showLoading(true);
-            
-            const querySnapshot = await firebase.firestore()
-                .collection(this.newsCollection)
-                .orderBy('createdAt', 'desc')
-                .get();
-            
-            this.newsData = [];
-            querySnapshot.forEach(doc => {
-                const data = doc.data();
-                this.newsData.push({
-                    id: doc.id,
-                    ...data,
-                    createdAt: data.createdAt?.toDate() || new Date(),
-                    updatedAt: data.updatedAt?.toDate() || new Date()
-                });
+        // Verificar que los elementos existan antes de agregar listeners
+        const btnNuevaNoticia = document.getElementById('btnNuevaNoticia');
+        if (btnNuevaNoticia) {
+            btnNuevaNoticia.addEventListener('click', () => {
+                this.nuevaNoticia();
             });
-            
-            this.filteredNews = [...this.newsData];
-            this.renderNews();
-            this.updateStats();
-            
-        } catch (error) {
-            console.error('Error loading news:', error);
-            this.showError('Error al cargar las noticias');
-        } finally {
-            this.showLoading(false);
+        }
+
+        const btnGuardarNoticia = document.getElementById('btnGuardarNoticia');
+        if (btnGuardarNoticia) {
+            btnGuardarNoticia.addEventListener('click', () => {
+                this.guardarNoticia();
+            });
+        }
+
+        // Filtros
+        const filtroTitulo = document.getElementById('filtroTitulo');
+        if (filtroTitulo) {
+            filtroTitulo.addEventListener('input', () => this.filtrarNoticias());
+        }
+
+        const filtroEstado = document.getElementById('filtroEstado');
+        if (filtroEstado) {
+            filtroEstado.addEventListener('change', () => this.filtrarNoticias());
+        }
+
+        const filtroCategoria = document.getElementById('filtroCategoria');
+        if (filtroCategoria) {
+            filtroCategoria.addEventListener('change', () => this.filtrarNoticias());
+        }
+
+        const filtroPrioridad = document.getElementById('filtroPrioridad');
+        if (filtroPrioridad) {
+            filtroPrioridad.addEventListener('change', () => this.filtrarNoticias());
+        }
+        
+        // Limpiar filtros
+        const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
+        if (btnLimpiarFiltros) {
+            btnLimpiarFiltros.addEventListener('click', () => {
+                const elementos = ['filtroTitulo', 'filtroEstado', 'filtroCategoria', 'filtroPrioridad'];
+                elementos.forEach(id => {
+                    const elemento = document.getElementById(id);
+                    if (elemento) elemento.value = '';
+                });
+                this.filtrarNoticias();
+            });
+        }
+
+        // Confirmar eliminación
+        const btnConfirmarEliminar = document.getElementById('btnConfirmarEliminar');
+        if (btnConfirmarEliminar) {
+            btnConfirmarEliminar.addEventListener('click', () => {
+                this.confirmarEliminar();
+            });
         }
     }
 
-    renderNews() {
-        if (!this.newsContainer) return;
+    async cargarNoticias() {
+        try {
+            console.log('Cargando noticias...');
+            
+            // Verificar que el elemento loading exista
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'block';
+            }
 
-        if (this.filteredNews.length === 0) {
-            this.newsContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="bi bi-newspaper"></i>
-                    <h5>No hay noticias</h5>
-                    <p>No se encontraron noticias con los filtros aplicados.</p>
+            const snapshot = await firebase.firestore()
+                .collection('noticias')
+                .orderBy('fechaCreacion', 'desc')
+                .get();
+
+            this.noticias = [];
+            snapshot.forEach(doc => {
+                this.noticias.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+
+            console.log(`Cargadas ${this.noticias.length} noticias`);
+            this.renderizarNoticias();
+            this.actualizarEstadisticas();
+
+        } catch (error) {
+            console.error('Error cargando noticias:', error);
+            this.mostrarError('Error al cargar las noticias');
+        } finally {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+        }
+    }
+
+    renderizarNoticias(noticias = this.noticias) {
+        const container = document.getElementById('listaNoticias');
+        
+        if (noticias.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-newspaper display-1 text-muted"></i>
+                    <h5 class="text-muted mt-3">No hay noticias</h5>
+                    <p class="text-muted">Crea tu primera noticia para comenzar</p>
                 </div>
             `;
             return;
         }
 
-        const newsHTML = this.filteredNews.map(news => this.createNewsHTML(news)).join('');
-        this.newsContainer.innerHTML = newsHTML;
-
-        // Add animation
-        const newsItems = this.newsContainer.querySelectorAll('.news-item');
-        newsItems.forEach((item, index) => {
-            setTimeout(() => {
-                item.classList.add('fade-in');
-            }, index * 100);
-        });
+        const html = noticias.map(noticia => this.crearHtmlNoticia(noticia)).join('');
+        container.innerHTML = html;
     }
 
-    createNewsHTML(news) {
-        const formattedDate = this.formatDate(news.createdAt);
-        const statusBadge = this.getStatusBadge(news.status);
-        const priorityBadge = news.priority !== 'normal' ? this.getPriorityBadge(news.priority) : '';
-        const categoryBadge = this.getCategoryBadge(news.category);
-
+    crearHtmlNoticia(noticia) {
+        const fecha = this.formatearFecha(noticia.fechaCreacion);
+        const estadoBadge = this.getEstadoBadge(noticia.estado);
+        const prioridadBadge = noticia.prioridad !== 'normal' ? this.getPrioridadBadge(noticia.prioridad) : '';
+        const dirigidoTexto = Array.isArray(noticia.dirigidoA) ? noticia.dirigidoA.join(', ') : 'todos';
+        
         return `
-            <div class="news-item" data-id="${news.id}">
-                <div class="news-meta">
-                    <div class="news-icon">
-                        <i class="bi ${news.icon || 'bi-newspaper'}"></i>
+            <div class="news-item fade-in">
+                <div class="news-header">
+                    <div class="d-flex align-items-center">
+                        <div class="news-icon">
+                            <i class="bi ${noticia.imagenUrl || 'bi-newspaper'}"></i>
+                        </div>
+                        <div>
+                            <h5 class="news-title">${noticia.titulo}</h5>
+                            <div class="news-meta">
+                                <span><i class="bi bi-person me-1"></i>${noticia.autor || 'Anónimo'}</span>
+                                <span><i class="bi bi-calendar me-1"></i>${fecha}</span>
+                                <span><i class="bi bi-tag me-1"></i>${noticia.categoria}</span>
+                                <span><i class="bi bi-people me-1"></i>${dirigidoTexto}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="news-date">${formattedDate}</div>
+                    <div class="news-actions">
+                        <button class="btn-action btn-primary" onclick="adminNoticias.editarNoticia('${noticia.id}')" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-action btn-success" onclick="adminNoticias.toggleEstado('${noticia.id}')" title="Cambiar estado">
+                            <i class="bi bi-${noticia.estado === 'publicada' ? 'eye-slash' : 'eye'}"></i>
+                        </button>
+                        <button class="btn-action btn-warning" onclick="adminNoticias.duplicarNoticia('${noticia.id}')" title="Duplicar">
+                            <i class="bi bi-files"></i>
+                        </button>
+                        <button class="btn-action btn-danger" onclick="adminNoticias.eliminarNoticia('${noticia.id}', '${noticia.titulo}')" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 
-                <h6 class="news-title">${this.escapeHtml(news.title)}</h6>
-                <p class="news-description">${this.escapeHtml(news.description)}</p>
-                
-                <div class="news-badges">
-                    ${statusBadge}
-                    ${priorityBadge}
-                    ${categoryBadge}
+                <div class="news-content">
+                    <p>${noticia.resumen}</p>
                 </div>
                 
-                <div class="news-actions">
-                    <button class="btn-action" onclick="gestionNoticias.editNews('${news.id}')" title="Editar">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn-action" onclick="gestionNoticias.toggleStatus('${news.id}')" title="Cambiar estado">
-                        <i class="bi ${news.status === 'published' ? 'bi-eye-slash' : 'bi-eye'}"></i>
-                    </button>
-                    <button class="btn-action" onclick="gestionNoticias.duplicateNews('${news.id}')" title="Duplicar">
-                        <i class="bi bi-files"></i>
-                    </button>
-                    <button class="btn-action btn-danger" onclick="gestionNoticias.deleteNews('${news.id}')" title="Eliminar">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                <div class="news-tags">
+                    ${estadoBadge}
+                    ${prioridadBadge}
+                    ${noticia.visibilidad === 'privada' ? '<span class="news-badge badge-borrador">Privada</span>' : ''}
                 </div>
             </div>
         `;
     }
 
-    getStatusBadge(status) {
+    getEstadoBadge(estado) {
         const badges = {
-            'published': '<span class="news-badge badge-published">Publicado</span>',
-            'draft': '<span class="news-badge badge-draft">Borrador</span>'
+            'borrador': '<span class="news-badge badge-borrador">Borrador</span>',
+            'publicada': '<span class="news-badge badge-publicada">Publicada</span>',
+            'archivada': '<span class="news-badge badge-archivada">Archivada</span>'
         };
-        return badges[status] || '';
+        return badges[estado] || '';
     }
 
-    getPriorityBadge(priority) {
+    getPrioridadBadge(prioridad) {
         const badges = {
-            'high': '<span class="news-badge badge-high">Alta prioridad</span>',
-            'urgent': '<span class="news-badge badge-urgent">Urgente</span>'
+            'importante': '<span class="news-badge priority-importante">Importante</span>',
+            'urgente': '<span class="news-badge priority-urgent">Urgente</span>'
         };
-        return badges[priority] || '';
+        return badges[prioridad] || '';
     }
 
-    getCategoryBadge(category) {
-        const categories = {
-            'general': 'General',
-            'actualizacion': 'Actualización',
-            'mantenimiento': 'Mantenimiento',
-            'evento': 'Evento'
-        };
-        return `<span class="news-badge" style="background: rgba(32, 44, 86, 0.1); color: var(--primary-blue); border: 1px solid rgba(32, 44, 86, 0.3);">${categories[category] || category}</span>`;
+    nuevaNoticia() {
+        this.noticiaEditando = null;
+        this.limpiarFormulario();
+        document.getElementById('modalTitle').textContent = 'Nueva Noticia';
+        
+        // Establecer fecha actual
+        const ahora = new Date();
+        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+        document.getElementById('fechaPublicacion').value = ahora.toISOString().slice(0, 16);
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalNoticia'));
+        modal.show();
     }
 
-    handleSearch() {
-        const searchTerm = this.searchInput?.value.toLowerCase() || '';
-        this.applyFilters(searchTerm);
+    editarNoticia(id) {
+        const noticia = this.noticias.find(n => n.id === id);
+        if (!noticia) return;
+
+        this.noticiaEditando = id;
+        this.llenarFormulario(noticia);
+        document.getElementById('modalTitle').textContent = 'Editar Noticia';
+
+        const modal = new bootstrap.Modal(document.getElementById('modalNoticia'));
+        modal.show();
     }
 
-    handleFilter() {
-        const searchTerm = this.searchInput?.value.toLowerCase() || '';
-        this.applyFilters(searchTerm);
+    llenarFormulario(noticia) {
+        document.getElementById('titulo').value = noticia.titulo || '';
+        document.getElementById('autor').value = noticia.autor || '';
+        document.getElementById('resumen').value = noticia.resumen || '';
+        document.getElementById('contenido').value = noticia.contenido || '';
+        document.getElementById('estado').value = noticia.estado || 'borrador';
+        document.getElementById('categoria').value = noticia.categoria || 'anuncio';
+        document.getElementById('prioridad').value = noticia.prioridad || 'normal';
+        document.getElementById('visibilidad').value = noticia.visibilidad || 'publica';
+        document.getElementById('imagenUrl').value = noticia.imagenUrl || 'bi-newspaper';
+        document.getElementById('liga').value = noticia.liga || '';
+        document.getElementById('etiquetas').value = Array.isArray(noticia.etiquetas) ? noticia.etiquetas.join(', ') : '';
+
+        // Dirigido A
+        document.getElementById('dirigidoEstudiantes').checked = false;
+        document.getElementById('dirigidoAsesores').checked = false;
+        document.getElementById('dirigidoTodos').checked = false;
+
+        if (Array.isArray(noticia.dirigidoA)) {
+            if (noticia.dirigidoA.includes('estudiantes')) document.getElementById('dirigidoEstudiantes').checked = true;
+            if (noticia.dirigidoA.includes('asesores')) document.getElementById('dirigidoAsesores').checked = true;
+            if (noticia.dirigidoA.includes('todos')) document.getElementById('dirigidoTodos').checked = true;
+        } else {
+            document.getElementById('dirigidoTodos').checked = true;
+        }
+
+        // Fecha de publicación
+        if (noticia.fechaPublicacion) {
+            const fecha = noticia.fechaPublicacion.toDate ? noticia.fechaPublicacion.toDate() : new Date(noticia.fechaPublicacion);
+            fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset());
+            document.getElementById('fechaPublicacion').value = fecha.toISOString().slice(0, 16);
+        }
     }
 
-    applyFilters(searchTerm = '') {
-        const statusFilter = this.statusFilter?.value || '';
-        const categoryFilter = this.categoryFilter?.value || '';
-
-        this.filteredNews = this.newsData.filter(news => {
-            const matchesSearch = !searchTerm || 
-                news.title.toLowerCase().includes(searchTerm) ||
-                news.description.toLowerCase().includes(searchTerm);
-            
-            const matchesStatus = !statusFilter || news.status === statusFilter;
-            const matchesCategory = !categoryFilter || news.category === categoryFilter;
-
-            return matchesSearch && matchesStatus && matchesCategory;
-        });
-
-        this.renderNews();
+    limpiarFormulario() {
+        document.getElementById('formNoticia').reset();
+        document.getElementById('dirigidoTodos').checked = true;
+        
+        // Establecer valores por defecto
+        document.getElementById('estado').value = 'borrador';
+        document.getElementById('categoria').value = 'anuncio';
+        document.getElementById('prioridad').value = 'normal';
+        document.getElementById('visibilidad').value = 'publica';
+        document.getElementById('imagenUrl').value = 'bi-newspaper';
     }
 
-    async saveNews() {
+    async guardarNoticia() {
         try {
-            if (!this.validateForm()) return;
-
-            const formData = this.getFormData();
-            const saveButton = document.getElementById('saveNewsBtn');
+            const formData = this.obtenerDatosFormulario();
             
-            this.setButtonLoading(saveButton, true);
+            if (!this.validarFormulario(formData)) {
+                return;
+            }
 
-            if (this.currentEditId) {
-                // Update existing news
+            const btnGuardar = document.getElementById('btnGuardarNoticia');
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
+
+            if (this.noticiaEditando) {
+                // Actualizar
                 await firebase.firestore()
-                    .collection(this.newsCollection)
-                    .doc(this.currentEditId)
+                    .collection('noticias')
+                    .doc(this.noticiaEditando)
                     .update({
                         ...formData,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 
-                this.showNotification('Éxito', 'Noticia actualizada correctamente', 'success');
+                this.mostrarExito('Noticia actualizada correctamente');
             } else {
-                // Create new news
+                // Crear nueva
                 await firebase.firestore()
-                    .collection(this.newsCollection)
+                    .collection('noticias')
                     .add({
                         ...formData,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+                        fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 
-                this.showNotification('Éxito', 'Noticia creada correctamente', 'success');
+                this.mostrarExito('Noticia creada correctamente');
             }
 
-            this.newsModal.hide();
-            await this.loadNews();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNoticia'));
+            modal.hide();
+            
+            this.cargarNoticias();
 
         } catch (error) {
-            console.error('Error saving news:', error);
-            this.showNotification('Error', 'Error al guardar la noticia', 'error');
+            console.error('Error guardando noticia:', error);
+            this.mostrarError('Error al guardar la noticia');
         } finally {
-            this.setButtonLoading(document.getElementById('saveNewsBtn'), false);
+            const btnGuardar = document.getElementById('btnGuardarNoticia');
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="bi bi-save me-2"></i>Guardar';
         }
     }
 
-    async editNews(id) {
-        try {
-            const news = this.newsData.find(n => n.id === id);
-            if (!news) return;
+    obtenerDatosFormulario() {
+        // Obtener dirigidoA
+        const dirigidoA = [];
+        if (document.getElementById('dirigidoEstudiantes').checked) dirigidoA.push('estudiantes');
+        if (document.getElementById('dirigidoAsesores').checked) dirigidoA.push('asesores');
+        if (document.getElementById('dirigidoTodos').checked) dirigidoA.push('todos');
 
-            this.currentEditId = id;
-            
-            // Fill form with news data
-            document.getElementById('newsTitle').value = news.title || '';
-            document.getElementById('newsCategory').value = news.category || '';
-            document.getElementById('newsIcon').value = news.icon || 'bi-newspaper';
-            document.getElementById('newsDescription').value = news.description || '';
-            document.getElementById('newsContent').value = news.content || '';
-            document.getElementById('newsStatus').value = news.status || 'draft';
-            document.getElementById('newsPriority').value = news.priority || 'normal';
+        // Obtener etiquetas
+        const etiquetasTexto = document.getElementById('etiquetas').value.trim();
+        const etiquetas = etiquetasTexto ? etiquetasTexto.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
 
-            // Update modal title
-            document.getElementById('modalTitle').textContent = 'Editar Noticia';
-            
-            this.newsModal.show();
+        // Fecha de publicación
+        const fechaPublicacionInput = document.getElementById('fechaPublicacion').value;
+        const fechaPublicacion = fechaPublicacionInput ? new Date(fechaPublicacionInput) : null;
 
-        } catch (error) {
-            console.error('Error editing news:', error);
-            this.showNotification('Error', 'Error al cargar la noticia para editar', 'error');
+        return {
+            titulo: document.getElementById('titulo').value.trim(),
+            autor: document.getElementById('autor').value.trim() || 'Administrador',
+            resumen: document.getElementById('resumen').value.trim(),
+            contenido: document.getElementById('contenido').value.trim(),
+            estado: document.getElementById('estado').value,
+            categoria: document.getElementById('categoria').value,
+            prioridad: document.getElementById('prioridad').value,
+            visibilidad: document.getElementById('visibilidad').value,
+            dirigidoA: dirigidoA.length > 0 ? dirigidoA : ['todos'],
+            imagenUrl: document.getElementById('imagenUrl').value,
+            liga: document.getElementById('liga').value.trim(),
+            etiquetas: etiquetas,
+            fechaPublicacion: fechaPublicacion
+        };
+    }
+
+    validarFormulario(data) {
+        if (!data.titulo) {
+            this.mostrarError('El título es obligatorio');
+            return false;
         }
+        if (!data.resumen) {
+            this.mostrarError('El resumen es obligatorio');
+            return false;
+        }
+        if (!data.contenido) {
+            this.mostrarError('El contenido es obligatorio');
+            return false;
+        }
+        return true;
     }
 
-    deleteNews(id) {
-        const news = this.newsData.find(n => n.id === id);
-        if (!news) return;
-
-        this.currentDeleteId = id;
-        
-        // Fill delete modal with news info
-        document.getElementById('deleteNewsTitle').textContent = news.title;
-        document.getElementById('deleteNewsDate').textContent = this.formatDate(news.createdAt);
-        
-        this.deleteModal.show();
-    }
-
-    async confirmDelete(id) {
+    async toggleEstado(id) {
         try {
+            const noticia = this.noticias.find(n => n.id === id);
+            if (!noticia) return;
+
+            let nuevoEstado;
+            if (noticia.estado === 'publicada') {
+                nuevoEstado = 'borrador';
+            } else if (noticia.estado === 'borrador') {
+                nuevoEstado = 'publicada';
+            } else {
+                nuevoEstado = 'publicada';
+            }
+
             await firebase.firestore()
-                .collection(this.newsCollection)
-                .doc(id)
-                .delete();
-            
-            this.showNotification('Éxito', 'Noticia eliminada correctamente', 'success');
-            this.deleteModal.hide();
-            await this.loadNews();
-
-        } catch (error) {
-            console.error('Error deleting news:', error);
-            this.showNotification('Error', 'Error al eliminar la noticia', 'error');
-        }
-    }
-
-    async toggleStatus(id) {
-        try {
-            const news = this.newsData.find(n => n.id === id);
-            if (!news) return;
-
-            const newStatus = news.status === 'published' ? 'draft' : 'published';
-            
-            await firebase.firestore()
-                .collection(this.newsCollection)
+                .collection('noticias')
                 .doc(id)
                 .update({
-                    status: newStatus,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    estado: nuevoEstado,
+                    fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-            this.showNotification('Éxito', `Noticia ${newStatus === 'published' ? 'publicada' : 'guardada como borrador'}`, 'success');
-            await this.loadNews();
+            this.mostrarExito(`Noticia ${nuevoEstado === 'publicada' ? 'publicada' : 'guardada como borrador'}`);
+            this.cargarNoticias();
 
         } catch (error) {
-            console.error('Error toggling status:', error);
-            this.showNotification('Error', 'Error al cambiar el estado', 'error');
+            console.error('Error cambiando estado:', error);
+            this.mostrarError('Error al cambiar el estado');
         }
     }
 
-    async duplicateNews(id) {
+    async duplicarNoticia(id) {
         try {
-            const news = this.newsData.find(n => n.id === id);
-            if (!news) return;
+            const noticia = this.noticias.find(n => n.id === id);
+            if (!noticia) return;
 
-            const duplicatedNews = {
-                ...news,
-                title: `${news.title} (Copia)`,
-                status: 'draft'
+            const nuevaNoticia = {
+                ...noticia,
+                titulo: `${noticia.titulo} (Copia)`,
+                estado: 'borrador'
             };
 
-            // Remove id and timestamps
-            delete duplicatedNews.id;
-            delete duplicatedNews.createdAt;
-            delete duplicatedNews.updatedAt;
+            // Eliminar campos que no deben duplicarse
+            delete nuevaNoticia.id;
+            delete nuevaNoticia.fechaCreacion;
+            delete nuevaNoticia.fechaActualizacion;
 
             await firebase.firestore()
-                .collection(this.newsCollection)
+                .collection('noticias')
                 .add({
-                    ...duplicatedNews,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    ...nuevaNoticia,
+                    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+                    fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-            this.showNotification('Éxito', 'Noticia duplicada correctamente', 'success');
-            await this.loadNews();
+            this.mostrarExito('Noticia duplicada correctamente');
+            this.cargarNoticias();
 
         } catch (error) {
-            console.error('Error duplicating news:', error);
-            this.showNotification('Error', 'Error al duplicar la noticia', 'error');
+            console.error('Error duplicando noticia:', error);
+            this.mostrarError('Error al duplicar la noticia');
         }
     }
 
-    getFormData() {
-        return {
-            title: document.getElementById('newsTitle').value.trim(),
-            category: document.getElementById('newsCategory').value,
-            icon: document.getElementById('newsIcon').value,
-            description: document.getElementById('newsDescription').value.trim(),
-            content: document.getElementById('newsContent').value.trim(),
-            status: document.getElementById('newsStatus').value,
-            priority: document.getElementById('newsPriority').value
-        };
+    eliminarNoticia(id, titulo) {
+        this.noticiaAEliminar = id;
+        document.getElementById('noticiaAEliminar').textContent = titulo;
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
     }
 
-    validateForm() {
-        const title = document.getElementById('newsTitle').value.trim();
-        const category = document.getElementById('newsCategory').value;
-        const description = document.getElementById('newsDescription').value.trim();
-        
-        const isValid = title && category && description;
-        
-        // Enable/disable save button
-        const saveButton = document.getElementById('saveNewsBtn');
-        if (saveButton) {
-            saveButton.disabled = !isValid;
-        }
+    async confirmarEliminar() {
+        if (!this.noticiaAEliminar) return;
 
-        return isValid;
-    }
+        try {
+            await firebase.firestore()
+                .collection('noticias')
+                .doc(this.noticiaAEliminar)
+                .delete();
 
-    resetForm() {
-        if (this.newsForm) {
-            this.newsForm.reset();
-        }
-        
-        // Reset validation states
-        document.querySelectorAll('.is-invalid').forEach(el => {
-            el.classList.remove('is-invalid');
-        });
-        
-        document.querySelectorAll('.invalid-feedback').forEach(el => {
-            el.remove();
-        });
-
-        // Enable save button
-        const saveButton = document.getElementById('saveNewsBtn');
-        if (saveButton) {
-            saveButton.disabled = false;
-        }
-    }
-
-    updateStats() {
-        const total = this.newsData.length;
-        const published = this.newsData.filter(n => n.status === 'published').length;
-        const drafts = this.newsData.filter(n => n.status === 'draft').length;
-        
-        // Recent news (last 7 days)
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const recent = this.newsData.filter(n => n.createdAt > weekAgo).length;
-
-        // Animate counters
-        this.animateCounter(this.totalNewsEl, total);
-        this.animateCounter(this.publishedNewsEl, published);
-        this.animateCounter(this.draftNewsEl, drafts);
-        this.animateCounter(this.recentNewsEl, recent);
-    }
-
-    animateCounter(element, targetValue) {
-        if (!element) return;
-        
-        const currentValue = parseInt(element.textContent) || 0;
-        const increment = targetValue > currentValue ? 1 : -1;
-        const duration = 1000;
-        const steps = Math.abs(targetValue - currentValue);
-        const stepTime = duration / steps;
-
-        let current = currentValue;
-        
-        const timer = setInterval(() => {
-            current += increment;
-            element.textContent = current;
+            this.mostrarExito('Noticia eliminada correctamente');
             
-            if (current === targetValue) {
-                clearInterval(timer);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEliminar'));
+            modal.hide();
+            
+            this.cargarNoticias();
+
+        } catch (error) {
+            console.error('Error eliminando noticia:', error);
+            this.mostrarError('Error al eliminar la noticia');
+        }
+
+        this.noticiaAEliminar = null;
+    }
+
+    filtrarNoticias() {
+        const titulo = document.getElementById('filtroTitulo').value.toLowerCase();
+        const estado = document.getElementById('filtroEstado').value;
+        const categoria = document.getElementById('filtroCategoria').value;
+        const prioridad = document.getElementById('filtroPrioridad').value;
+
+        const noticiasFiltradas = this.noticias.filter(noticia => {
+            return (!titulo || noticia.titulo.toLowerCase().includes(titulo)) &&
+                   (!estado || noticia.estado === estado) &&
+                   (!categoria || noticia.categoria === categoria) &&
+                   (!prioridad || noticia.prioridad === prioridad);
+        });
+
+        this.renderizarNoticias(noticiasFiltradas);
+    }
+
+    actualizarEstadisticas() {
+        const total = this.noticias.length;
+        const publicadas = this.noticias.filter(n => n.estado === 'publicada').length;
+        const borradores = this.noticias.filter(n => n.estado === 'borrador').length;
+        const archivadas = this.noticias.filter(n => n.estado === 'archivada').length;
+
+        // Actualizar solo si los elementos existen
+        const actualizarElemento = (id, valor) => {
+            const elemento = document.getElementById(id);
+            if (elemento) {
+                elemento.textContent = valor;
             }
-        }, stepTime);
+        };
+
+        actualizarElemento('totalNoticias', total);
+        actualizarElemento('noticiasPublicadas', publicadas);
+        actualizarElemento('borradores', borradores);
+        actualizarElemento('archivadas', archivadas);
+
+        console.log(`Estadísticas: ${total} total, ${publicadas} publicadas, ${borradores} borradores, ${archivadas} archivadas`);
     }
 
-    showLoading(show) {
-        const loadingState = document.getElementById('loadingState');
-        if (loadingState) {
-            loadingState.style.display = show ? 'block' : 'none';
-        }
+    formatearFecha(timestamp) {
+        if (!timestamp) return 'Sin fecha';
         
-        if (!show && this.newsContainer) {
-            this.newsContainer.style.display = 'block';
-        }
-    }
-
-    showError(message) {
-        if (this.newsContainer) {
-            this.newsContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="bi bi-exclamation-triangle text-danger"></i>
-                    <h5>Error</h5>
-                    <p>${message}</p>
-                    <button class="btn btn-sica mt-3" onclick="gestionNoticias.loadNews()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Reintentar
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    setButtonLoading(button, loading) {
-        if (!button) return;
-        
-        if (loading) {
-            button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
-        } else {
-            button.disabled = false;
-            button.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Noticia';
-        }
-    }
-
-    showNotification(title, message, type = 'info') {
-        // Use the modern notification system from navigation.js
-        if (window.modernNav && window.modernNav.showModernNotification) {
-            const icons = {
-                success: 'bi-check-circle-fill',
-                error: 'bi-exclamation-triangle-fill',
-                warning: 'bi-exclamation-circle-fill',
-                info: 'bi-info-circle-fill'
-            };
-            
-            window.modernNav.showModernNotification(title, message, type, icons[type]);
-        } else {
-            // Fallback notification
-            alert(`${title}: ${message}`);
-        }
-    }
-
-    formatDate(date) {
-        if (!date) return '';
-        
-        const options = {
+        const fecha = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return fecha.toLocaleDateString('es-ES', {
             day: '2-digit',
             month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        
-        return date.toLocaleDateString('es-ES', options);
+            year: 'numeric'
+        });
     }
 
-    escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, m => map[m]);
+    mostrarExito(mensaje) {
+        // Usar el sistema de notificaciones moderno si está disponible
+        if (window.modernNav && window.modernNav.showModernNotification) {
+            window.modernNav.showModernNotification('Éxito', mensaje, 'success', 'bi-check-circle-fill');
+        } else {
+            alert(mensaje);
+        }
+    }
+
+    mostrarError(mensaje) {
+        if (window.modernNav && window.modernNav.showModernNotification) {
+            window.modernNav.showModernNotification('Error', mensaje, 'error', 'bi-exclamation-triangle-fill');
+        } else {
+            alert('Error: ' + mensaje);
+        }
     }
 }
 
-// Initialize when DOM is loaded
+// Inicialización mejorada
 document.addEventListener('DOMContentLoaded', () => {
-    // Authentication check
-    firebase.auth().onAuthStateChanged(async (user) => {
-        if (!user) {
-            window.location.href = '../view/login.html';
-            return;
-        }
-        
-        // Initialize the news management system
-        window.gestionNoticias = new GestionNoticias();
-    });
+    console.log('DOM cargado, verificando elementos...');
+    
+    // Verificar que los elementos principales existan
+    const elementosRequeridos = [
+        'btnNuevaNoticia', 'listaNoticias', 'totalNoticias', 
+        'noticiasPublicadas', 'borradores', 'archivadas'
+    ];
+    
+    const elementosEncontrados = elementosRequeridos.filter(id => document.getElementById(id));
+    console.log(`Elementos encontrados: ${elementosEncontrados.length}/${elementosRequeridos.length}`);
+    
+    if (elementosEncontrados.length < elementosRequeridos.length) {
+        console.warn('Algunos elementos del DOM no se encontraron. Reintentando en 1 segundo...');
+        setTimeout(() => {
+            initializeAdminNoticias();
+        }, 1000);
+    } else {
+        initializeAdminNoticias();
+    }
 });
 
-// Export for global access
-if (typeof window !== 'undefined') {
-    window.GestionNoticias = GestionNoticias;
+function initializeAdminNoticias() {
+    console.log('Inicializando Admin Noticias...');
+    
+    // Verificar autenticación cuando Firebase esté listo
+    const checkAuth = () => {
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            console.log('Firebase disponible, verificando autenticación...');
+            
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (!user) {
+                    console.log('Usuario no autenticado, redirigiendo...');
+                    window.location.href = '../login.html';
+                    return;
+                }
+                
+                console.log('Usuario autenticado:', user.email);
+                
+                // Esperar un poco más para asegurar que todo esté cargado
+                setTimeout(() => {
+                    try {
+                        window.adminNoticias = new AdminNoticias();
+                    } catch (error) {
+                        console.error('Error inicializando AdminNoticias:', error);
+                        alert('Error al inicializar la aplicación. Por favor, recarga la página.');
+                    }
+                }, 500);
+            });
+        } else {
+            console.log('Esperando Firebase...');
+            setTimeout(checkAuth, 1000);
+        }
+    };
+    
+    checkAuth();
 }

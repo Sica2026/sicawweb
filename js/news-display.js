@@ -1,147 +1,309 @@
-// News Display for Index Page - JavaScript
+// News Display - Versión Simplificada que funciona siempre
 
 class NewsDisplay {
     constructor() {
         this.newsCollection = 'noticias';
-        this.maxNewsToShow = 6; // Máximo número de noticias a mostrar
+        this.maxNewsToShow = 6;
         this.init();
     }
 
     async init() {
-        try {
-            await this.loadAndDisplayNews();
-        } catch (error) {
-            console.error('Error loading news:', error);
-            this.showErrorState();
+        console.log('🚀 Iniciando News Display Simplificado...');
+        
+        // Buscar contenedor
+        const newsContainer = this.findNewsContainer();
+        if (!newsContainer) {
+            console.error('❌ No se encontró contenedor de noticias');
+            return;
+        }
+
+        // Intentar cargar desde Firebase con timeout
+        const firebaseLoaded = await this.tryFirebaseWithTimeout(3000);
+        
+        if (firebaseLoaded) {
+            console.log('✅ Cargando desde Firebase');
+            await this.loadFromFirebase(newsContainer);
+        } else {
+            console.log('⚠️ Usando noticias por defecto');
+            this.showDefaultNews(newsContainer);
         }
     }
 
-    async loadAndDisplayNews() {
-        try {
-            // Show loading state
-            this.showLoadingState();
+    async tryFirebaseWithTimeout(timeout) {
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+            
+            const checkFirebase = () => {
+                if (typeof firebase !== 'undefined' && 
+                    firebase.firestore && 
+                    firebase.app) {
+                    try {
+                        // Intentar acceder a la configuración
+                        const app = firebase.app();
+                        if (app && app.options && app.options.projectId) {
+                            console.log('✅ Firebase configurado correctamente');
+                            resolve(true);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log('⚠️ Firebase no configurado correctamente:', error.message);
+                    }
+                }
+                
+                // Check timeout
+                if (Date.now() - startTime > timeout) {
+                    console.log('⏰ Timeout esperando Firebase');
+                    resolve(false);
+                } else {
+                    setTimeout(checkFirebase, 500);
+                }
+            };
+            
+            checkFirebase();
+        });
+    }
 
-            // Get published news ordered by date
-            const querySnapshot = await firebase.firestore()
+    async loadFromFirebase(container) {
+        try {
+            this.showLoading(container);
+
+            const snapshot = await firebase.firestore()
                 .collection(this.newsCollection)
-                .where('status', '==', 'published')
-                .orderBy('createdAt', 'desc')
+                .where('estado', '==', 'publicada')
+                .where('visibilidad', '==', 'publica')
+                .orderBy('fechaCreacion', 'desc')
                 .limit(this.maxNewsToShow)
                 .get();
 
-            const newsData = [];
-            querySnapshot.forEach(doc => {
+            const noticias = [];
+            snapshot.forEach(doc => {
                 const data = doc.data();
-                newsData.push({
+                noticias.push({
                     id: doc.id,
                     ...data,
-                    createdAt: data.createdAt?.toDate() || new Date()
+                    fechaCreacion: data.fechaCreacion?.toDate() || new Date()
                 });
             });
 
-            if (newsData.length > 0) {
-                this.displayNews(newsData);
+            if (noticias.length > 0) {
+                console.log(`✅ Cargadas ${noticias.length} noticias desde Firebase`);
+                this.displayNews(container, noticias);
             } else {
-                this.showEmptyState();
+                console.log('⚠️ No hay noticias publicadas, mostrando por defecto');
+                this.showDefaultNews(container);
             }
 
         } catch (error) {
-            console.error('Error fetching news:', error);
-            this.showErrorState();
+            console.error('❌ Error cargando desde Firebase:', error);
+            this.showDefaultNews(container);
         }
     }
 
-    displayNews(newsData) {
-        const newsContainer = document.querySelector('.news-section .row.g-4');
-        if (!newsContainer) return;
+    findNewsContainer() {
+        const selectors = [
+            '#dynamic-news-container',
+            '.news-section .row.g-4',
+            '.news-section .row:last-child'
+        ];
 
-        // Clear existing content except the title row
-        const titleRow = newsContainer.parentElement.querySelector('.row').innerHTML;
-        newsContainer.innerHTML = '';
+        for (const selector of selectors) {
+            const container = document.querySelector(selector);
+            if (container) {
+                console.log(`📍 Contenedor encontrado: ${selector}`);
+                return container;
+            }
+        }
 
-        // Generate news cards HTML
-        const newsHTML = newsData.map(news => this.createNewsCard(news)).join('');
-        newsContainer.innerHTML = newsHTML;
+        return null;
+    }
 
-        // Add animation to cards
-        const newsCards = newsContainer.querySelectorAll('.news-card');
-        newsCards.forEach((card, index) => {
+    showLoading(container) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-muted">Cargando noticias desde Firebase...</p>
+                </div>
+            </div>
+        `;
+    }
+
+    displayNews(container, noticias) {
+        const newsHTML = noticias.map(noticia => this.createNewsCard(noticia)).join('');
+        container.innerHTML = newsHTML;
+
+        // Añadir animaciones
+        const cards = container.querySelectorAll('.news-card');
+        cards.forEach((card, index) => {
             setTimeout(() => {
                 card.classList.add('fade-in');
             }, index * 150);
         });
     }
 
-    createNewsCard(news) {
-        const formattedDate = this.formatDate(news.createdAt);
-        const icon = news.icon || 'bi-newspaper';
-        const title = this.escapeHtml(news.title);
-        const description = this.escapeHtml(news.description);
-        const priority = news.priority || 'normal';
+    createNewsCard(noticia) {
+        const fecha = this.formatDate(noticia.fechaCreacion);
+        const icono = noticia.imagenUrl || 'bi-newspaper';
+        const titulo = this.escapeHtml(noticia.titulo);
+        const resumen = this.escapeHtml(noticia.resumen);
+        const prioridad = noticia.prioridad || 'normal';
         
-        // Add priority indicator
-        const priorityClass = priority === 'urgent' ? 'news-card-urgent' : 
-                             priority === 'high' ? 'news-card-high' : '';
+        // Clases y badges de prioridad
+        let priorityClass = '';
+        let priorityBadge = '';
+        
+        if (prioridad === 'urgente') {
+            priorityClass = 'border-danger';
+            priorityBadge = '<span class="badge bg-danger position-absolute top-0 end-0 m-2">Urgente</span>';
+        } else if (prioridad === 'importante') {
+            priorityClass = 'border-warning';
+            priorityBadge = '<span class="badge bg-warning position-absolute top-0 end-0 m-2">Importante</span>';
+        }
+
+        // Click handler
+        let clickHandler = '';
+        if (noticia.liga) {
+            clickHandler = `onclick="window.open('${noticia.liga}', '_blank')" style="cursor: pointer;"`;
+        } else if (noticia.contenido && noticia.contenido !== 'CADA NOTICIA') {
+            clickHandler = `onclick="newsDisplay.showFullNews('${noticia.id}')" style="cursor: pointer;"`;
+        }
 
         return `
             <div class="col-lg-4 col-md-6">
-                <div class="news-card card-modern ${priorityClass}" data-id="${news.id}">
-                    <div class="news-header">
-                        <i class="bi ${icon} news-icon"></i>
-                        <div class="news-date">${formattedDate}</div>
-                        ${priority === 'urgent' ? '<span class="priority-badge urgent">Urgente</span>' : ''}
-                        ${priority === 'high' ? '<span class="priority-badge high">Prioritario</span>' : ''}
+                <div class="news-card card h-100 ${priorityClass}" data-id="${noticia.id}" ${clickHandler}>
+                    ${priorityBadge}
+                    <div class="card-header bg-primary text-white position-relative">
+                        <div class="news-header-content">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi ${icono} me-2 fs-4"></i>
+                                <h5 class="card-title text-white mb-0 flex-grow-1">${titulo}</h5>
+                            </div>
+                            <small class="news-date position-absolute bottom-0 end-0 m-2 opacity-75">${fecha}</small>
+                        </div>
                     </div>
-                    <div class="news-body">
-                        <h5 class="news-title">${title}</h5>
-                        <p class="news-description">${description}</p>
-                        ${news.content ? `<a href="#" class="news-link" onclick="newsDisplay.showFullNews('${news.id}')">Leer más</a>` : ''}
+                    <div class="card-body">
+                        <p class="card-text">${resumen}</p>
+                        ${(noticia.contenido && noticia.contenido !== 'CADA NOTICIA') || noticia.liga ? 
+                            '<small class="text-muted"><i class="bi bi-arrow-right me-1"></i>Click para más información</small>' : 
+                            ''
+                        }
                     </div>
                 </div>
             </div>
         `;
     }
 
+    showDefaultNews(container) {
+        console.log('📰 Mostrando noticias por defecto');
+        
+        const defaultNews = [
+            {
+                icono: 'bi-calendar-event',
+                fecha: '5 Sep 2025',
+                titulo: 'Nuevos Horarios de Servicio',
+                resumen: 'Se han actualizado los horarios de atención de la sala de cómputo para el semestre actual.'
+            },
+            {
+                icono: 'bi-pc-display', 
+                fecha: '3 Sep 2025',
+                titulo: 'Actualización de Software',
+                resumen: 'Todos los equipos han sido actualizados con las últimas versiones de software académico.'
+            },
+            {
+                icono: 'bi-shield-check',
+                fecha: '1 Sep 2025', 
+                titulo: 'Medidas de Seguridad',
+                resumen: 'Recordatorio sobre las medidas de seguridad e higiene vigentes en la sala.'
+            },
+            {
+                icono: 'bi-book',
+                fecha: '28 Ago 2025',
+                titulo: 'Recursos Académicos',
+                resumen: 'Nuevos recursos digitales disponibles para apoyo académico de los estudiantes.'
+            },
+            {
+                icono: 'bi-tools',
+                fecha: '25 Ago 2025',
+                titulo: 'Mantenimiento Programado',
+                resumen: 'Información sobre las fechas de mantenimiento preventivo de los equipos.'
+            },
+            {
+                icono: 'bi-people',
+                fecha: '22 Ago 2025',
+                titulo: 'Capacitación Disponible',
+                resumen: 'Sesiones de capacitación gratuitas para el uso de software especializado.'
+            }
+        ];
+
+        const newsHTML = defaultNews.map(news => `
+            <div class="col-lg-4 col-md-6">
+                <div class="news-card card h-100 fade-in">
+                    <div class="card-header bg-primary text-white position-relative">
+                        <div class="news-header-content">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi ${news.icono} me-2 fs-4"></i>
+                                <h5 class="card-title text-white mb-0 flex-grow-1">${news.titulo}</h5>
+                            </div>
+                            <small class="news-date position-absolute bottom-0 end-0 m-2 opacity-75">${news.fecha}</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">${news.resumen}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = newsHTML;
+    }
+
     showFullNews(newsId) {
-        // Find the news item
-        const querySnapshot = firebase.firestore()
+        if (typeof firebase === 'undefined') return;
+
+        firebase.firestore()
             .collection(this.newsCollection)
             .doc(newsId)
             .get()
             .then(doc => {
                 if (doc.exists) {
-                    const news = doc.data();
-                    this.displayFullNewsModal(news);
+                    const noticia = doc.data();
+                    this.displayFullNewsModal(noticia);
                 }
             })
             .catch(error => {
-                console.error('Error fetching full news:', error);
+                console.error('Error cargando noticia completa:', error);
             });
     }
 
-    displayFullNewsModal(news) {
-        // Create modal if it doesn't exist
+    displayFullNewsModal(noticia) {
         let modal = document.getElementById('fullNewsModal');
         if (!modal) {
             modal = this.createFullNewsModal();
             document.body.appendChild(modal);
         }
 
-        // Fill modal content
         const modalTitle = modal.querySelector('.modal-title');
         const modalBody = modal.querySelector('.modal-body');
-        const modalDate = modal.querySelector('.news-modal-date');
 
-        modalTitle.innerHTML = `<i class="bi ${news.icon || 'bi-newspaper'} me-2"></i>${this.escapeHtml(news.title)}`;
-        modalDate.textContent = this.formatDate(news.createdAt?.toDate() || new Date());
+        modalTitle.innerHTML = `<i class="bi ${noticia.imagenUrl || 'bi-newspaper'} me-2"></i>${this.escapeHtml(noticia.titulo)}`;
         modalBody.innerHTML = `
+            <div class="mb-3">
+                <small class="text-muted">
+                    <i class="bi bi-calendar me-1"></i>${this.formatDate(noticia.fechaCreacion?.toDate ? noticia.fechaCreacion.toDate() : new Date())}
+                    ${noticia.autor ? ` | <i class="bi bi-person me-1"></i>${this.escapeHtml(noticia.autor)}` : ''}
+                </small>
+            </div>
             <div class="news-full-content">
-                <p class="lead">${this.escapeHtml(news.description)}</p>
-                ${news.content ? `<div class="news-content mt-4">${this.formatContent(news.content)}</div>` : ''}
+                <p class="lead">${this.escapeHtml(noticia.resumen)}</p>
+                ${noticia.contenido && noticia.contenido !== 'CADA NOTICIA' ? 
+                    `<hr><div class="mt-3">${this.formatContent(noticia.contenido)}</div>` : 
+                    ''
+                }
             </div>
         `;
 
-        // Show modal
         const bootstrapModal = new bootstrap.Modal(modal);
         bootstrapModal.show();
     }
@@ -152,18 +314,15 @@ class NewsDisplay {
         modal.id = 'fullNewsModal';
         modal.tabIndex = -1;
         modal.innerHTML = `
-            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content modal-modern">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title"></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="news-modal-date text-muted mb-3"></div>
-                        <!-- Content will be inserted here -->
-                    </div>
+                    <div class="modal-body"></div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-2"></i>Cerrar
                         </button>
                     </div>
@@ -173,69 +332,17 @@ class NewsDisplay {
         return modal;
     }
 
-    showLoadingState() {
-        const newsContainer = document.querySelector('.news-section .row.g-4');
-        if (!newsContainer) return;
-
-        newsContainer.innerHTML = `
-            <div class="col-12">
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary mb-3" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="text-muted">Cargando noticias...</p>
-                </div>
-            </div>
-        `;
-    }
-
-    showEmptyState() {
-        const newsContainer = document.querySelector('.news-section .row.g-4');
-        if (!newsContainer) return;
-
-        newsContainer.innerHTML = `
-            <div class="col-12">
-                <div class="text-center py-5">
-                    <i class="bi bi-newspaper display-1 text-muted mb-3"></i>
-                    <h4 class="text-muted">No hay noticias disponibles</h4>
-                    <p class="text-muted">Aún no se han publicado noticias. Vuelve pronto para ver las últimas actualizaciones.</p>
-                </div>
-            </div>
-        `;
-    }
-
-    showErrorState() {
-        const newsContainer = document.querySelector('.news-section .row.g-4');
-        if (!newsContainer) return;
-
-        newsContainer.innerHTML = `
-            <div class="col-12">
-                <div class="text-center py-5">
-                    <i class="bi bi-exclamation-triangle display-1 text-warning mb-3"></i>
-                    <h4 class="text-muted">Error al cargar noticias</h4>
-                    <p class="text-muted">No se pudieron cargar las noticias. Por favor, intenta recargar la página.</p>
-                    <button class="btn btn-sica mt-3" onclick="newsDisplay.loadAndDisplayNews()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Reintentar
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
     formatDate(date) {
-        if (!date) return '';
-        
-        const options = {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
+        if (!date) return 'Sin fecha';
+        const options = { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
         };
-        
         return date.toLocaleDateString('es-ES', options);
     }
 
     formatContent(content) {
-        // Simple content formatting - convert line breaks to paragraphs
         return content
             .split('\n\n')
             .map(paragraph => `<p>${this.escapeHtml(paragraph.trim())}</p>`)
@@ -244,180 +351,147 @@ class NewsDisplay {
 
     escapeHtml(text) {
         const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
+            '&': '&amp;', '<': '&lt;', '>': '&gt;',
+            '"': '&quot;', "'": '&#039;'
         };
-        return text.replace(/[&<>"']/g, m => map[m]);
+        return text ? text.replace(/[&<>"']/g, m => map[m]) : '';
     }
 
-    // Method to refresh news (can be called from other parts of the app)
+    // Método público para refrescar
     async refresh() {
-        await this.loadAndDisplayNews();
+        await this.init();
     }
 }
 
-// Additional CSS for news display enhancements
-const additionalStyles = `
-    <style>
-    /* Priority indicators */
-    .news-card-urgent {
-        border-left: 4px solid #dc3545 !important;
-        animation: pulse-urgent 2s infinite;
-    }
-    
-    .news-card-high {
-        border-left: 4px solid #ffc107 !important;
-    }
-    
-    @keyframes pulse-urgent {
-        0%, 100% { box-shadow: 0 8px 25px rgba(220, 53, 69, 0.15); }
-        50% { box-shadow: 0 8px 25px rgba(220, 53, 69, 0.25); }
-    }
-    
-    .priority-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .priority-badge.urgent {
-        background: rgba(220, 53, 69, 0.1);
-        color: #dc3545;
-        border: 1px solid rgba(220, 53, 69, 0.3);
-    }
-    
-    .priority-badge.high {
-        background: rgba(255, 193, 7, 0.1);
-        color: #ffc107;
-        border: 1px solid rgba(255, 193, 7, 0.3);
-    }
-    
-    /* Enhanced news cards */
-    .news-card {
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .news-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(172, 150, 90, 0.1) 0%, transparent 100%);
+// Estilos mejorados
+const newsStyles = `
+<style>
+.news-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 56, 117, 0.15);
+}
+
+.news-card[onclick] {
+    cursor: pointer;
+}
+
+.news-card .card-header {
+    background: linear-gradient(135deg, #003875 0%, #0056b3 100%) !important;
+    border: none;
+    padding: 1rem;
+    position: relative;
+    min-height: 80px;
+}
+
+.news-header-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.news-card .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0;
+    color: white !important;
+    flex-grow: 1;
+    padding-right: 60px; /* Espacio para la fecha */
+}
+
+.news-date {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.border-danger {
+    border-left: 5px solid #dc3545 !important;
+}
+
+.border-warning {
+    border-left: 5px solid #ffc107 !important;
+}
+
+.fade-in {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
         opacity: 0;
-        transition: opacity 0.4s ease;
+        transform: translateY(20px);
     }
-    
-    .news-card:hover::before {
+    to {
         opacity: 1;
+        transform: translateY(0);
     }
-    
-    .news-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 40px rgba(32, 44, 86, 0.15);
-    }
-    
-    .news-header {
-        position: relative;
-        z-index: 2;
-    }
-    
-    .news-body {
-        position: relative;
-        z-index: 2;
-    }
-    
-    /* Animation classes */
-    .fade-in {
-        animation: fadeInUp 0.6s ease-out forwards;
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    
-    @keyframes fadeInUp {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Modal enhancements */
-    .modal-modern .news-full-content {
-        line-height: 1.7;
-    }
-    
-    .modal-modern .news-content p {
-        margin-bottom: 1rem;
-    }
-    
-    .news-modal-date {
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .news-card .card-title {
         font-size: 0.9rem;
-        font-weight: 500;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 0.75rem;
+        padding-right: 50px;
     }
     
-    /* Dark mode support */
-    [data-theme="dark"] .news-card-urgent {
-        border-left-color: #ff6b7a !important;
+    .news-date {
+        font-size: 0.7rem;
     }
     
-    [data-theme="dark"] .news-card-high {
-        border-left-color: #ffda6a !important;
+    .news-card .card-header {
+        min-height: 70px;
+        padding: 0.75rem;
     }
-    
-    [data-theme="dark"] .priority-badge.urgent {
-        background: rgba(255, 107, 122, 0.15);
-        color: #ff6b7a;
-        border-color: rgba(255, 107, 122, 0.3);
-    }
-    
-    [data-theme="dark"] .priority-badge.high {
-        background: rgba(255, 218, 106, 0.15);
-        color: #ffda6a;
-        border-color: rgba(255, 218, 106, 0.3);
-    }
-    </style>
+}
+
+/* Dark mode support */
+[data-theme="dark"] .news-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+}
+
+[data-theme="dark"] .news-card .card-body {
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+</style>
 `;
 
-// Initialize when DOM is loaded and Firebase is available
-document.addEventListener('DOMContentLoaded', () => {
-    // Add additional styles
-    document.head.insertAdjacentHTML('beforeend', additionalStyles);
+// Inicialización robusta
+function initNewsDisplay() {
+    console.log('📰 Preparando News Display...');
     
-    // Check if Firebase is loaded
-    const initNewsDisplay = () => {
-        if (typeof firebase !== 'undefined' && firebase.firestore) {
-            window.newsDisplay = new NewsDisplay();
-        } else {
-            // If Firebase is not loaded yet, wait a bit and try again
-            setTimeout(initNewsDisplay, 1000);
-        }
-    };
-    
-    initNewsDisplay();
-});
-
-// Auto-refresh news every 5 minutes (optional)
-setInterval(() => {
-    if (window.newsDisplay && typeof window.newsDisplay.refresh === 'function') {
-        window.newsDisplay.refresh();
+    // Agregar estilos
+    if (!document.querySelector('#news-display-styles')) {
+        const styleDiv = document.createElement('div');
+        styleDiv.id = 'news-display-styles';
+        styleDiv.innerHTML = newsStyles;
+        document.head.appendChild(styleDiv);
     }
-}, 5 * 60 * 1000); // 5 minutes
+    
+    // Crear instancia
+    window.newsDisplay = new NewsDisplay();
+}
 
-// Export for global access
+// Múltiples formas de inicialización
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNewsDisplay);
+} else if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    setTimeout(initNewsDisplay, 500);
+}
+
+// Export
 if (typeof window !== 'undefined') {
     window.NewsDisplay = NewsDisplay;
+    window.initNewsDisplay = initNewsDisplay;
 }

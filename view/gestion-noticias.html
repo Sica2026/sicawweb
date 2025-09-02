@@ -22,255 +22,295 @@
 
     <!-- Main Content Area -->
     <main class="main-content" id="main-content">
-        <!-- Header Section -->
-        <section class="news-header">
-            <div class="container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="container-fluid">
                 <div class="row align-items-center">
-                    <div class="col-lg-8">
-                        <div class="header-content">
-                            <h1 class="display-5 fw-bold mb-3">
-                                <i class="bi bi-newspaper header-icon"></i>
-                                Gestión de Noticias
-                            </h1>
-                            <p class="lead text-muted">
-                                Administra las noticias y actualizaciones que se muestran en el portal principal
-                            </p>
-                        </div>
+                    <div class="col-md-8">
+                        <h1 class="admin-title">
+                            <i class="bi bi-newspaper me-3"></i>
+                            Gestión de Noticias
+                        </h1>
+                        <p class="admin-subtitle">Administra las noticias del sistema SICA</p>
                     </div>
-                    <div class="col-lg-4 text-lg-end">
-                        <button class="btn btn-sica btn-lg shadow-sica" data-bs-toggle="modal" data-bs-target="#newsModal">
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-primary btn-lg" id="btnNuevaNoticia">
                             <i class="bi bi-plus-circle me-2"></i>
                             Nueva Noticia
                         </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
         <!-- Stats Cards -->
-        <section class="stats-section">
-            <div class="container">
-                <div class="row g-4">
-                    <div class="col-xl-3 col-lg-6">
-                        <div class="stats-card">
-                            <div class="stats-content">
-                                <div class="stats-icon bg-primary-gradient">
-                                    <i class="bi bi-newspaper"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3 class="stats-number" id="total-news">0</h3>
-                                    <p class="stats-label">Total Noticias</p>
-                                </div>
-                            </div>
+        <div class="container-fluid mb-4">
+            <div class="row g-4">
+                <div class="col-xl-3 col-lg-6">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary">
+                            <i class="bi bi-newspaper"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalNoticias">0</h3>
+                            <p>Total Noticias</p>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-lg-6">
-                        <div class="stats-card">
-                            <div class="stats-content">
-                                <div class="stats-icon bg-success-gradient">
-                                    <i class="bi bi-eye"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3 class="stats-number" id="published-news">0</h3>
-                                    <p class="stats-label">Publicadas</p>
-                                </div>
-                            </div>
+                </div>
+                <div class="col-xl-3 col-lg-6">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="noticiasPublicadas">0</h3>
+                            <p>Publicadas</p>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-lg-6">
-                        <div class="stats-card">
-                            <div class="stats-content">
-                                <div class="stats-icon bg-warning-gradient">
-                                    <i class="bi bi-clock"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3 class="stats-number" id="draft-news">0</h3>
-                                    <p class="stats-label">Borradores</p>
-                                </div>
-                            </div>
+                </div>
+                <div class="col-xl-3 col-lg-6">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning">
+                            <i class="bi bi-pencil"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="borradores">0</h3>
+                            <p>Borradores</p>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-lg-6">
-                        <div class="stats-card">
-                            <div class="stats-content">
-                                <div class="stats-icon bg-info-gradient">
-                                    <i class="bi bi-calendar-event"></i>
-                                </div>
-                                <div class="stats-info">
-                                    <h3 class="stats-number" id="recent-news">0</h3>
-                                    <p class="stats-label">Esta Semana</p>
-                                </div>
-                            </div>
+                </div>
+                <div class="col-xl-3 col-lg-6">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger">
+                            <i class="bi bi-archive"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="archivadas">0</h3>
+                            <p>Archivadas</p>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- News Management Section -->
-        <section class="management-section">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12">
-                        <!-- Filters and Search -->
-                        <div class="filters-card card-modern mb-4">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-lg-6">
-                                        <div class="search-wrapper">
-                                            <i class="bi bi-search search-icon"></i>
-                                            <input type="text" class="form-control form-control-sica ps-5" 
-                                                   id="searchInput" placeholder="Buscar noticias...">
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6">
-                                        <div class="d-flex gap-3">
-                                            <select class="form-select form-control-sica" id="statusFilter">
-                                                <option value="">Todos los estados</option>
-                                                <option value="published">Publicado</option>
-                                                <option value="draft">Borrador</option>
-                                            </select>
-                                            <select class="form-select form-control-sica" id="categoryFilter">
-                                                <option value="">Todas las categorías</option>
-                                                <option value="general">General</option>
-                                                <option value="actualizacion">Actualización</option>
-                                                <option value="mantenimiento">Mantenimiento</option>
-                                                <option value="evento">Evento</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+        <!-- Filters -->
+        <div class="container-fluid mb-4">
+            <div class="card filter-card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="filtroTitulo" placeholder="Buscar por título...">
                         </div>
-
-                        <!-- News List -->
-                        <div class="news-list-card card-modern">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-list-ul me-2"></i>
-                                    Lista de Noticias
-                                </h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <div id="newsContainer" class="news-container">
-                                    <!-- Loading State -->
-                                    <div id="loadingState" class="loading-state">
-                                        <div class="loading-spinner"></div>
-                                        <p>Cargando noticias...</p>
-                                    </div>
-                                    <!-- News items will be loaded here -->
-                                </div>
-                            </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="filtroEstado">
+                                <option value="">Todos los estados</option>
+                                <option value="borrador">Borrador</option>
+                                <option value="publicada">Publicada</option>
+                                <option value="archivada">Archivada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="filtroCategoria">
+                                <option value="">Todas las categorías</option>
+                                <option value="anuncio">Anuncio</option>
+                                <option value="mantenimiento">Mantenimiento</option>
+                                <option value="evento">Evento</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="filtroPrioridad">
+                                <option value="">Todas las prioridades</option>
+                                <option value="normal">Normal</option>
+                                <option value="importante">Importante</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-secondary" id="btnLimpiarFiltros">
+                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Lista de Noticias -->
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list me-2"></i>Lista de Noticias</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="listaNoticias" class="news-list">
+                        <!-- Loading -->
+                        <div class="text-center py-5" id="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Cargando noticias...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- News Modal -->
-    <div class="modal fade" id="newsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content modal-modern">
+    <!-- Modal Nueva/Editar Noticia -->
+    <div class="modal fade" id="modalNoticia" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-plus-circle me-2"></i>
-                        <span id="modalTitle">Nueva Noticia</span>
-                    </h5>
+                    <h5 class="modal-title" id="modalTitle">Nueva Noticia</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="newsForm">
+                    <form id="formNoticia">
                         <div class="row g-4">
+                            <!-- Información Básica -->
                             <div class="col-12">
-                                <label class="form-label-sica required">Título</label>
-                                <input type="text" class="form-control form-control-sica" 
-                                       id="newsTitle" placeholder="Ingresa el título de la noticia" required>
+                                <h6 class="text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Información Básica</h6>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica required">Categoría</label>
-                                <select class="form-select form-control-sica" id="newsCategory" required>
-                                    <option value="">Seleccionar categoría</option>
-                                    <option value="general">General</option>
-                                    <option value="actualizacion">Actualización</option>
+                            
+                            <div class="col-md-8">
+                                <label class="form-label">Título <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="titulo" required>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Autor</label>
+                                <input type="text" class="form-control" id="autor">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Resumen <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="resumen" rows="2" required></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Contenido <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="contenido" rows="6" required></textarea>
+                            </div>
+
+                            <!-- Configuración -->
+                            <div class="col-12 mt-4">
+                                <h6 class="text-primary mb-3"><i class="bi bi-gear me-2"></i>Configuración</h6>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select" id="estado">
+                                    <option value="borrador">Borrador</option>
+                                    <option value="publicada">Publicada</option>
+                                    <option value="archivada">Archivada</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Categoría</label>
+                                <select class="form-select" id="categoria">
+                                    <option value="anuncio">Anuncio</option>
                                     <option value="mantenimiento">Mantenimiento</option>
                                     <option value="evento">Evento</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Ícono</label>
-                                <select class="form-select form-control-sica" id="newsIcon">
-                                    <option value="bi-newspaper">Periódico</option>
-                                    <option value="bi-calendar-event">Evento</option>
-                                    <option value="bi-pc-display">Computadora</option>
-                                    <option value="bi-shield-check">Seguridad</option>
-                                    <option value="bi-book">Libro</option>
-                                    <option value="bi-tools">Herramientas</option>
-                                    <option value="bi-people">Personas</option>
-                                    <option value="bi-info-circle">Información</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label-sica required">Descripción</label>
-                                <textarea class="form-control form-control-sica" id="newsDescription" 
-                                          rows="4" placeholder="Describe brevemente la noticia" required></textarea>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label-sica">Contenido Completo (Opcional)</label>
-                                <textarea class="form-control form-control-sica" id="newsContent" 
-                                          rows="6" placeholder="Contenido detallado de la noticia"></textarea>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Estado</label>
-                                <select class="form-select form-control-sica" id="newsStatus">
-                                    <option value="draft">Borrador</option>
-                                    <option value="published">Publicado</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-sica">Prioridad</label>
-                                <select class="form-select form-control-sica" id="newsPriority">
+
+                            <div class="col-md-3">
+                                <label class="form-label">Prioridad</label>
+                                <select class="form-select" id="prioridad">
                                     <option value="normal">Normal</option>
-                                    <option value="high">Alta</option>
-                                    <option value="urgent">Urgente</option>
+                                    <option value="importante">Importante</option>
+                                    <option value="urgente">Urgente</option>
                                 </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Visibilidad</label>
+                                <select class="form-select" id="visibilidad">
+                                    <option value="publica">Pública</option>
+                                    <option value="privada">Privada</option>
+                                </select>
+                            </div>
+
+                            <!-- Dirigido A -->
+                            <div class="col-md-6">
+                                <label class="form-label">Dirigido a</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="estudiantes" id="dirigidoEstudiantes">
+                                    <label class="form-check-label" for="dirigidoEstudiantes">Estudiantes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="asesores" id="dirigidoAsesores">
+                                    <label class="form-check-label" for="dirigidoAsesores">Asesores</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="todos" id="dirigidoTodos" checked>
+                                    <label class="form-check-label" for="dirigidoTodos">Todos</label>
+                                </div>
+                            </div>
+
+                            <!-- Ícono -->
+                            <div class="col-md-6">
+                                <label class="form-label">Ícono</label>
+                                <select class="form-select" id="imagenUrl">
+                                    <option value="bi-newspaper">📰 Periódico</option>
+                                    <option value="bi-megaphone">📢 Anuncio</option>
+                                    <option value="bi-calendar-event">📅 Evento</option>
+                                    <option value="bi-tools">🔧 Mantenimiento</option>
+                                    <option value="bi-exclamation-triangle">⚠️ Advertencia</option>
+                                    <option value="bi-info-circle">ℹ️ Información</option>
+                                    <option value="bi-star">⭐ Importante</option>
+                                    <option value="bi-bell">🔔 Notificación</option>
+                                </select>
+                            </div>
+
+                            <!-- Liga -->
+                            <div class="col-12">
+                                <label class="form-label">Liga/URL (opcional)</label>
+                                <input type="url" class="form-control" id="liga" placeholder="https://ejemplo.com">
+                                <small class="form-text text-muted">Si agregas una URL, la noticia redirigirá a esta página al hacer clic</small>
+                            </div>
+
+                            <!-- Etiquetas -->
+                            <div class="col-12">
+                                <label class="form-label">Etiquetas</label>
+                                <input type="text" class="form-control" id="etiquetas" placeholder="Separadas por comas">
+                                <small class="form-text text-muted">Ej: importante, sistema, actualización</small>
+                            </div>
+
+                            <!-- Fecha de Publicación -->
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de Publicación</label>
+                                <input type="datetime-local" class="form-control" id="fechaPublicacion">
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-2"></i>Cancelar
-                    </button>
-                    <button type="button" class="btn btn-sica" id="saveNewsBtn">
-                        <i class="bi bi-check-circle me-2"></i>Guardar Noticia
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarNoticia">
+                        <i class="bi bi-save me-2"></i>Guardar
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-modern">
+    <!-- Modal Confirmar Eliminación -->
+    <div class="modal fade" id="modalEliminar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Confirmar Eliminación
-                    </h5>
+                    <h5 class="modal-title text-danger">Confirmar Eliminación</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0">¿Estás seguro de que deseas eliminar esta noticia? Esta acción no se puede deshacer.</p>
-                    <div class="news-preview mt-3 p-3 bg-light rounded">
-                        <h6 id="deleteNewsTitle" class="mb-1"></h6>
-                        <small id="deleteNewsDate" class="text-muted"></small>
-                    </div>
+                    <p>¿Estás seguro de que deseas eliminar esta noticia?</p>
+                    <p class="text-muted mb-0" id="noticiaAEliminar"></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
                         <i class="bi bi-trash me-2"></i>Eliminar
                     </button>
                 </div>
@@ -295,6 +335,6 @@
     <!-- Base Navigation JS -->
     <script src="../js/navigation.js"></script>
     <!-- Page Specific JS -->
-    <script id="page-script" src="../js/gestion-noticias.js"></script>
+    <script src="../js/gestion-noticias.js"></script>
 </body>
 </html>
