@@ -254,7 +254,6 @@
     padding: 1rem 0.75rem;
     vertical-align: middle;
     border-top: none;
-    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Action Buttons */
@@ -385,4 +384,111 @@
 
 .sugerencias-dropdown::-webkit-scrollbar-thumb:hover {
     background: var(--light-gold);
+}
+
+/* Solución para texto en modo oscuro */
+
+/* 1. INPUTS Y FORMULARIOS EN MODO OSCURO */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-control-sica {
+    color: #ffffff !important; /* Texto blanco en inputs */
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(172, 150, 90, 0.3) !important;
+}
+
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] .form-control-sica::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important; /* Placeholder más visible */
+}
+
+/* 2. LABELS EN MODO OSCURO */
+[data-theme="dark"] .form-label,
+[data-theme="dark"] .form-label-sica {
+    color: var(--primary-gold) !important; /* Labels dorados */
+}
+
+/* 3. BOTONES EN MODO OSCURO */
+[data-theme="dark"] .btn-sica-outline {
+    color: var(--primary-gold) !important;
+    border-color: var(--primary-gold) !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 4. TABLA EN MODO OSCURO */
+[data-theme="dark"] .table-sica td {
+    color: #ffffff !important; /* Texto blanco en celdas */
+}
+
+[data-theme="dark"] .table-sica thead th {
+    color: var(--primary-gold) !important; /* Encabezados dorados */
+}
+
+/* 5. CARDS Y CONTENEDORES EN MODO OSCURO */
+[data-theme="dark"] .card-modern {
+    background: linear-gradient(145deg, 
+        rgba(20, 30, 60, 0.95), 
+        rgba(30, 40, 80, 0.95)
+    ) !important;
+    color: #ffffff !important;
+}
+
+/* 6. TEXTO GENERAL EN MODO OSCURO */
+[data-theme="dark"] body,
+[data-theme="dark"] .main-content {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* 7. DROPDOWN/SELECT OPTIONS EN MODO OSCURO */
+[data-theme="dark"] option {
+    background-color: var(--dark-blue) !important;
+    color: #ffffff !important;
+}
+
+/* 8. INPUTS CON FOCUS EN MODO OSCURO */
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .form-control-sica:focus {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: var(--primary-gold) !important;
+    box-shadow: 0 0 0 0.2rem rgba(172, 150, 90, 0.25) !important;
+}
+
+/* 9. SUGERENCIAS DROPDOWN EN MODO OSCURO */
+[data-theme="dark"] .sugerencias-dropdown {
+    background: linear-gradient(145deg, 
+        rgba(20, 30, 60, 0.98), 
+        rgba(30, 40, 80, 0.98)
+    ) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .sugerencia-item {
+    color: #ffffff !important;
+}
+
+/* 10. ESPECÍFICO PARA FILTROS (como en tu imagen) */
+[data-theme="dark"] #filtroAsesor,
+[data-theme="dark"] #filtroSala,
+[data-theme="dark"] #filtroFechaDesde,
+[data-theme="dark"] #filtroFechaHasta {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ALTERNATIVA: Si prefieres usar colores dorados para todo */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-control-sica,
+[data-theme="dark"] .table-sica td {
+    color: var(--primary-gold) !important;
 }

@@ -786,7 +786,7 @@ class ModernNavigation {
                 title: 'Gestión de Incidencias',
                 message: 'Accediendo al sistema de incidencias...',
                 icon: 'bi-exclamation-triangle',
-                route: 'gestion-incidencias.html'
+                route: 'admin-incidencias.html'
             },
             // ✅ NUEVA OPCIÓN DE NOTICIAS
             'noticias': {
