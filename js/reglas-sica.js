@@ -13,7 +13,7 @@ const reglasData = [
         severity: "medium"
     },
     {
-        description: "NO estar en un tiempo LÍMITE de 10 minutos por cada hora de servicio.",
+        description: "NO estar en su turno. El puntaje es por cada media hora de servicio.",
         sanction: "REPORTE 0.5 HORAS",
         severity: "medium"
     },
@@ -118,7 +118,7 @@ const reglasData = [
         severity: "high"
     },
     {
-        description: "Hacer uso de las cubículos NO autorizadas. Visitas: 15 minutos por cada media hora de estancia.",
+        description: "Hacer uso de los cubículos NO autorizados para visitas. El puntaje es por cada media hora de estancia.",
         sanction: "REPORTE 2.0 HORAS",
         severity: "high"
     },
