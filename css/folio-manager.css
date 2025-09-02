@@ -647,3 +647,128 @@
 .history-asesor {
     margin-left: 0.5rem;
 }
+/* Agregar estas clases al archivo folio-manager.css existente */
+
+/* ================================
+   HISTORIAL - BOTÓN MÁS
+   ================================ */
+.history-more-section {
+    border-top: 1px solid #e9ecef;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+#btnMoreHistory {
+    border: 2px solid #ac965a;
+    color: #ac965a;
+    background: transparent;
+    font-weight: 600;
+    padding: 12px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#btnMoreHistory:hover {
+    background: linear-gradient(135deg, #ac965a, #8a7749);
+    border-color: #ac965a;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(172, 150, 90, 0.3);
+}
+
+#btnMoreHistory:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(172, 150, 90, 0.2);
+}
+
+#btnMoreHistory i {
+    transition: transform 0.3s ease;
+}
+
+#btnMoreHistory:hover i.bi-arrow-right {
+    transform: translateX(5px);
+}
+
+#btnMoreHistory:hover i.bi-three-dots {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ================================
+   MODO EDICIÓN - INDICADORES
+   ================================ */
+.border-warning {
+    border-color: #ffc107 !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+}
+
+.edit-mode-indicator {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-mode-indicator i {
+    color: #856404;
+    font-size: 1.2rem;
+}
+
+.edit-mode-text {
+    color: #856404;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* ================================
+   HISTORIAL RESPONSIVE
+   ================================ */
+@media (max-width: 768px) {
+    .history-more-section {
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+    
+    #btnMoreHistory {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ================================
+   ANIMACIONES PARA TRANSICIONES
+   ================================ */
+.config-view.slide-in-right {
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.history-item {
+    transition: all 0.3s ease;
+}
+
+.history-item:hover {
+    background: rgba(172, 150, 90, 0.05);
+    border-radius: 6px;
+    transform: translateX(3px);
+}

@@ -14,6 +14,10 @@ class FolioManager {
     async init() {
         try {
             console.log('🔧 Inicializando FolioManager...');
+            
+            // NUEVA LÍNEA: Verificar si viene de edición
+            await this.checkEditParameters();
+            
             await this.loadHistorial();
             this.setupEventListeners();
             console.log('✅ FolioManager inicializado');
@@ -22,6 +26,75 @@ class FolioManager {
             this.showNotification('Error de inicialización', 'No se pudo conectar con Firebase', 'error');
         }
     }
+
+    async checkEditParameters() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.get('edit') === 'true') {
+            const folio = urlParams.get('folio');
+            const asesorId = urlParams.get('asesorId');
+            const docType = urlParams.get('docType');
+            const docCategory = urlParams.get('docCategory');
+            const docTitle = urlParams.get('docTitle');
+            
+            if (folio && asesorId && docType && docCategory && docTitle) {
+                console.log('🔄 Modo edición detectado, cargando datos...');
+                
+                // Cargar datos del asesor
+                const asesorDoc = await this.db.collection('asesores').doc(asesorId).get();
+                if (!asesorDoc.exists) {
+                    throw new Error('Asesor no encontrado');
+                }
+                
+                const asesorData = { id: asesorId, ...asesorDoc.data() };
+                
+                // Crear configuración del documento
+                const docConfig = {
+                    type: docType,
+                    category: docCategory,
+                    title: docTitle
+                };
+                
+                // Mostrar vista de configuración directamente
+                setTimeout(() => {
+                    this.showConfigView(asesorData, docConfig);
+                    
+                    // Pre-llenar el folio
+                    setTimeout(() => {
+                        const folioInput = document.getElementById('folioInput');
+                        if (folioInput) {
+                            folioInput.value = folio;
+                            folioInput.classList.add('border-warning');
+                            
+                            // Mostrar notificación de edición
+                            this.showNotification(
+                                'Modo Edición', 
+                                `Editando el folio: ${folio}`, 
+                                'warning'
+                            );
+                        }
+                    }, 500);
+                    
+                }, 100);
+                
+                // Limpiar parámetros de URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error procesando parámetros de edición:', error);
+        this.showNotification('Error', 'No se pudieron cargar los datos de edición', 'error');
+        
+        // Limpiar parámetros de URL en caso de error
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+goToHistorialCompleto() {
+    window.location.href = 'historial-completo.html';
+}
 
     setupEventListeners() {
         // Botón de folio personalizado
@@ -47,6 +120,14 @@ class FolioManager {
         // Botón actualizar vista previa
         const btnPreview = document.getElementById('btnPreview');
         btnPreview?.addEventListener('click', () => this.updatePreview());
+
+        document.addEventListener('click', (e) => {
+        if (e.target.matches('[data-action="historial-completo"]') || 
+            e.target.closest('[data-action="historial-completo"]')) {
+            e.preventDefault();
+            this.goToHistorialCompleto();
+        }
+    });
     }
 
     // ================================
@@ -247,22 +328,38 @@ class FolioManager {
             return;
         }
         
-        historyList.innerHTML = historial.map(item => `
-            <div class="history-item fade-in ${item.esPersonalizado ? 'history-personalizado' : ''}">
-                <div class="history-item-header">
-                    <span class="history-folio">${item.folio}</span>
-                    <span class="history-date">${this.formatDate(item.fecha)}</span>
+        historyList.innerHTML = `
+            ${historial.map(item => `
+                <div class="history-item fade-in ${item.esPersonalizado ? 'history-personalizado' : ''}">
+                    <div class="history-item-header">
+                        <span class="history-folio">${item.folio}</span>
+                        <span class="history-date">${this.formatDate(item.fecha)}</span>
+                    </div>
+                    <div class="history-details">
+                        <span class="history-type">${item.tipo}</span>
+                        ${item.esPersonalizado ? 
+                            `<small class="history-asesor text-muted">👤 ${item.asesor}</small>` : 
+                            `<small class="history-asesor text-muted">${item.asesor} (${item.numeroCuenta})</small>`
+                        }
+                    </div>
+                    ${item.comentario ? `<small class="history-comment text-muted"><i class="bi bi-chat-quote"></i> ${item.comentario}</small>` : ''}
                 </div>
-                <div class="history-details">
-                    <span class="history-type">${item.tipo}</span>
-                    ${item.esPersonalizado ? 
-                        `<small class="history-asesor text-muted">👤 ${item.asesor}</small>` : 
-                        `<small class="history-asesor text-muted">${item.asesor} (${item.numeroCuenta})</small>`
-                    }
-                </div>
-                ${item.comentario ? `<small class="history-comment text-muted"><i class="bi bi-chat-quote"></i> ${item.comentario}</small>` : ''}
+            `).join('')}
+            
+            <!-- Botón "Más" -->
+            <div class="history-more-section mt-3">
+                <button class="btn btn-outline-gold w-100" id="btnMoreHistory">
+                    <i class="bi bi-three-dots"></i>
+                    Ver Historial Completo
+                    <i class="bi bi-arrow-right ms-2"></i>
+                </button>
             </div>
-        `).join('');
+        `;
+        
+        // Agregar listener para el botón "Más"
+        document.getElementById('btnMoreHistory')?.addEventListener('click', () => {
+            window.location.href = 'historial-completo.html';
+        });
     }
 
     renderConfigForm(asesor, servicioData) {

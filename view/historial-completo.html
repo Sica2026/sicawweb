@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Historial Completo de Folios - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Admin Folios Styles -->
+    <link href="../css/folio-manager.css" rel="stylesheet">
+    <!-- Historial Styles -->
+    <link href="../css/historial-completo.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Header con navegación -->
+                <div class="col-12">
+                    <div class="admin-header">
+                        <div class="header-content">
+                            <div class="header-info">
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb">
+                                        <li class="breadcrumb-item">
+                                            <a href="admin-folios.html" class="text-decoration-none">
+                                                <i class="bi bi-arrow-left"></i>
+                                                Administración de Folios
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item active" aria-current="page">Historial Completo</li>
+                                    </ol>
+                                </nav>
+                                <h1 class="admin-title">
+                                    <i class="bi bi-clock-history text-gold"></i>
+                                    Historial Completo de Folios
+                                </h1>
+                                <p class="admin-subtitle">Todos los registros del sistema SICA</p>
+                            </div>
+                            <div class="header-actions">
+                                <div class="stats-summary" id="statsSummary">
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="totalRegistros">0</span>
+                                        <span class="stat-label">Total</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="registrosAceptacion">0</span>
+                                        <span class="stat-label">Aceptación</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="registrosTermino">0</span>
+                                        <span class="stat-label">Término</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="registrosPersonalizados">0</span>
+                                        <span class="stat-label">Personalizados</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros y búsqueda -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="filters-panel">
+                        <div class="row align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label-sica">Buscar</label>
+                                <div class="search-input-wrapper">
+                                    <input type="text" 
+                                           class="form-control form-control-sica" 
+                                           id="searchInput" 
+                                           placeholder="Folio, nombre, cuenta...">
+                                    <i class="bi bi-search search-icon"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label-sica">Tipo</label>
+                                <select class="form-select form-control-sica" id="tipoFilter">
+                                    <option value="">Todos</option>
+                                    <option value="aceptacion">Aceptación</option>
+                                    <option value="termino">Término</option>
+                                    <option value="personalizado">Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label-sica">Año</label>
+                                <select class="form-select form-control-sica" id="yearFilter">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label-sica">Mes</label>
+                                <select class="form-select form-control-sica" id="monthFilter">
+                                    <option value="">Todos</option>
+                                    <option value="0">Enero</option>
+                                    <option value="1">Febrero</option>
+                                    <option value="2">Marzo</option>
+                                    <option value="3">Abril</option>
+                                    <option value="4">Mayo</option>
+                                    <option value="5">Junio</option>
+                                    <option value="6">Julio</option>
+                                    <option value="7">Agosto</option>
+                                    <option value="8">Septiembre</option>
+                                    <option value="9">Octubre</option>
+                                    <option value="10">Noviembre</option>
+                                    <option value="11">Diciembre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label-sica">Mostrar</label>
+                                <select class="form-select form-control-sica" id="limitFilter">
+                                    <option value="50">50</option>
+                                    <option value="100" selected>100</option>
+                                    <option value="200">200</option>
+                                    <option value="0">Todos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-outline-secondary" id="btnClearFilters" title="Limpiar filtros">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de registros -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="historial-table-panel">
+                        <div class="table-header">
+                            <h3><i class="bi bi-list-ul"></i> Registros</h3>
+                            <div class="table-actions">
+                                <button class="btn btn-outline-primary btn-sm" id="btnExportData">
+                                    <i class="bi bi-download"></i>
+                                    Exportar
+                                </button>
+                                <div class="view-toggle">
+                                    <button class="btn btn-outline-secondary btn-sm active" id="btnTableView" title="Vista de tabla">
+                                        <i class="bi bi-table"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="btnCardView" title="Vista de tarjetas">
+                                        <i class="bi bi-grid-3x3-gap"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading -->
+                        <div class="table-loading" id="tableLoading">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando registros...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Cargando historial...</p>
+                            </div>
+                        </div>
+
+                        <!-- Vista de tabla -->
+                        <div class="table-view" id="tableView" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-sort="folio">
+                                                Folio
+                                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-sort="tipo">
+                                                Tipo
+                                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-sort="asesor">
+                                                Asesor
+                                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-sort="numeroCuenta">
+                                                Cuenta
+                                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                                            </th>
+                                            <th class="sortable" data-sort="fecha">
+                                                Fecha
+                                                <i class="bi bi-arrow-down-up sort-icon"></i>
+                                            </th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historialTableBody">
+                                        <!-- Los registros se cargarán aquí -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Vista de tarjetas -->
+                        <div class="card-view" id="cardView" style="display: none;">
+                            <div class="row" id="historialCardContainer">
+                                <!-- Las tarjetas se cargarán aquí -->
+                            </div>
+                        </div>
+
+                        <!-- Sin resultados -->
+                        <div class="no-results" id="noResults" style="display: none;">
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                                <h4 class="text-muted mt-3">No se encontraron registros</h4>
+                                <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="Paginación del historial">
+                        <ul class="pagination justify-content-center" id="pagination">
+                            <!-- La paginación se generará dinámicamente -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmación para Editar -->
+    <div class="modal fade" id="editConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content modal-sica">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i>
+                        Editar Registro
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Deseas editar este registro?</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Se abrirá el editor con los datos actuales del registro para que puedas realizar cambios.
+                    </div>
+                    <div class="record-info" id="editRecordInfo">
+                        <!-- Información del registro se mostrará aquí -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sica" id="btnConfirmEdit">
+                        <i class="bi bi-pencil-square"></i>
+                        Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Historial Completo Module -->
+    <script src="../js/edgar/historial-completo.js"></script>
+
+    <script>
+    // Solo verifica si hay usuario autenticado con Firebase
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // Si hay usuario, inicializar el sistema
+        if (window.historialCompleto) {
+            await window.historialCompleto.init();
+        }
+    });
+    </script>
+</body>
+</html>
