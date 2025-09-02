@@ -140,12 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializePage() {
     // Configurar título y breadcrumbs usando componentes SICA
-    SICAComponents.setPageTitle("Reglas de Servicio - SICA");
-    SICAComponents.addBreadcrumbs([
-        { text: "Inicio", link: "../index.html" },
-        { text: "Normativas", link: "#" },
-        { text: "Reglas de Servicio", active: true }
-    ]);
 
     // Renderizar las reglas
     renderRules();
