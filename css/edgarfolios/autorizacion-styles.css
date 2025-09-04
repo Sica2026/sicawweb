@@ -1,0 +1,420 @@
+/* autorizacion-styles.css - Estilos para página de autorización */
+
+/* Variables específicas */
+:root {
+    --auth-gradient: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    --auth-accent: rgba(172, 150, 90, 0.1);
+    --preview-bg: rgba(255, 255, 255, 0.05);
+    --loading-overlay: rgba(32, 44, 86, 0.9);
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--loading-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+}
+
+.loading-content {
+    text-align: center;
+    color: white;
+}
+
+.loading-spinner {
+    margin-bottom: 1rem;
+}
+
+.loading-spinner .spinner-border {
+    width: 4rem;
+    height: 4rem;
+    border-width: 0.4rem;
+}
+
+/* Header de autorización */
+.auth-header {
+    background: var(--auth-gradient);
+    border-radius: 20px;
+    padding: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(172, 150, 90, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.auth-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.auth-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+/* Folio Input */
+.folio-input-group {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    max-width: 300px;
+}
+
+.folio-input-group:focus-within {
+    border-color: var(--primary-gold);
+    box-shadow: 0 0 0 0.2rem rgba(172, 150, 90, 0.25);
+}
+
+.folio-prefix,
+.folio-suffix {
+    background: var(--primary-gold);
+    color: var(--primary-blue);
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.folio-input {
+    border: none;
+    background: transparent;
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    width: 80px;
+    flex: 0 0 80px;
+}
+
+.folio-input:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+/* Configuration Accordion */
+.accordion-item {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px !important;
+    margin-bottom: 1rem;
+}
+
+.accordion-button {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 12px !important;
+    font-weight: 600;
+    padding: 1.25rem 1.5rem;
+}
+
+.accordion-button:not(.collapsed) {
+    background: var(--auth-accent);
+    color: var(--primary-blue);
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(172, 150, 90, 0.25);
+}
+
+.accordion-body {
+    padding: 1.5rem;
+}
+
+/* Configuration Sections */
+.config-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.config-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.config-title {
+    color: var(--primary-blue);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.duration-info {
+    background: var(--auth-accent);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: var(--primary-blue);
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+/* Document Preview */
+.preview-card {
+    height: calc(100vh - 200px);
+    min-height: 600px;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.document-preview {
+    height: calc(100vh - 350px);
+    min-height: 400px;
+    background: var(--preview-bg);
+    border-radius: 8px;
+    overflow: auto;
+    position: relative;
+}
+
+.preview-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+}
+
+.preview-content {
+    padding: 1rem;
+    background: white;
+    color: black;
+    font-family: 'Times New Roman', serif;
+    line-height: 1.6;
+    min-height: 100%;
+}
+
+.preview-content h1, .preview-content h2 {
+    color: var(--primary-blue);
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.preview-content .document-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-blue);
+}
+
+.preview-content .logo-placeholder {
+    width: 80px;
+    height: 80px;
+    background: var(--primary-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin-right: 2rem;
+}
+
+.preview-content .header-text {
+    flex: 1;
+    text-align: right;
+}
+
+/* Error Screen */
+.error-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.error-content {
+    max-width: 500px;
+}
+
+.error-actions {
+    margin-top: 2rem;
+}
+
+/* Success Modal Animations */
+.success-animation {
+    animation: successPulse 1s ease-in-out;
+}
+
+@keyframes successPulse {
+    0% { 
+        transform: scale(0.8); 
+        opacity: 0; 
+    }
+    50% { 
+        transform: scale(1.1); 
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .auth-title {
+        font-size: 1.5rem;
+    }
+    
+    .auth-header {
+        padding: 1.5rem;
+    }
+    
+    .folio-input-group {
+        max-width: 100%;
+    }
+    
+    .document-preview {
+        height: 400px;
+    }
+    
+    .preview-card {
+        height: auto;
+        min-height: 450px;
+        margin-top: 2rem;
+    }
+    
+    .config-section {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+    }
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] .auth-header {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+}
+
+[data-theme="dark"] .preview-content {
+    background: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .folio-prefix,
+[data-theme="dark"] .folio-suffix {
+    background: var(--primary-gold);
+    color: var(--dark-blue);
+}
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+[data-theme="dark"] .loading-overlay {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.document-loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+/* Form Enhancements */
+.form-control-sica[readonly] {
+    background-color: rgba(172, 150, 90, 0.05);
+    border-color: rgba(172, 150, 90, 0.2);
+    color: var(--text-secondary);
+}
+
+/* Button Enhancements */
+.btn-success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    border: none;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #229954, #27ae60);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+/* Preview Controls */
+.preview-controls .btn {
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Card Improvements */
+.card-modern .card-header {
+    background: var(--auth-accent);
+    border-bottom: 1px solid var(--card-border);
+    font-weight: 600;
+}
+
+/* Animations */
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in-right {
+    animation: slideInFromRight 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.5s ease forwards;
+}

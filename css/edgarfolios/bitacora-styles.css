@@ -1,0 +1,602 @@
+/* Bitácora Styles - Diseño futurista con colores UNAM */
+
+/* Variables adicionales para bitácora */
+:root {
+    --bitacora-gradient: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    --bitacora-accent: rgba(172, 150, 90, 0.1);
+    --stats-shadow: 0 8px 25px rgba(32, 44, 86, 0.15);
+    --card-hover-transform: translateY(-5px) scale(1.02);
+    --search-focus-glow: 0 0 20px rgba(172, 150, 90, 0.3);
+}
+
+/* Header de bitácora */
+.bitacora-header {
+    background: var(--bitacora-gradient);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.bitacora-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(172, 150, 90, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.bitacora-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Filtros modernos */
+.filters-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(10px);
+}
+
+.search-input-group {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-gold);
+    z-index: 3;
+    font-size: 1.1rem;
+}
+
+.search-input-group input {
+    padding-left: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.search-input-group input:focus {
+    border-color: var(--primary-gold);
+    box-shadow: var(--search-focus-glow);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.search-results-count {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--primary-gold);
+    color: var(--primary-blue);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.search-results-count.visible {
+    opacity: 1;
+}
+
+/* Cards de estadísticas futuristas */
+.stats-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: var(--stats-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(172, 150, 90, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.stats-card:hover::before {
+    left: 100%;
+}
+
+.stats-card:hover {
+    transform: var(--card-hover-transform);
+    box-shadow: 0 15px 35px rgba(32, 44, 86, 0.2);
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stats-icon.bg-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+}
+
+.stats-icon.bg-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.stats-icon.bg-success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+}
+
+.stats-icon.bg-info {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: 0.25rem;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Badge flotante para SICA */
+#sicaBadge {
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Tabla moderna */
+.table-sica {
+    background: transparent;
+}
+
+.table-sica thead th {
+    background: var(--bitacora-gradient);
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+}
+
+.table-sica tbody tr {
+    border-bottom: 1px solid var(--card-border);
+    transition: all 0.3s ease;
+}
+
+.table-sica tbody tr:hover {
+    background: var(--bitacora-accent);
+    transform: scale(1.01);
+}
+
+.table-sica tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border: none;
+}
+
+/* Botones de importancia */
+.importancia-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.importancia-alta {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.importancia-media {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.importancia-baja {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+/* Cards view */
+.folio-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.folio-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-gold);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.folio-card:hover::before {
+    opacity: 1;
+}
+
+.folio-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(32, 44, 86, 0.15);
+}
+
+.folio-card-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.folio-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.folio-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.folio-nombre {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.folio-comentarios {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+}
+
+/* Controles de tabla */
+.table-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-controls .btn-group .btn {
+    border-color: var(--card-border);
+}
+
+.table-controls .btn-group .btn.active {
+    background: var(--primary-gold);
+    border-color: var(--primary-gold);
+    color: var(--primary-blue);
+}
+
+/* Loading states */
+.loading-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+}
+
+.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(172, 150, 90, 0.4), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* No data message */
+.no-data-message {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+}
+
+/* Paginación moderna */
+.pagination .page-link {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    margin: 0 2px;
+    border-radius: 8px;
+}
+
+.pagination .page-link:hover {
+    background: var(--primary-gold);
+    border-color: var(--primary-gold);
+    color: var(--primary-blue);
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+/* Modales mejorados */
+.modal-content {
+    background: white !important;
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    background: var(--bitacora-gradient);
+    color: white;
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--card-border);
+    padding: 1.5rem 2rem;
+}
+
+/* Inputs del modal */
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+    box-shadow: 0 0 0 0.2rem rgba(172, 150, 90, 0.25);
+}
+
+/* Acciones de tabla */
+.action-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    margin: 0 2px;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+}
+
+.btn-view {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+}
+
+/* Documentos adjuntos */
+.documento-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--primary-gold);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(172, 150, 90, 0.1);
+    transition: all 0.3s ease;
+}
+
+.documento-link:hover {
+    background: rgba(172, 150, 90, 0.2);
+    color: var(--primary-gold);
+    transform: translateY(-1px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .bitacora-title {
+        font-size: 1.8rem;
+    }
+    
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+    
+    .filters-card {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .folio-card {
+        padding: 1rem;
+    }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .bitacora-header {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+}
+
+[data-theme="dark"] .stats-number {
+    color: var(--primary-gold);
+}
+
+[data-theme="dark"] .table-sica tbody tr:hover {
+    background: rgba(172, 150, 90, 0.05);
+}
+
+[data-theme="dark"] .folio-card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+/* Animaciones adicionales */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.4s ease forwards;
+}
+
+/* Estados de carga específicos */
+.skeleton-loader {
+    background: linear-gradient(90deg, 
+        var(--card-bg) 25%, 
+        rgba(172, 150, 90, 0.1) 50%, 
+        var(--card-bg) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Tooltip personalizado */
+.tooltip-custom {
+    position: relative;
+    cursor: help;
+}
+
+.tooltip-custom::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary-blue);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.tooltip-custom:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Efectos de hover mejorados */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.hover-glow {
+    transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(172, 150, 90, 0.3);
+}
+
+[data-theme="dark"] .modal-content {
+    background: var(--card-bg) !important;
+    color: var(--text-primary);
+}
+
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+}

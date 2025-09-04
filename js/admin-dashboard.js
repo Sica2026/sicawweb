@@ -1034,7 +1034,7 @@ window.AdminDownloadsManager = AdminDownloadsManager;
         },
         'systemSettings': () =>  {
             // Redirigir a la página de descargas
-            window.location.href = '../view/folio-manager.html';
+            window.location.href = '../view/foliosedgar.html';
         },
           
             'manageLockers': () => {
