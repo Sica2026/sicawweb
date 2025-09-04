@@ -1,0 +1,474 @@
+/* consumibles.css - Estilos específicos para la página de consumibles */
+
+/* Semester Cards Styles */
+.semester-card {
+    border: none;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    height: 100%;
+}
+
+.semester-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+.current-semester {
+    border-left: 4px solid var(--primary-blue);
+}
+
+.previous-semester {
+    border-left: 4px solid var(--text-muted);
+}
+
+.semester-label {
+    color: var(--primary-gold);
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 0;
+}
+
+.semester-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.semester-icon.current {
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    color: white;
+}
+
+.semester-icon.previous {
+    background: var(--card-border);
+    color: var(--text-muted);
+}
+
+/* Sala Statistics */
+.sala-stat {
+    padding: 0.5rem 0;
+}
+
+.sala-number {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+    line-height: 1.2;
+}
+
+.sala-label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.total-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-right: 8px;
+}
+
+.total-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-gold);
+    margin-right: 8px;
+}
+
+.total-unit {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Chart Containers */
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--card-border);
+    padding: 1rem 1.5rem;
+}
+
+.card-title {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+/* Chart Summary */
+.chart-summary {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--card-border);
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.summary-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.summary-percent {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    margin-top: 2px;
+}
+
+/* Color coding for SICA rooms */
+.sica1-color {
+    color: #3498db !important;
+}
+
+.sica2-color {
+    color: #e74c3c !important;
+}
+
+.sica4-color {
+    color: #f39c12 !important;
+}
+
+/* Semester Selector */
+.semester-selector {
+    min-width: 120px;
+    border-color: var(--card-border);
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+.semester-selector:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(32, 44, 86, 0.25);
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-hover);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--card-border);
+    background: var(--card-bg);
+}
+
+.modal-title {
+    color: var(--primary-blue);
+}
+
+/* Table Enhancements */
+.table-sica thead th {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+.table-sica tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+.loading-row td {
+    height: 200px;
+    vertical-align: middle;
+}
+
+/* Import/Export Buttons */
+.btn-sica {
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue));
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-sica:hover {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.btn-sica-outline {
+    background: transparent;
+    border: 1px solid var(--primary-blue);
+    color: var(--primary-blue);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-sica-outline:hover {
+    background: var(--primary-blue);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* File Input Styling */
+.form-control-sica {
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.form-control-sica:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(32, 44, 86, 0.25);
+    background: var(--card-bg);
+}
+
+.form-label-sica {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Alert Styles */
+.alert-sica {
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.alert-sica-info {
+    background: rgba(52, 152, 219, 0.1);
+    color: var(--primary-blue);
+    border-left: 4px solid #3498db;
+}
+
+.alert-sica-success {
+    background: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+    border-left: 4px solid #2ecc71;
+}
+
+.alert-sica-warning {
+    background: rgba(243, 156, 18, 0.1);
+    color: #d68910;
+    border-left: 4px solid #f39c12;
+}
+
+.alert-sica-error {
+    background: rgba(231, 76, 60, 0.1);
+    color: #c0392b;
+    border-left: 4px solid #e74c3c;
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Lecturas Semanales */
+.semana-info .badge {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.8rem;
+}
+
+.lectura-row.pendiente {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.lectura-row.completada {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.estado-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.calculo-preview {
+    border-left: 4px solid var(--primary-gold);
+    background: rgba(172, 150, 90, 0.1);
+}
+
+.btn-accion {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+/* Form Enhancements */
+.form-control-sica[readonly] {
+    background-color: rgba(108, 117, 125, 0.1);
+    border-color: var(--card-border);
+}
+
+/* Dark Mode for new elements */
+[data-theme="dark"] .lectura-row.pendiente {
+    background-color: rgba(255, 193, 7, 0.2);
+}
+
+[data-theme="dark"] .lectura-row.completada {
+    background-color: rgba(40, 167, 69, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .semana-info {
+        margin-top: 0.5rem;
+    }
+    
+    .btn-accion {
+        margin-bottom: 0.25rem;
+        width: 100%;
+    }
+}
+[data-theme="dark"] .semester-card {
+    background: var(--card-bg);
+    border-color: var(--card-border);
+}
+
+[data-theme="dark"] .chart-summary {
+    background: var(--bg-secondary);
+    border-color: var(--card-border);
+}
+
+[data-theme="dark"] .modal-content {
+    background: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-header {
+    border-color: var(--card-border);
+}
+
+[data-theme="dark"] .semester-icon.previous {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .table-sica tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .semester-card {
+        margin-bottom: 1rem;
+    }
+    
+    .sala-stat {
+        padding: 0.25rem 0;
+    }
+    
+    .sala-number {
+        font-size: 1rem;
+    }
+    
+    .total-number {
+        font-size: 1.4rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 1rem 0.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .semester-label {
+        font-size: 1.2rem;
+    }
+    
+    .summary-item {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .btn, .modal, .breadcrumb-nav {
+        display: none !important;
+    }
+    
+    .semester-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .chart-summary {
+        break-inside: avoid;
+    }
+}

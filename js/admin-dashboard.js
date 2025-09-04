@@ -1036,6 +1036,11 @@ window.AdminDownloadsManager = AdminDownloadsManager;
             // Redirigir a la página de descargas
             window.location.href = '../view/folio-manager.html';
         },
+          
+            'manageLockers': () => {
+                window.location.href = '../view/locker.html';
+            },  // 👈 AGREGAR ESTA LÍNEA
+            
         'generateReport': () => generateReport(),
         // 👇 AGREGAR ESTA LÍNEA
         'technicianPanel': () => {

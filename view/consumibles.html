@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Consumibles - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/consumibles.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Consumibles</li>
+            </ol>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="text-blue mb-2">
+                                <i class="bi bi-printer me-2"></i>
+                                Control de Consumibles
+                            </h1>
+                            <p class="text-muted">Estadísticas de impresión por salas SICA</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success" id="btn-nueva-lectura" data-bs-toggle="modal" data-bs-target="#lecturaModal">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Nueva Lectura
+                            </button>
+                            <button class="btn btn-sica-outline" id="btn-historico" data-bs-toggle="modal" data-bs-target="#historicoModal">
+                                <i class="bi bi-clock-history me-1"></i>
+                                Histórico
+                            </button>
+                            <button class="btn btn-sica-outline" id="btn-importar" data-bs-toggle="modal" data-bs-target="#importarModal">
+                                <i class="bi bi-upload me-1"></i>
+                                Importar
+                            </button>
+                            <button class="btn btn-sica" id="btn-exportar">
+                                <i class="bi bi-download me-1"></i>
+                                Exportar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Semester Cards -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card-modern semester-card current-semester">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title text-blue mb-1">Semestre Actual</h5>
+                                    <h3 class="semester-label">2026-1</h3>
+                                </div>
+                                <div class="semester-icon current">
+                                    <i class="bi bi-calendar-check"></i>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <div class="sala-stat">
+                                        <span class="sala-number">12,450</span>
+                                        <small class="sala-label">SICA 1</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="sala-stat">
+                                        <span class="sala-number">8,320</span>
+                                        <small class="sala-label">SICA 2</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="sala-stat">
+                                        <span class="sala-number">15,680</span>
+                                        <small class="sala-label">SICA 4</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-3">
+                            <div class="text-center">
+                                <span class="total-label">Total:</span>
+                                <span class="total-number">36,450</span>
+                                <span class="total-unit">páginas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-modern semester-card previous-semester">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title text-muted mb-1">Semestre Anterior</h5>
+                                    <h3 class="semester-label">2025-2</h3>
+                                </div>
+                                <div class="semester-icon previous">
+                                    <i class="bi bi-calendar"></i>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <div class="sala-stat">
+                                        <span class="sala-number">15,200</span>
+                                        <small class="sala-label">SICA 1</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="sala-stat">
+                                        <span class="sala-number">12,100</span>
+                                        <small class="sala-label">SICA 2</small>
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="sala-stat">
+                                        <span class="sala-number">18,500</span>
+                                        <small class="sala-label">SICA 4</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-3">
+                            <div class="text-center">
+                                <span class="total-label">Total:</span>
+                                <span class="total-number">45,800</span>
+                                <span class="total-unit">páginas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lecturas Semanales -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card-modern">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-calendar-week me-2"></i>
+                                Lecturas Semanales - Semestre 2026-1
+                            </h5>
+                            <div class="semana-info">
+                                <span class="badge bg-primary">Semana 8 de 24</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sica">
+                                    <thead>
+                                        <tr>
+                                            <th>Semana</th>
+                                            <th>Fecha</th>
+                                            <th>Sala</th>
+                                            <th>Acumulado</th>
+                                            <th>Páginas Semana</th>
+                                            <th>Nivel Tóner</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="lecturasTableBody">
+                                        <!-- Se llenará dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row">
+                <!-- Comparative Chart -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card-modern">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                Comparativo por Semestre
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="comparativeChart" width="400" height="300"></canvas>
+                            <div class="chart-summary mt-3">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="summary-item">
+                                            <span class="summary-label">2025-2</span>
+                                            <span class="summary-value text-muted">45,800</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="summary-item">
+                                            <span class="summary-label">2026-1</span>
+                                            <span class="summary-value text-blue">36,450</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-arrow-down text-danger me-1"></i>
+                                        Reducción del 20.4% respecto al semestre anterior
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribution Chart -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card-modern">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-pie-chart me-2"></i>
+                                Distribución por Sala
+                            </h5>
+                            <select class="form-select form-select-sm semester-selector" id="distributionSemester" style="width: auto;">
+                                <option value="2026-1">2026-1</option>
+                                <option value="2025-2">2025-2</option>
+                            </select>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="distributionChart" width="400" height="300"></canvas>
+                            <div class="chart-summary mt-3">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="summary-item">
+                                            <span class="summary-label">SICA 1</span>
+                                            <span class="summary-value sica1-color">12,450</span>
+                                            <small class="summary-percent">(34.1%)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="summary-item">
+                                            <span class="summary-label">SICA 2</span>
+                                            <span class="summary-value sica2-color">8,320</span>
+                                            <small class="summary-percent">(22.8%)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="summary-item">
+                                            <span class="summary-label">SICA 4</span>
+                                            <span class="summary-value sica4-color">15,680</span>
+                                            <small class="summary-percent">(43.1%)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Nueva Lectura Modal -->
+    <div class="modal fade" id="lecturaModal" tabindex="-1" aria-labelledby="lecturaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="lecturaModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Nueva Lectura Semanal
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="lecturaForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Semana</label>
+                                <input type="number" class="form-control form-control-sica" id="semanaInput" 
+                                       min="1" max="24" readonly>
+                                <div class="form-text">Se asigna automáticamente la próxima semana</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Fecha</label>
+                                <input type="date" class="form-control form-control-sica" id="fechaInput" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-sica">Sala SICA</label>
+                            <select class="form-select form-control-sica" id="salaSelect" required>
+                                <option value="">Seleccionar sala</option>
+                                <option value="SICA 1">SICA 1</option>
+                                <option value="SICA 2">SICA 2</option>
+                                <option value="SICA 4">SICA 4</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Páginas Acumuladas</label>
+                                <input type="number" class="form-control form-control-sica" id="acumuladoInput" 
+                                       min="0" step="1" required>
+                                <div class="form-text">Total de páginas con el consumible actual</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label-sica">Nivel de Tóner (%)</label>
+                                <input type="number" class="form-control form-control-sica" id="tonerInput" 
+                                       min="0" max="100" step="1" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-sica">Notas (Opcional)</label>
+                            <textarea class="form-control form-control-sica" id="notasInput" rows="2" 
+                                      placeholder="Cambios de cartucho, mantenimientos, etc."></textarea>
+                        </div>
+                        <div id="calculoPreview" class="alert-sica alert-sica-info" style="display: none;">
+                            <i class="bi bi-calculator me-2"></i>
+                            <strong>Páginas esta semana:</strong> <span id="paginasCalculadas">0</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="btnGuardarLectura">
+                        <i class="bi bi-save me-1"></i>
+                        Guardar Lectura
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Histórico Modal -->
+    <div class="modal fade" id="historicoModal" tabindex="-1" aria-labelledby="historicoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="historicoModalLabel">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Histórico de Semestres
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sica">
+                            <thead>
+                                <tr>
+                                    <th>Semestre</th>
+                                    <th>SICA 1</th>
+                                    <th>SICA 2</th>
+                                    <th>SICA 4</th>
+                                    <th>Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historicoTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Importar Modal -->
+    <div class="modal fade" id="importarModal" tabindex="-1" aria-labelledby="importarModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importarModalLabel">
+                        <i class="bi bi-upload me-2"></i>
+                        Importar Datos
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="importStep1">
+                        <div class="mb-3">
+                            <label for="fileInput" class="form-label-sica">Seleccionar archivo Excel</label>
+                            <input type="file" class="form-control form-control-sica" id="fileInput" accept=".xlsx,.xls">
+                            <div class="form-text">Formato soportado: Excel (.xlsx, .xls)</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="semesterInput" class="form-label-sica">Semestre</label>
+                            <input type="text" class="form-control form-control-sica" id="semesterInput" 
+                                   placeholder="Ej: 2025-1" pattern="[0-9]{4}-[1-2]">
+                            <div class="form-text">Formato: YYYY-N (ejemplo: 2025-1)</div>
+                        </div>
+                    </div>
+                    <div id="importStep2" style="display: none;">
+                        <div class="alert-sica alert-sica-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Vista previa de los datos a importar
+                        </div>
+                        <div class="table-responsive" style="max-height: 300px;">
+                            <table class="table table-sm">
+                                <thead id="previewTableHead"></thead>
+                                <tbody id="previewTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sica-outline" id="btnPreview" disabled>
+                        <i class="bi bi-eye me-1"></i>
+                        Vista Previa
+                    </button>
+                    <button type="button" class="btn btn-sica" id="btnConfirmImport" style="display: none;">
+                        <i class="bi bi-check2 me-1"></i>
+                        Confirmar Importación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <!-- SheetJS for Excel handling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script id="page-script" src="../js/consumibles.js"></script>
+</body>
+</html>
