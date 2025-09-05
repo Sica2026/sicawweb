@@ -1,813 +1,480 @@
-// autorizacion-main.js - Módulo principal para página de autorización
-// Maneja la autorización individual de pendientes SICA
+// autorizacion-nuevo.js - Sistema de autorización completamente nuevo
 
-class AutorizacionMain {
+class AutorizacionSICA {
     constructor() {
-        this.db = firebase.firestore();
-        this.pendienteId = null;
-        this.datosOriginales = null;
-        this.previewInterval = null;
-        this.ultimoFolioPreview = null;
+        this.pendienteId = this.obtenerParametroURL('id');
+        this.datosFormulario = {};
+        this.zoomLevel = 100;
+        this.tipoDocumento = null;
         
-        this.inicializar();
+        this.elementos = {
+            loadingScreen: document.getElementById('loadingScreen'),
+            tipoDocumento: document.getElementById('tipoDocumento'),
+            fechaSolicitud: document.getElementById('fechaSolicitud'),
+            btnAutorizar: document.getElementById('btnAutorizar'),
+            documentContainer: document.getElementById('documentContainer'),
+            documentPage: document.getElementById('documentPage'),
+            zoomIndicator: document.getElementById('zoomIndicator'),
+            duracionDisplay: document.getElementById('duracionDisplay')
+        };
     }
 
     async inicializar() {
         try {
-            console.log('🚀 Inicializando módulo de autorización...');
-            
-            // Verificar autenticación
-            await this.verificarAutenticacion();
-            
-            // Obtener ID del pendiente desde URL
-            this.pendienteId = this.obtenerIdDeUrl();
+            console.log('🚀 Iniciando sistema de autorización...');
             
             if (!this.pendienteId) {
-                throw new Error('ID de pendiente no proporcionado');
+                throw new Error('No se especificó ID del pendiente');
             }
-            
-            // Configurar componentes base
-            this.configurarComponentes();
-            
-            // Configurar event listeners
-            this.configurarEventos();
-            
-            // Cargar datos del pendiente
+
+            await this.verificarAutenticacion();
+            this.configurarEventListeners();
             await this.cargarDatosPendiente();
+            this.configurarActualizacionTiempoReal();
             
-            // Configurar vista previa
-            this.configurarVistaPrevia();
+            // Ocultar loading
+            this.elementos.loadingScreen.style.display = 'none';
             
-            console.log('✅ Módulo de autorización inicializado');
+            console.log('✅ Sistema inicializado correctamente');
             
         } catch (error) {
-            console.error('❌ Error inicializando autorización:', error);
+            console.error('❌ Error inicializando:', error);
             this.mostrarError(error.message);
         }
     }
 
+    obtenerParametroURL(nombre) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(nombre);
+    }
+
     async verificarAutenticacion() {
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Timeout verificando autenticación'));
-            }, 5000);
-            
             firebase.auth().onAuthStateChanged(user => {
-                clearTimeout(timeout);
-                
                 if (!user) {
                     window.location.href = '../login.html';
                     return;
                 }
-                
-                console.log('✅ Usuario autenticado:', user.email);
                 resolve(user);
             });
         });
     }
 
-    obtenerIdDeUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id');
-    }
+    configurarEventListeners() {
+        // Botón autorizar
+        this.elementos.btnAutorizar.addEventListener('click', () => this.procesarAutorizacion());
 
-    configurarComponentes() {
-        // Configurar título y breadcrumbs
-        if (window.SICAComponents) {
-            window.SICAComponents.setPageTitle('Autorización SICA - Admin');
-            window.SICAComponents.addBreadcrumbs([
-                { text: 'Dashboard', link: '../index.html' },
-                { text: 'Bitácora', link: 'bitacora.html' },
-                { text: 'Autorización', active: true }
-            ]);
-        }
-    }
+        // Controles de zoom
+        document.getElementById('btnZoomIn').addEventListener('click', () => this.zoom(125));
+        document.getElementById('btnZoomOut').addEventListener('click', () => this.zoom(75));
+        document.getElementById('btnRefresh').addEventListener('click', () => this.actualizarVistaPrevia());
+        document.getElementById('btnFullscreen').addEventListener('click', () => this.toggleFullscreen());
 
-    configurarEventos() {
-        // Botón guardar
-        document.getElementById('btnGuardar')?.addEventListener('click', () => {
-            this.procesarAutorizacion();
-        });
-
-        // Actualizar vista previa cuando cambie el folio
-        document.getElementById('folioNumber')?.addEventListener('input', () => {
-            this.actualizarVistaPrevia();
-        });
-
-        // Botón refrescar vista previa
-        document.getElementById('btnRefreshPreview')?.addEventListener('click', () => {
-            this.actualizarVistaPrevia(true);
-        });
-
-        // Botón pantalla completa
-        document.getElementById('btnFullscreen')?.addEventListener('click', () => {
-            this.togglePantallaCompleta();
+        // Campos del formulario
+        const campos = ['folioNumber', 'nombreAsesor', 'numeroCuenta', 'carrera', 
+                       'fechaInicio', 'fechaTermino', 'actividadesDesarrolladas', 'clavePrograma'];
+        
+        campos.forEach(campoId => {
+            const campo = document.getElementById(campoId);
+            if (campo) {
+                campo.addEventListener('input', () => this.actualizarVistaPrevia());
+                campo.addEventListener('change', () => this.calcularDuracion());
+            }
         });
     }
 
     async cargarDatosPendiente() {
         try {
-            console.log('📋 Cargando datos del pendiente:', this.pendienteId);
-            
-            // Obtener datos del servicio social
-            const servicioSocialDoc = await this.db.collection('serviciosocial')
-                .doc(this.pendienteId).get();
-            
-            if (!servicioSocialDoc.exists) {
+            // Obtener datos del pendiente
+            const doc = await firebase.firestore()
+                .collection('serviciosocial')
+                .doc(this.pendienteId)
+                .get();
+
+            if (!doc.exists) {
                 throw new Error('Pendiente no encontrado');
             }
-            
-            const datosServicio = servicioSocialDoc.data();
-            
-            // Obtener datos del asesor
-            let datosAsesor = null;
-            if (datosServicio.asesorId) {
-                try {
-                    const asesorId = datosServicio.asesorId.replace('asesor_', '');
-                    const asesorQuery = await this.db.collection('asesores')
-                        .where('numeroCuenta', '==', asesorId).get();
-                    
-                    if (!asesorQuery.empty) {
-                        datosAsesor = asesorQuery.docs[0].data();
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Error obteniendo asesor:', error);
-                }
-            }
-            
-            // Combinar datos
-            this.datosOriginales = {
-                servicioSocial: datosServicio,
-                asesor: datosAsesor,
-                id: this.pendienteId
-            };
-            
-            // Mostrar datos en la interfaz
-            this.mostrarDatosEnFormulario();
-            
-            // Obtener siguiente número de folio
-            await this.configurarSiguienteFolio();
-            
-            // Ocultar loading y mostrar contenido
-            document.getElementById('loadingScreen').style.display = 'none';
-            document.getElementById('authContent').style.display = 'block';
-            
-            console.log('✅ Datos cargados correctamente');
-            
+
+            const pendiente = doc.data();
+            this.tipoDocumento = pendiente.tipoAutorizacion;
+
+            // Cargar datos del asesor
+            await this.cargarDatosAsesor(pendiente.asesorId);
+
+            // Poblar formulario
+            this.poblarFormulario(pendiente);
+
+            // Actualizar interfaz
+            this.actualizarTituloDocumento();
+            this.actualizarFechaSolicitud(pendiente.fechaSolicitud);
+            this.actualizarVistaPrevia();
+
         } catch (error) {
-            console.error('❌ Error cargando pendiente:', error);
-            this.mostrarError(error.message);
+            throw new Error(`Error cargando pendiente: ${error.message}`);
         }
     }
 
-    mostrarDatosEnFormulario() {
-        const { servicioSocial, asesor } = this.datosOriginales;
-        
-        // Actualizar título según tipo de autorización
-        const tipoAutorizacion = servicioSocial.tipoAutorizacion || 'Autorización SICA';
-        document.getElementById('tipoAutorizacionTitle').textContent = this.formatearTipoAutorizacion(tipoAutorizacion);
-        
-        // Mostrar fecha de solicitud
-        const fechaSolicitud = convertirFechaSegura(servicioSocial.fechaSolicitud) || new Date();
-        document.getElementById('fechaSolicitud').textContent = 
-            `Solicitado: ${this.formatearFecha(fechaSolicitud)}`;
-        
-        // Datos del asesor
-        if (asesor) {
-            document.getElementById('nombreAsesor').value = asesor.nombreAsesor || '';
-            document.getElementById('numeroCuenta').value = asesor.numeroCuenta || '';
-            document.getElementById('carrera').value = asesor.carrera || '';
+    async cargarDatosAsesor(asesorId) {
+        try {
+            const numeroCuenta = asesorId.replace('asesor_', '');
+            const query = await firebase.firestore()
+                .collection('asesores')
+                .where('numeroCuenta', '==', numeroCuenta)
+                .get();
+
+            if (!query.empty) {
+                const asesor = query.docs[0].data();
+                document.getElementById('nombreAsesor').value = asesor.nombreAsesor || '';
+                document.getElementById('numeroCuenta').value = asesor.numeroCuenta || '';
+                document.getElementById('carrera').value = asesor.carrera || '';
+            }
+        } catch (error) {
+            console.warn('Error cargando asesor:', error);
         }
-        
-        // Fechas del servicio social - Para inputs de tipo date, usar directamente el string
-        if (servicioSocial.fechaInicio) {
-            document.getElementById('fechaInicio').value = servicioSocial.fechaInicio; // Directo como string "2026-03-03"
+    }
+
+    poblarFormulario(pendiente) {
+        // Obtener siguiente número de folio
+        this.obtenerSiguienteNumeroFolio();
+
+        // Fechas del servicio
+        if (pendiente.fechaInicio) {
+            document.getElementById('fechaInicio').value = this.formatearFechaInput(pendiente.fechaInicio);
         }
-        
-        if (servicioSocial.fechaTermino) {
-            document.getElementById('fechaTermino').value = servicioSocial.fechaTermino; // Directo como string "2026-03-03"
+        if (pendiente.fechaTermino) {
+            document.getElementById('fechaTermino').value = this.formatearFechaInput(pendiente.fechaTermino);
         }
+
+        // Actividades por defecto
+        const actividades = [
+            'Préstamo de equipos de cómputo a los alumnos',
+            'Atención al servicio de impresiones',
+            'Apoyo en departamentales',
+            'Apoyo en cursos y clases en sala de cómputo',
+            'Atención a usuarios con problemas en equipos'
+        ].join('\n• ');
         
-        // Clave del programa
-        document.getElementById('clavePrograma').value = servicioSocial.clavePrograma || '';
+        document.getElementById('actividadesDesarrolladas').value = '• ' + actividades;
         
-        // Calcular duración
         this.calcularDuracion();
     }
 
-    async configurarSiguienteFolio() {
+    async obtenerSiguienteNumeroFolio() {
         try {
-            const siguienteNumero = await this.obtenerSiguienteNumeroFolio();
-            document.getElementById('folioNumber').value = siguienteNumero.toString().padStart(3, '0');
+            const year = new Date().getFullYear();
+            const query = await firebase.firestore()
+                .collection('edgar')
+                .where('folio', '>=', `CI/001/${year}`)
+                .where('folio', '<=', `CI/999/${year}`)
+                .orderBy('folio', 'desc')
+                .limit(1)
+                .get();
+
+            let siguiente = 1;
+            if (!query.empty) {
+                const ultimo = query.docs[0].data().folio;
+                const numero = parseInt(ultimo.match(/CI\/(\d+)\/\d{4}/)?.[1] || '0');
+                siguiente = numero + 1;
+            }
+
+            document.getElementById('folioNumber').value = siguiente.toString().padStart(3, '0');
         } catch (error) {
-            console.error('Error obteniendo siguiente folio:', error);
             document.getElementById('folioNumber').value = '001';
         }
     }
 
-    async obtenerSiguienteNumeroFolio() {
-        const year = new Date().getFullYear();
-        const query = await this.db.collection('edgar')
-            .where('folio', '>=', `CI/001/${year}`)
-            .where('folio', '<=', `CI/999/${year}`)
-            .orderBy('folio', 'desc')
-            .limit(1)
-            .get();
+    configurarActualizacionTiempoReal() {
+        const observer = new MutationObserver(() => this.actualizarVistaPrevia());
         
-        if (query.empty) {
-            return 1;
+        document.querySelectorAll('input, textarea').forEach(campo => {
+            observer.observe(campo, { attributes: true, attributeFilter: ['value'] });
+        });
+    }
+
+    actualizarTituloDocumento() {
+        const titulo = this.tipoDocumento?.includes('aceptacion') ? 
+            'Carta de Aceptación' : 'Carta de Término';
+        this.elementos.tipoDocumento.textContent = titulo;
+    }
+
+    actualizarFechaSolicitud(timestamp) {
+        if (timestamp) {
+            const fecha = timestamp.toDate();
+            this.elementos.fechaSolicitud.textContent = 
+                `Solicitado: ${fecha.toLocaleDateString('es-ES')}`;
         }
-        
-        const ultimoFolio = query.docs[0].data().folio;
-        const numero = parseInt(ultimoFolio.match(/CI\/(\d+)\/\d{4}/)[1]);
-        return numero + 1;
     }
 
     calcularDuracion() {
-        const fechaInicio = document.getElementById('fechaInicio').value;
-        const fechaTermino = document.getElementById('fechaTermino').value;
+        const inicio = document.getElementById('fechaInicio').value;
+        const termino = document.getElementById('fechaTermino').value;
         
-        if (fechaInicio && fechaTermino) {
-            const inicio = new Date(fechaInicio);
-            const termino = new Date(fechaTermino);
-            const meses = Math.round((termino - inicio) / (1000 * 60 * 60 * 24 * 30));
+        if (inicio && termino) {
+            const fechaInicio = new Date(inicio);
+            const fechaTermino = new Date(termino);
+            const diffTime = Math.abs(fechaTermino - fechaInicio);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const meses = Math.round(diffDays / 30);
             
-            document.getElementById('duracionServicio').textContent = 
-                `Duración: ${meses} meses`;
+            this.elementos.duracionDisplay.innerHTML = 
+                `<i class="bi bi-clock"></i> Duración: ${meses} meses (${diffDays} días)`;
         }
     }
 
-    // ==========================================
-    // VISTA PREVIA
-    // ==========================================
-
-    configurarVistaPrevia() {
-        // Actualizar vista previa inicial
-        this.actualizarVistaPrevia();
+    actualizarVistaPrevia() {
+        const datos = this.obtenerDatosFormulario();
         
-        // Configurar actualización automática cada 2 segundos si hay cambios
-        this.previewInterval = setInterval(() => {
-            const folioActual = document.getElementById('folioNumber').value;
-            if (this.ultimoFolioPreview !== folioActual) {
-                this.actualizarVistaPrevia();
-                this.ultimoFolioPreview = folioActual;
-            }
-        }, 2000);
+        if (!datos.nombreAsesor || !datos.folioCompleto) {
+            this.mostrarCargandoDocumento();
+            return;
+        }
+
+        const contenidoHTML = this.tipoDocumento?.includes('aceptacion') ? 
+            this.generarCartaAceptacion(datos) : this.generarCartaTermino(datos);
+
+        this.elementos.documentPage.innerHTML = `
+            <div class="document-content">
+                ${contenidoHTML}
+            </div>
+        `;
     }
 
-    async actualizarVistaPrevia(forzar = false) {
-        const previewContainer = document.getElementById('documentPreview');
+    obtenerDatosFormulario() {
+        const folioNum = document.getElementById('folioNumber').value.padStart(3, '0');
+        const year = new Date().getFullYear();
         
-        if (!forzar && previewContainer.querySelector('.preview-content')) {
-            // Solo actualizar si el folio cambió
-            const folioActual = this.obtenerFolioCompleto();
-            if (this.ultimoFolioPreview === folioActual) {
-                return;
-            }
+        return {
+            folioCompleto: `CI/${folioNum}/${year}`,
+            nombreAsesor: document.getElementById('nombreAsesor').value,
+            numeroCuenta: document.getElementById('numeroCuenta').value,
+            carrera: document.getElementById('carrera').value,
+            fechaInicio: document.getElementById('fechaInicio').value,
+            fechaTermino: document.getElementById('fechaTermino').value,
+            actividades: document.getElementById('actividadesDesarrolladas').value,
+            clavePrograma: document.getElementById('clavePrograma').value,
+            fechaHoy: new Date().toLocaleDateString('es-ES', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            })
+        };
+    }
+
+    generarCartaAceptacion(datos) {
+        return `
+            <div class="document-header">
+                <div class="logo-section">
+                    <div class="logo-placeholder">LOGO<br>FQ</div>
+                </div>
+                <div class="header-text">
+                    <h1>FACULTAD DE QUÍMICA UNAM</h1>
+                    <h2>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</h2>
+                    <h2>CENTRO DE INFORMÁTICA Y SICAS</h2>
+                </div>
+            </div>
+            
+            <div class="folio-info">
+                <strong>FOLIO: ${datos.folioCompleto}</strong><br>
+                <strong>Asunto: Carta de aceptación</strong>
+            </div>
+            
+            <div class="document-body">
+                <p>Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta <strong>${datos.numeroCuenta}</strong>, de la Licenciatura en <strong>${datos.carrera}</strong> ha sido aceptado(a) para realizar su Servicio Social en este Centro, a partir del <strong>${this.formatearFecha(datos.fechaInicio)}</strong>.</p>
+                
+                <div class="activities-section">
+                    <p><strong>ACTIVIDADES A DESARROLLAR</strong></p>
+                    <ul class="activities-list">
+                        ${this.formatearActividades(datos.actividades)}
+                    </ul>
+                </div>
+                
+                <div class="signature-section">
+                    <p><strong>ATENTAMENTE</strong></p>
+                    <p><em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em></p>
+                    <p>Ciudad Universitaria, Cd. Mx., ${datos.fechaHoy}</p>
+                    <div class="signature-line"></div>
+                    <p><strong>RESPONSABLE DEL CENTRO DE INFORMÁTICA Y SICAS</strong></p>
+                </div>
+            </div>
+        `;
+    }
+
+    generarCartaTermino(datos) {
+        return `
+            <div class="document-header">
+                <div class="logo-section">
+                    <div class="logo-placeholder">LOGO<br>FQ</div>
+                </div>
+                <div class="header-text">
+                    <h1>FACULTAD DE QUÍMICA UNAM</h1>
+                    <h2>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</h2>
+                    <h2>CENTRO DE INFORMÁTICA Y SICAS</h2>
+                </div>
+            </div>
+            
+            <div class="folio-info">
+                <strong>FOLIO: ${datos.folioCompleto}</strong><br>
+                <strong>Asunto: Carta de término</strong>
+            </div>
+            
+            <div class="document-body">
+                <p>Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta <strong>${datos.numeroCuenta}</strong>, de la Licenciatura en <strong>${datos.carrera}</strong> concluyó satisfactoriamente su Servicio Social, cumpliendo las <strong>480 horas reglamentarias</strong>.</p>
+                
+                <div class="activities-section">
+                    <p><strong>ACTIVIDADES DESARROLLADAS</strong></p>
+                    <ul class="activities-list">
+                        ${this.formatearActividades(datos.actividades)}
+                    </ul>
+                </div>
+                
+                <div class="signature-section">
+                    <p><strong>ATENTAMENTE</strong></p>
+                    <p><em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em></p>
+                    <p>Ciudad Universitaria, Cd. Mx., ${datos.fechaHoy}</p>
+                    <div class="signature-line"></div>
+                    <p><strong>RESPONSABLE DEL CENTRO DE INFORMÁTICA Y SICAS</strong></p>
+                </div>
+            </div>
+        `;
+    }
+
+    formatearActividades(actividades) {
+        return actividades.split('\n')
+            .filter(linea => linea.trim())
+            .map(linea => `<li>${linea.replace(/^[•\-\*]\s*/, '')}</li>`)
+            .join('');
+    }
+
+    mostrarCargandoDocumento() {
+        this.elementos.documentPage.innerHTML = `
+            <div class="loading-document">
+                <div class="spinner-border text-primary mb-3"></div>
+                <p>Generando vista previa...</p>
+                <small>Complete los datos para ver el documento</small>
+            </div>
+        `;
+    }
+
+    zoom(porcentaje) {
+        if (porcentaje) {
+            this.zoomLevel = porcentaje;
         }
         
-        // Mostrar loading
-        previewContainer.innerHTML = `
-            <div class="preview-loading text-center py-5">
-                <div class="spinner-border text-primary mb-3" role="status"></div>
-                <p class="text-muted">Generando vista previa...</p>
-            </div>
-        `;
-        
-        try {
-            const htmlContent = await this.generarVistaPrevia();
-            
-            previewContainer.innerHTML = `
-                <div class="preview-content">
-                    ${htmlContent}
-                </div>
-            `;
-            
-            this.ultimoFolioPreview = this.obtenerFolioCompleto();
-            
-        } catch (error) {
-            console.error('Error generando vista previa:', error);
-            previewContainer.innerHTML = `
-                <div class="text-center py-5 text-danger">
-                    <i class="bi bi-exclamation-triangle display-4 mb-3"></i>
-                    <p>Error generando vista previa</p>
-                    <button class="btn btn-outline-primary btn-sm" onclick="autorizacionMain.actualizarVistaPrevia(true)">
-                        Reintentar
-                    </button>
-                </div>
-            `;
+        this.elementos.documentPage.className = `document-page zoom-${this.zoomLevel}`;
+        this.elementos.zoomIndicator.textContent = `${this.zoomLevel}%`;
+    }
+
+    toggleFullscreen() {
+        const container = this.elementos.documentContainer;
+        if (!document.fullscreenElement) {
+            container.requestFullscreen();
+        } else {
+            document.exitFullscreen();
         }
     }
-
-    async generarVistaPrevia() {
-        const datos = this.obtenerDatosParaDocumento();
-        const tipoDoc = this.datosOriginales.servicioSocial.tipoAutorizacion;
-        
-        // Generar HTML según tipo de documento
-        switch (tipoDoc) {
-            case 'carta-aceptacion-FQ':
-                return this.generarPreviewCartaAceptacionFQ(datos);
-            case 'carta-aceptacion-prepa':
-                return this.generarPreviewCartaAceptacionPrepa(datos);
-            case 'carta-termino-FQ':
-                return this.generarPreviewCartaTerminoFQ(datos);
-            case 'carta-termino-prepa':
-                return this.generarPreviewCartaTerminoPrepa(datos);
-            default:
-                return '<p class="text-center text-muted py-5">Tipo de documento no reconocido</p>';
-        }
-    }
-
-    generarPreviewCartaAceptacionFQ(datos) {
-        return `
-            <div class="document-header">
-                <div class="logo-placeholder">
-                    <div>LOGO<br>FQ</div>
-                </div>
-                <div class="header-text">
-                    <h2>FACULTAD DE QUÍMICA UNAM</h2>
-                    <p><strong>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</strong></p>
-                    <p><strong>CENTRO DE INFORMÁTICA Y SICAS</strong></p>
-                </div>
-            </div>
-            
-            <div class="text-end mb-3">
-                <p><strong>FOLIO: ${datos.folio}</strong></p>
-                <p><strong>Asunto: Carta de aceptación.</strong></p>
-            </div>
-            
-            <div class="mb-4">
-                <p><strong>MVZ GRISELL MORENO MORALES</strong><br>
-                <strong>COORDINADORA</strong><br>
-                <strong>FACULTAD DE QUÍMICA</strong><br>
-                <strong>PRESENTE</strong></p>
-            </div>
-            
-            <p class="text-justify">
-                Por este conducto me permito informar a usted, que el alumno (a) 
-                <strong>${datos.nombreAsesor}</strong>, con número de cuenta 
-                <strong>${datos.numeroCuenta}</strong>, inscrito en la 
-                <strong>${datos.carrera}</strong>, ha sido aceptado para poder realizar 
-                su servicio social, durante un periodo de <strong>6</strong> meses, 
-                en el programa de trabajo "<strong>Sala de informática y cómputo para alumnos (SICA)</strong>" 
-                con clave <strong>${datos.clavePrograma}</strong>.
-            </p>
-            
-            <p class="text-center mt-4">
-                <strong>ATENTAMENTE</strong><br>
-                <em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em>
-            </p>
-            
-            <div class="text-center mt-5">
-                <p>Cd. Universitaria, CDMX a ${this.formatearFecha(new Date())}.</p>
-            </div>
-        `;
-    }
-
-    generarPreviewCartaAceptacionPrepa(datos) {
-        return `
-            <div class="document-header">
-                <div class="logo-placeholder">
-                    <div>LOGO<br>FQ</div>
-                </div>
-                <div class="header-text">
-                    <h2>FACULTAD DE QUÍMICA</h2>
-                    <p><strong>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</strong></p>
-                    <p><strong>CENTRO DE INFORMÁTICA</strong></p>
-                </div>
-            </div>
-            
-            <div class="text-end mb-3">
-                <p><strong>FOLIO: ${datos.folio}</strong></p>
-                <p>Ciudad de México a ${this.formatearFecha(new Date())}</p>
-                <p><strong>Asunto: Carta de aceptación Servicio Social.</strong></p>
-            </div>
-            
-            <div class="mb-4">
-                <p><strong>MTRA. ADANELY PÉREZ RODRÍGUEZ</strong><br>
-                <strong>COORDINADORA GENERAL DE LOS ESTUDIOS TÉCNICOS<br>
-                ESPECIALIZADOS DE LA ESCUELA NACIONAL PREPARATORIA</strong><br>
-                <strong>PRESENTE</strong></p>
-            </div>
-            
-            <p class="text-justify">
-                Por este conducto me permito informar a usted, que el alumno (a) 
-                <strong>${datos.nombreAsesor}</strong>, con número de cuenta, 
-                <strong>${datos.numeroCuenta}</strong> inscrito en la 
-                <strong>${datos.carrera || 'xxxxxxxx'}</strong>, ha sido aceptado 
-                para poder concluir su servicio social, durante un periodo de 
-                <strong>6</strong> meses.
-            </p>
-            
-            <p class="text-center mt-4">
-                <strong>ATENTAMENTE</strong><br>
-                <em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em>
-            </p>
-        `;
-    }
-
-    generarPreviewCartaTerminoFQ(datos) {
-        return `
-            <div class="document-header">
-                <div class="logo-placeholder">
-                    <div>LOGO<br>FQ</div>
-                </div>
-                <div class="header-text">
-                    <h2>FACULTAD DE QUÍMICA UNAM</h2>
-                    <p><strong>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</strong></p>
-                    <p><strong>CENTRO DE INFORMÁTICA Y SICAS</strong></p>
-                </div>
-            </div>
-            
-            <div class="text-end mb-3">
-                <p><strong>FOLIO: ${datos.folio}</strong></p>
-                <p><strong>Asunto: Carta de término</strong></p>
-            </div>
-            
-            <p class="text-justify">
-                Por este conducto me permito informar a usted, que el alumno (a) 
-                <strong>${datos.nombreAsesor}</strong>, con número de cuenta 
-                <strong>${datos.numeroCuenta}</strong>, de la Licenciatura en 
-                <strong>${datos.carrera}</strong> concluyó satisfactoriamente su 
-                Servicio Social, cumpliendo las <strong>480</strong> horas reglamentarias.
-            </p>
-            
-            <div class="mt-4">
-                <h6><strong>ACTIVIDADES DESARROLLADAS</strong></h6>
-                <ul>
-                    <li>Préstamo de equipos de cómputo a los alumnos</li>
-                    <li>Atención al servicio de impresiones</li>
-                    <li>Apoyo en departamentales</li>
-                    <li>Apoyo en cursos y clases en sala de cómputo</li>
-                    <li>Atención a usuarios con problemas en equipos</li>
-                </ul>
-            </div>
-            
-            <p class="text-center mt-4">
-                <strong>ATENTAMENTE</strong><br>
-                <em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em>
-            </p>
-        `;
-    }
-
-    generarPreviewCartaTerminoPrepa(datos) {
-        return `
-            <div class="document-header">
-                <div class="logo-placeholder">
-                    <div>LOGO<br>FQ</div>
-                </div>
-                <div class="header-text">
-                    <h2>FACULTAD DE QUÍMICA</h2>
-                    <p><strong>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</strong></p>
-                    <p><strong>CENTRO DE INFORMÁTICA</strong></p>
-                </div>
-            </div>
-            
-            <div class="text-end mb-3">
-                <p><strong>FOLIO: ${datos.folio}</strong></p>
-                <p>Ciudad de México a ${this.formatearFecha(new Date())}</p>
-                <p><strong>Asunto: Carta de término de Servicio Social.</strong></p>
-            </div>
-            
-            <div class="mb-4">
-                <p><strong>MTRA. ADANELY PÉREZ RODRÍGUEZ</strong><br>
-                <strong>COORDINADORA GENERAL DE LOS ESTUDIOS TÉCNICOS<br>
-                ESPECIALIZADOS DE LA ESCUELA NACIONAL PREPARATORIA</strong><br>
-                <strong>PRESENTE</strong></p>
-            </div>
-            
-            <p class="text-justify">
-                Por este conducto me permito informar a usted, que el alumno (a) 
-                <strong>${datos.nombreAsesor}</strong> con número de cuenta 
-                <strong>${datos.numeroCuenta}</strong>, inscrito en la 
-                <strong>${datos.carrera || 'XXXXXX'}</strong>, ha concluido 
-                satisfactoriamente su servicio social, cubriendo <strong>480</strong> 
-                horas totales.
-            </p>
-            
-            <p class="text-center mt-4">
-                <strong>ATENTAMENTE</strong><br>
-                <em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em>
-            </p>
-        `;
-    }
-
-    // ==========================================
-    // PROCESAMIENTO DE AUTORIZACIÓN
-    // ==========================================
 
     async procesarAutorizacion() {
-        const btnGuardar = document.getElementById('btnGuardar');
-        const textoOriginal = btnGuardar.innerHTML;
-        
         try {
-            // Mostrar loading
-            btnGuardar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Procesando...';
-            btnGuardar.disabled = true;
-            
-            // Validar datos
-            if (!this.validarDatos()) {
+            if (!this.validarFormulario()) {
+                this.mostrarError('Complete todos los campos requeridos');
                 return;
             }
+
+            // Mostrar loading en botón
+            this.elementos.btnAutorizar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Procesando...';
+            this.elementos.btnAutorizar.disabled = true;
+
+            const datos = this.obtenerDatosFormulario();
+            await this.guardarAutorizacion(datos);
             
-            // Obtener datos para autorización
-            const datosAutorizacion = this.obtenerDatosParaDocumento();
-            
-            // Generar PDF
-            console.log('📄 Generando documento PDF...');
-            await this.generarDocumentoPDF(datosAutorizacion);
-            
-            // Actualizar base de datos
-            console.log('💾 Actualizando base de datos...');
-            await this.actualizarBaseDatos(datosAutorizacion);
-            
-            // Mostrar éxito
-            this.mostrarExito(datosAutorizacion.folio);
-            
-            console.log('✅ Autorización completada exitosamente');
-            
+            this.mostrarExito(datos.folioCompleto);
+
         } catch (error) {
-            console.error('❌ Error procesando autorización:', error);
-            this.mostrarNotificacion(
-                'Error en Autorización',
-                error.message || 'No se pudo completar la autorización',
-                'error'
-            );
-        } finally {
-            // Restaurar botón
-            btnGuardar.innerHTML = textoOriginal;
-            btnGuardar.disabled = false;
+            this.mostrarError(error.message);
+            this.elementos.btnAutorizar.innerHTML = '<i class="bi bi-check-circle me-2"></i>Autorizar';
+            this.elementos.btnAutorizar.disabled = false;
         }
     }
 
-    validarDatos() {
-        const folioNumber = document.getElementById('folioNumber').value;
-        
-        if (!folioNumber || parseInt(folioNumber) < 1 || parseInt(folioNumber) > 999) {
-            this.mostrarNotificacion(
-                'Folio inválido',
-                'El número de folio debe estar entre 001 y 999',
-                'warning'
-            );
-            return false;
-        }
-        
-        if (!this.datosOriginales.asesor) {
-            this.mostrarNotificacion(
-                'Datos incompletos',
-                'No se encontraron datos completos del asesor',
-                'warning'
-            );
-            return false;
-        }
-        
-        return true;
+    validarFormulario() {
+        const requeridos = ['folioNumber', 'nombreAsesor', 'numeroCuenta', 'carrera', 'fechaInicio', 'fechaTermino'];
+        return requeridos.every(id => document.getElementById(id).value.trim());
     }
 
-obtenerDatosParaDocumento() {
-    const folioCompleto = this.obtenerFolioCompleto();
-    const { servicioSocial, asesor } = this.datosOriginales;
-    
-    return {
-        folio: folioCompleto,
-        folioAceptacion: servicioSocial.tipoAutorizacion.includes('aceptacion') ? folioCompleto : null,
-        folioTermino: servicioSocial.tipoAutorizacion.includes('termino') ? folioCompleto : null,
-        nombreAsesor: asesor?.nombreAsesor || '',
-        numeroCuenta: asesor?.numeroCuenta || '',
-        carrera: asesor?.carrera || '',
-        fechaInicio: convertirFechaSegura(servicioSocial.fechaInicio),
-        fechaTermino: convertirFechaSegura(servicioSocial.fechaTermino),
-        clavePrograma: servicioSocial.clavePrograma || '',
-        tipoAutorizacion: servicioSocial.tipoAutorizacion,
-        programa: 'Sala de informática y cómputo para alumnos (SICA)',
-        fechaAceptacion: new Date(),
-        fechaCarta: new Date()
-    };
-}
+    async guardarAutorizacion(datos) {
+        const batch = firebase.firestore().batch();
 
-    async generarDocumentoPDF(datos) {
-        const tipoDoc = datos.tipoAutorizacion;
-        
-        switch (tipoDoc) {
-            case 'carta-aceptacion-FQ':
-                if (window.generarCartaAceptacionFQPDF) {
-                    await window.generarCartaAceptacionFQPDF(datos);
-                } else {
-                    throw new Error('Generador de carta FQ no disponible');
-                }
-                break;
-                
-            case 'carta-aceptacion-prepa':
-                if (window.generarCartaAceptacionPrepaPDF) {
-                    await window.generarCartaAceptacionPrepaPDF(datos);
-                } else {
-                    throw new Error('Generador de carta Prepa no disponible');
-                }
-                break;
-                
-            case 'carta-termino-FQ':
-                if (window.generarCartaTerminoFQPDF) {
-                    await window.generarCartaTerminoFQPDF(datos);
-                } else {
-                    throw new Error('Generador de carta término FQ no disponible');
-                }
-                break;
-                
-            case 'carta-termino-prepa':
-                if (window.generarCartaTerminoPrepaPDF) {
-                    await window.generarCartaTerminoPrepaPDF(datos);
-                } else {
-                    throw new Error('Generador de carta término Prepa no disponible');
-                }
-                break;
-                
-            default:
-                throw new Error(`Tipo de documento no soportado: ${tipoDoc}`);
-        }
-    }
-
-    async actualizarBaseDatos(datosAutorizacion) {
-        const batch = this.db.batch();
-        
-        // 1. Actualizar servicio social
-        const servicioSocialRef = this.db.collection('serviciosocial').doc(this.pendienteId);
-        const updateData = {
+        // Actualizar pendiente
+        const pendienteRef = firebase.firestore().collection('serviciosocial').doc(this.pendienteId);
+        batch.update(pendienteRef, {
             porAutorizar: 'Autorizado',
             fechaAutorizacion: firebase.firestore.Timestamp.now(),
-            autorizadoPor: firebase.auth().currentUser?.email || 'admin'
-        };
-        
-        // Agregar folio según tipo
-        if (datosAutorizacion.tipoAutorizacion.includes('aceptacion')) {
-            updateData.folioAceptacion = datosAutorizacion.folio;
-        } else if (datosAutorizacion.tipoAutorizacion.includes('termino')) {
-            updateData.folioTermino = datosAutorizacion.folio;
-        }
-        
-        batch.update(servicioSocialRef, updateData);
-        
-        // 2. Crear registro en Edgar
-        const edgarRef = this.db.collection('edgar').doc();
+            autorizadoPor: firebase.auth().currentUser?.email || 'admin',
+            folioAsignado: datos.folioCompleto
+        });
+
+        // Crear registro en Edgar
+        const edgarRef = firebase.firestore().collection('edgar').doc();
         batch.set(edgarRef, {
-            folio: datosAutorizacion.folio,
-            nombre: datosAutorizacion.nombreAsesor,
-            carrera: datosAutorizacion.carrera,
-            tipoAutorizacion: datosAutorizacion.tipoAutorizacion,
+            folio: datos.folioCompleto,
+            nombre: datos.nombreAsesor,
+            carrera: datos.carrera,
+            tipoAutorizacion: this.tipoDocumento,
             fecha: firebase.firestore.Timestamp.now(),
             fechaCreacion: firebase.firestore.Timestamp.now(),
             creadoPor: firebase.auth().currentUser?.email || 'admin',
             tipo: 'sica',
             importancia: 'alta',
-            comentarios: `Autorización SICA: ${this.formatearTipoAutorizacion(datosAutorizacion.tipoAutorizacion)}`,
-            numeroCuenta: datosAutorizacion.numeroCuenta
+            comentarios: `Autorización SICA: ${this.tipoDocumento}`,
+            numeroCuenta: datos.numeroCuenta
         });
-        
+
         await batch.commit();
     }
 
-    // ==========================================
-    // UTILIDADES
-    // ==========================================
+    mostrarExito(folio) {
+        document.getElementById('folioFinal').textContent = folio;
+        const modal = new bootstrap.Modal(document.getElementById('modalExito'));
+        modal.show();
 
-    obtenerFolioCompleto() {
-        const numero = document.getElementById('folioNumber').value.padStart(3, '0');
-        const año = new Date().getFullYear();
-        return `CI/${numero}/${año}`;
+        // Configurar descarga
+        document.getElementById('btnDescargar').onclick = () => this.descargarDocumento();
     }
 
-    formatearTipoAutorizacion(tipo) {
-        const tipos = {
-            'carta-aceptacion-FQ': 'Carta de Aceptación - Facultad de Química',
-            'carta-aceptacion-prepa': 'Carta de Aceptación - Preparatoria',
-            'carta-termino-FQ': 'Carta de Término - Facultad de Química',
-            'carta-termino-prepa': 'Carta de Término - Preparatoria'
-        };
+    descargarDocumento() {
+        const contenido = this.elementos.documentPage.innerHTML;
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Documento</title></head><body>${contenido}</body></html>`;
         
-        return tipos[tipo] || tipo;
-    }
-
-    formatearFecha(fecha) {
-        if (!fecha) return '';
-        
-        const f = new Date(fecha);
-        return f.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    }
-
-    formatearFechaInput(fecha) {
-        if (!fecha) return '';
-        
-        const f = new Date(fecha);
-        return f.toISOString().split('T')[0];
-    }
-
-    togglePantallaCompleta() {
-        const previewCard = document.querySelector('.preview-card');
-        const btn = document.getElementById('btnFullscreen');
-        
-        if (previewCard.classList.contains('fullscreen')) {
-            previewCard.classList.remove('fullscreen');
-            btn.innerHTML = '<i class="bi bi-fullscreen"></i>';
-        } else {
-            previewCard.classList.add('fullscreen');
-            btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
-        }
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.obtenerDatosFormulario().folioCompleto}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     mostrarError(mensaje) {
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('authContent').style.display = 'none';
-        document.getElementById('errorScreen').style.display = 'block';
-        document.getElementById('errorMessage').textContent = mensaje;
-    }
-
-    mostrarExito(folio) {
-        document.getElementById('folioAsignado').textContent = folio;
-        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+        document.getElementById('mensajeError').textContent = mensaje;
+        const modal = new bootstrap.Modal(document.getElementById('modalError'));
         modal.show();
     }
 
-    mostrarNotificacion(titulo, mensaje, tipo = 'info') {
-        if (window.SICAComponents) {
-            const iconos = {
-                success: 'bi-check-circle-fill',
-                error: 'bi-x-circle-fill',
-                warning: 'bi-exclamation-triangle-fill',
-                info: 'bi-info-circle-fill'
-            };
-            
-            window.SICAComponents.notify(titulo, mensaje, tipo, iconos[tipo]);
-        } else {
-            alert(`${titulo}: ${mensaje}`);
-        }
+    formatearFecha(fechaString) {
+        if (!fechaString) return '';
+        return new Date(fechaString).toLocaleDateString('es-ES', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
     }
 
-    // Cleanup al salir
-    destruir() {
-        if (this.previewInterval) {
-            clearInterval(this.previewInterval);
-            this.previewInterval = null;
-        }
+    formatearFechaInput(timestamp) {
+        const fecha = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return fecha.toISOString().split('T')[0];
     }
 }
 
-// Función auxiliar para convertir fechas string ISO a Date
-function convertirFechaSegura(fecha) {
-    if (!fecha) return null;
-    
-    // Si ya es un objeto Date
-    if (fecha instanceof Date) {
-        return fecha;
-    }
-    
-    // Si es un string ISO (formato "2026-03-03")
-    if (typeof fecha === 'string') {
-        // Para fechas en formato "YYYY-MM-DD", agregar hora para evitar problemas de timezone
-        const fechaStr = fecha.includes('T') ? fecha : fecha + 'T00:00:00';
-        const fechaConvertida = new Date(fechaStr);
-        return isNaN(fechaConvertida.getTime()) ? null : fechaConvertida;
-    }
-    
-    // Si es un Timestamp de Firebase (por compatibilidad)
-    if (fecha && typeof fecha.toDate === 'function') {
-        return fecha.toDate();
-    }
-    
-    // Si es un número (timestamp)
-    if (typeof fecha === 'number') {
-        return new Date(fecha);
-    }
-    
-    console.warn('Formato de fecha no reconocido:', fecha, typeof fecha);
-    return null;
-}
-
-// ==========================================
-// INICIALIZACIÓN GLOBAL
-// ==========================================
-
-// Instancia global
-window.autorizacionMain = new AutorizacionMain();
-
-// Cleanup al salir
-window.addEventListener('beforeunload', () => {
-    if (window.autorizacionMain) {
-        window.autorizacionMain.destruir();
-    }
+// Inicializar aplicación
+document.addEventListener('DOMContentLoaded', () => {
+    window.autorizacion = new AutorizacionSICA();
+    window.autorizacion.inicializar();
 });
 
-// Verificar autenticación de Firebase
-firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-        console.log('❌ Usuario no autenticado, redirigiendo...');
-        window.location.href = '../login.html';
-        return;
-    }
-    
-    console.log('✅ Usuario autenticado:', user.email);
-});
-
-console.log('✅ Módulo AutorizacionMain cargado correctamente');
+console.log('✅ Sistema de autorización cargado');

@@ -3,283 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Autorización SICA - Admin</title>
-    <!-- Bootstrap CSS -->
+    <title>Autorización SICA - Admin</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- Base Styles -->
     <link href="../css/base-styles.css" rel="stylesheet">
-    <!-- Autorización Styles -->
     <link href="../css/edgarfolios/autorizacion-styles.css" rel="stylesheet">
 </head>
 <body class="admin-authenticated">
     <!-- Header Component -->
     <div id="header-component"></div>
-
-    <!-- Navigation Component -->
     <div id="navbar-component"></div>
 
-    <!-- Main Content Area -->
-    <main class="main-content" id="main-content">
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <!-- Loading Screen -->
+    <div class="loading-overlay" id="loadingScreen">
+        <div class="loading-content">
+            <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;"></div>
+            <h4>Cargando autorización...</h4>
+            <p class="text-muted">Preparando datos del pendiente</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div class="auth-header">
             <div class="container-fluid">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="../index.html">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="bitacora.html">Bitácora</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Autorización</li>
-                </ol>
-            </div>
-        </div>
-
-        <!-- Loading Screen -->
-        <div class="loading-screen" id="loadingScreen">
-            <div class="loading-content">
-                <div class="loading-spinner">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                </div>
-                <h4 class="mt-3">Cargando datos del pendiente...</h4>
-                <p class="text-muted">Por favor espera un momento</p>
-            </div>
-        </div>
-
-        <!-- Main Authorization Content -->
-        <div class="container-fluid" id="authContent" style="display: none;">
-            <!-- Header Section -->
-            <div class="auth-header mb-4">
                 <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h1 class="auth-title" id="authTitle">
+                    <div class="col-lg-8">
+                        <h1 class="auth-title">
                             <i class="bi bi-clipboard-check me-3"></i>
-                            <span id="tipoAutorizacionTitle">Autorización SICA</span>
+                            <span id="tipoDocumento">Autorización SICA</span>
                         </h1>
-                        <div class="auth-subtitle">
+                        <p class="auth-subtitle">
                             <span class="badge bg-warning me-2">Pendiente</span>
-                            <span id="fechaSolicitud">Solicitado: --/--/----</span>
-                        </div>
+                            <span id="fechaSolicitud">Solicitado: --</span>
+                        </p>
                     </div>
-                    <div class="col-md-4 text-end">
-                        <button class="btn btn-outline-secondary me-2" onclick="history.back()">
-                            <i class="bi bi-arrow-left me-2"></i>Regresar
+                    <div class="col-lg-4 text-end">
+                        <button class="btn btn-outline-light me-2" onclick="history.back()">
+                            <i class="bi bi-arrow-left"></i> Regresar
                         </button>
-                        <button class="btn btn-success" id="btnGuardar">
-                            <i class="bi bi-check-circle me-2"></i>Autorizar y Guardar
+                        <button class="btn btn-success btn-lg" id="btnAutorizar">
+                            <i class="bi bi-check-circle me-2"></i>Autorizar
                         </button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="row">
-                <!-- Left Column - Form -->
-                <div class="col-lg-6">
-                    <!-- Folio Section -->
-                    <div class="card-modern mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="bi bi-hash me-2"></i>Número de Folio
-                            </h5>
+        <div class="container-fluid mt-4">
+            <div class="row g-4">
+                <!-- Panel de Configuración -->
+                <div class="col-xl-5">
+                    <div class="config-panel">
+                        <div class="panel-header">
+                            <h3><i class="bi bi-gear-fill me-2"></i>Panel de Configuración</h3>
+                            <p>Complete los datos para generar el documento</p>
                         </div>
-                        <div class="card-body">
-                            <div class="folio-input-group">
-                                <span class="folio-prefix">CI/</span>
-                                <input type="number" class="form-control folio-input" 
-                                       id="folioNumber" min="1" max="999" required>
-                                <span class="folio-suffix">/2025</span>
-                            </div>
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Número consecutivo único para este tipo de autorización
+
+                        <!-- Sección Folio -->
+                        <div class="config-section">
+                            <h4 class="section-title">
+                                <i class="bi bi-hash"></i> Número de Folio
+                            </h4>
+                            <div class="folio-container">
+                                <div class="folio-input-wrapper">
+                                    <span class="folio-prefix">CI/</span>
+                                    <input type="number" id="folioNumber" class="folio-input" 
+                                           min="1" max="999" value="001" required>
+                                    <span class="folio-suffix">/2025</span>
+                                </div>
+                                <small class="form-help">Número consecutivo único</small>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Configuration Accordion -->
-                    <div class="accordion" id="configAccordion">
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button" type="button" 
-                                        data-bs-toggle="collapse" data-bs-target="#configPanel"
-                                        aria-expanded="true" aria-controls="configPanel">
-                                    <i class="bi bi-gear me-2"></i>
-                                    Configuración Extra
-                                </button>
-                            </h2>
-                            <div id="configPanel" class="accordion-collapse collapse show"
-                                 data-bs-parent="#configAccordion">
-                                <div class="accordion-body">
-                                    <!-- Datos del Asesor -->
-                                    <div class="config-section">
-                                        <h6 class="config-title">
-                                            <i class="bi bi-person me-2"></i>Datos del Asesor
-                                        </h6>
-                                        <div class="row">
-                                            <div class="col-md-12">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Nombre Completo</label>
-                                                    <input type="text" class="form-control form-control-sica" 
-                                                           id="nombreAsesor" readonly>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Número de Cuenta</label>
-                                                    <input type="text" class="form-control form-control-sica" 
-                                                           id="numeroCuenta" readonly>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Carrera</label>
-                                                    <input type="text" class="form-control form-control-sica" 
-                                                           id="carrera" readonly>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <!-- Sección Datos Personales -->
+                        <div class="config-section">
+                            <h4 class="section-title">
+                                <i class="bi bi-person-fill"></i> Datos del Asesor
+                            </h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Nombre Completo</label>
+                                    <input type="text" id="nombreAsesor" class="form-control" 
+                                           placeholder="Nombre completo del asesor" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Número de Cuenta</label>
+                                    <input type="text" id="numeroCuenta" class="form-control" 
+                                           placeholder="Ej: 314302498" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Carrera</label>
+                                    <input type="text" id="carrera" class="form-control" 
+                                           placeholder="Nombre de la carrera" required>
+                                </div>
+                            </div>
+                        </div>
 
-                                    <!-- Fechas del Servicio Social -->
-                                    <div class="config-section">
-                                        <h6 class="config-title">
-                                            <i class="bi bi-calendar-range me-2"></i>Fechas del Servicio Social
-                                        </h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Fecha de Inicio</label>
-                                                    <input type="date" class="form-control form-control-sica" 
-                                                           id="fechaInicio" readonly>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Fecha de Término</label>
-                                                    <input type="date" class="form-control form-control-sica" 
-                                                           id="fechaTermino" readonly>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="duration-info">
-                                            <i class="bi bi-clock me-2"></i>
-                                            <span id="duracionServicio">Duración: -- meses</span>
-                                        </div>
-                                    </div>
+                        <!-- Sección Fechas -->
+                        <div class="config-section">
+                            <h4 class="section-title">
+                                <i class="bi bi-calendar-range"></i> Fechas del Servicio
+                            </h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Fecha de Inicio</label>
+                                    <input type="date" id="fechaInicio" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fecha de Término</label>
+                                    <input type="date" id="fechaTermino" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="duration-display" id="duracionDisplay">
+                                <i class="bi bi-clock"></i> Duración: Calcular fechas
+                            </div>
+                        </div>
 
-                                    <!-- Información Adicional -->
-                                    <div class="config-section">
-                                        <h6 class="config-title">
-                                            <i class="bi bi-info-circle me-2"></i>Información Adicional
-                                        </h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Programa SICA</label>
-                                                    <input type="text" class="form-control form-control-sica" 
-                                                           value="Sala de informática y cómputo para alumnos (SICA)" readonly>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label-sica">Clave del Programa</label>
-                                                    <input type="text" class="form-control form-control-sica" 
-                                                           id="clavePrograma" readonly>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <!-- Sección Actividades -->
+                        <div class="config-section">
+                            <h4 class="section-title">
+                                <i class="bi bi-list-check"></i> Actividades Desarrolladas
+                            </h4>
+                            <div class="form-group">
+                                <textarea id="actividadesDesarrolladas" class="form-control" 
+                                          rows="6" placeholder="Describa las actividades realizadas..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Sección Información Adicional -->
+                        <div class="config-section">
+                            <h4 class="section-title">
+                                <i class="bi bi-info-circle"></i> Información Adicional
+                            </h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Clave del Programa</label>
+                                    <input type="text" id="clavePrograma" class="form-control" 
+                                           value="SICA-2025" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Programa</label>
+                                    <input type="text" class="form-control" 
+                                           value="Sala de informática y cómputo para alumnos (SICA)" readonly>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column - Document Preview -->
-                <div class="col-lg-6">
-                    <div class="card-modern preview-card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-file-earmark-text me-2"></i>Vista Previa del Documento
-                            </h5>
+                <!-- Vista Previa del Documento -->
+                <div class="col-xl-7">
+                    <div class="preview-panel">
+                        <div class="preview-header">
+                            <h3><i class="bi bi-file-text me-2"></i>Vista Previa del Documento</h3>
                             <div class="preview-controls">
-                                <button class="btn btn-sm btn-outline-primary" id="btnRefreshPreview"
-                                        title="Actualizar vista previa">
+                                <button class="btn btn-sm btn-outline-primary" id="btnRefresh" title="Actualizar">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary" id="btnFullscreen"
-                                        title="Pantalla completa">
+                                <button class="btn btn-sm btn-outline-primary" id="btnZoomOut" title="Alejar">
+                                    <i class="bi bi-zoom-out"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" id="btnZoomIn" title="Acercar">
+                                    <i class="bi bi-zoom-in"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" id="btnFullscreen" title="Pantalla completa">
                                     <i class="bi bi-fullscreen"></i>
                                 </button>
                             </div>
                         </div>
-                        <div class="card-body p-0">
-                            <!-- Preview Container -->
-                            <div class="document-preview" id="documentPreview">
-                                <div class="preview-loading text-center py-5">
-                                    <div class="spinner-border text-primary mb-3" role="status">
-                                        <span class="visually-hidden">Cargando vista previa...</span>
-                                    </div>
-                                    <p class="text-muted">Generando vista previa...</p>
+                        
+                        <div class="document-container" id="documentContainer">
+                            <div class="document-page" id="documentPage">
+                                <div class="loading-document">
+                                    <div class="spinner-border text-primary mb-3"></div>
+                                    <p>Generando vista previa...</p>
+                                    <small>Complete los datos para ver el documento</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-footer text-center">
+                        
+                        <div class="preview-footer">
                             <small class="text-muted">
                                 <i class="bi bi-eye me-1"></i>
                                 Vista previa actualizada automáticamente
                             </small>
+                            <div class="zoom-indicator" id="zoomIndicator">100%</div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Error Screen -->
-        <div class="error-screen" id="errorScreen" style="display: none;">
-            <div class="error-content text-center">
-                <i class="bi bi-exclamation-triangle display-1 text-danger mb-4"></i>
-                <h2 class="text-danger">Error al Cargar Datos</h2>
-                <p class="lead text-muted mb-4" id="errorMessage">
-                    No se pudieron cargar los datos del pendiente solicitado.
-                </p>
-                <div class="error-actions">
-                    <button class="btn btn-primary me-2" onclick="location.reload()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Reintentar
-                    </button>
-                    <a href="bitacora.html" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>Volver a Bitácora
-                    </a>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer Component -->
-    <div id="footer-component"></div>
-
-    <!-- Success Modal -->
-    <div class="modal fade" id="successModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Modal de Éxito -->
+    <div class="modal fade" id="modalExito" tabindex="-1">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">
-                        <i class="bi bi-check-circle me-2"></i>Autorización Completada
+                        <i class="bi bi-check-circle me-2"></i>¡Autorización Completada!
                     </h5>
                 </div>
-                <div class="modal-body text-center">
-                    <div class="success-animation mb-3">
+                <div class="modal-body text-center py-4">
+                    <div class="success-icon mb-3">
                         <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                     </div>
-                    <h4>¡Autorización Exitosa!</h4>
-                    <p class="text-muted">
-                        El documento ha sido generado y la autorización se ha registrado correctamente.
-                    </p>
-                    <div class="mt-3">
-                        <strong>Folio asignado:</strong> <span id="folioAsignado" class="text-primary">--</span>
+                    <h4 class="text-success mb-3">Documento generado exitosamente</h4>
+                    <div class="alert alert-info">
+                        <strong>Folio asignado:</strong> 
+                        <span id="folioFinal" class="fs-5 text-primary">--</span>
                     </div>
+                    <p class="text-muted">El documento ha sido registrado en la bitácora</p>
                 </div>
                 <div class="modal-footer justify-content-center">
+                    <button class="btn btn-outline-success" id="btnDescargar">
+                        <i class="bi bi-download me-2"></i>Descargar Documento
+                    </button>
                     <a href="bitacora.html" class="btn btn-success">
                         <i class="bi bi-arrow-left me-2"></i>Volver a Bitácora
                     </a>
@@ -288,25 +229,35 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
+    <!-- Modal de Error -->
+    <div class="modal fade" id="modalError" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Error
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p id="mensajeError">Ha ocurrido un error inesperado.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="location.reload()">Reintentar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    <!-- Firebase Config -->
     <script src="../firebase-config.js"></script>
-    <!-- Base Components JS -->
     <script src="../js/components.js"></script>
-    <!-- Base Navigation JS -->
     <script src="../js/navigation.js"></script>
-    <!-- Document Generators -->
-    <script src="../js/documents/carta-aceptacion-FQ.js"></script>
-    <script src="../js/documents/carta-aceptacion-prepa.js"></script>
-    <script src="../js/documents/carta-termino-FQ-pdf.js"></script>
-    <script src="../js/documents/carta-termino-prepa.js"></script>
-    <!-- Authorization Module -->
     <script src="../js/edgarfolios/autorizacion-main.js"></script>
 </body>
 </html>
