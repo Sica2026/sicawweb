@@ -666,6 +666,51 @@
                                 </div>
                         </div>
 
+                        <div class="info-section">
+    <h6 class="section-title">
+        <i class="bi bi-send-check"></i>
+        Enviar Solicitud
+    </h6>
+    
+    <!-- Solo botones, SIN script en HTML -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>Carta de Término</h6>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary" data-auth-type="carta-termino-fq">
+                            <i class="bi bi-file-earmark-check me-2"></i>
+                            Carta Término FQ
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-auth-type="carta-termino-prepa">
+                            <i class="bi bi-file-earmark-check me-2"></i>
+                            Carta Término Prepa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h6>Carta de Aceptación</h6>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-success" data-auth-type="carta-aceptacion-fq">
+                            <i class="bi bi-file-earmark-plus me-2"></i>
+                            Carta Aceptación FQ
+                        </button>
+                        <button type="button" class="btn btn-outline-success" data-auth-type="carta-aceptacion-prepa">
+                            <i class="bi bi-file-earmark-plus me-2"></i>
+                            Carta Aceptación Prepa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
                         <!-- Generar Documentos -->
                         <div class="info-section">
                             <h6 class="section-title">
@@ -763,5 +808,6 @@
     <script src="../js/servicio-social/detail-modal.js"></script>
     <script src="../js/servicio-social/event-manager.js"></script>
     <script src="../js/servicio-social/servicio-social-main.js"></script>
+    <script src="../js/servicio-social/authorization-request-manager.js"></script>
 </body>
 </html>

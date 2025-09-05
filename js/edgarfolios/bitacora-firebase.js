@@ -220,11 +220,29 @@ class BitacoraFirebase {
                 console.log('📋 Procesando documento:', doc.id, data);
                 
                 // Obtener datos del asesor
-                let asesorData = null;
-                if (data.asesorId) {
-                    console.log('🔍 Buscando asesor:', data.asesorId);
-                    // ... resto del código
+                // Obtener datos del asesor
+            let asesorData = null;
+            if (data.asesorId) {
+                try {
+                    console.log('🔍 asesorId completo:', data.asesorId);
+                    const asesorId = data.asesorId.replace('asesor_', '');
+                    console.log('🔍 numeroCuenta extraído:', asesorId);
+                    
+                    const asesorQuery = await this.asesoresCollection
+                        .where('numeroCuenta', '==', asesorId).get();
+                    
+                    console.log('📊 Documentos de asesor encontrados:', asesorQuery.size);
+                    
+                    if (!asesorQuery.empty) {
+                        asesorData = asesorQuery.docs[0].data();
+                        console.log('✅ Datos del asesor:', asesorData);
+                    } else {
+                        console.log('❌ No se encontró asesor con numeroCuenta:', asesorId);
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error obteniendo asesor:', error);
                 }
+            }
                 
                 pendientes.push({
                     id: doc.id,
@@ -342,6 +360,8 @@ class BitacoraFirebase {
             // No lanzamos error para no bloquear otras operaciones
         }
     }
+
+    
 
     // ==========================================
     // ESTADÍSTICAS Y UTILIDADES
@@ -520,5 +540,6 @@ firebase.auth().onAuthStateChanged(user => {
     
     console.log('✅ Usuario autenticado:', user.email);
 });
+
 
 console.log('✅ Módulo BitacoraFirebase cargado correctamente');

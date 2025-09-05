@@ -209,6 +209,8 @@ class DataManager {
         delete this.core.currentAsesor.servicioSocial.filesToDelete;
     }
 
+    
+
     getFormData() {
         return {
             asesorId: this.core.currentAsesor.id,
@@ -231,5 +233,7 @@ class DataManager {
         };
     }
 }
+
+
 
 window.DataManager = DataManager;

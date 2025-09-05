@@ -168,7 +168,7 @@ class AutorizacionMain {
         document.getElementById('tipoAutorizacionTitle').textContent = this.formatearTipoAutorizacion(tipoAutorizacion);
         
         // Mostrar fecha de solicitud
-        const fechaSolicitud = servicioSocial.fechaSolicitud?.toDate() || new Date();
+        const fechaSolicitud = convertirFechaSegura(servicioSocial.fechaSolicitud) || new Date();
         document.getElementById('fechaSolicitud').textContent = 
             `Solicitado: ${this.formatearFecha(fechaSolicitud)}`;
         
@@ -179,15 +179,13 @@ class AutorizacionMain {
             document.getElementById('carrera').value = asesor.carrera || '';
         }
         
-        // Fechas del servicio social
+        // Fechas del servicio social - Para inputs de tipo date, usar directamente el string
         if (servicioSocial.fechaInicio) {
-            document.getElementById('fechaInicio').value = 
-                this.formatearFechaInput(servicioSocial.fechaInicio.toDate());
+            document.getElementById('fechaInicio').value = servicioSocial.fechaInicio; // Directo como string "2026-03-03"
         }
         
         if (servicioSocial.fechaTermino) {
-            document.getElementById('fechaTermino').value = 
-                this.formatearFechaInput(servicioSocial.fechaTermino.toDate());
+            document.getElementById('fechaTermino').value = servicioSocial.fechaTermino; // Directo como string "2026-03-03"
         }
         
         // Clave del programa
@@ -566,26 +564,26 @@ class AutorizacionMain {
         return true;
     }
 
-    obtenerDatosParaDocumento() {
-        const folioCompleto = this.obtenerFolioCompleto();
-        const { servicioSocial, asesor } = this.datosOriginales;
-        
-        return {
-            folio: folioCompleto,
-            folioAceptacion: servicioSocial.tipoAutorizacion.includes('aceptacion') ? folioCompleto : null,
-            folioTermino: servicioSocial.tipoAutorizacion.includes('termino') ? folioCompleto : null,
-            nombreAsesor: asesor.nombreAsesor || '',
-            numeroCuenta: asesor.numeroCuenta || '',
-            carrera: asesor.carrera || '',
-            fechaInicio: servicioSocial.fechaInicio?.toDate(),
-            fechaTermino: servicioSocial.fechaTermino?.toDate(),
-            clavePrograma: servicioSocial.clavePrograma || '',
-            tipoAutorizacion: servicioSocial.tipoAutorizacion,
-            programa: 'Sala de informática y cómputo para alumnos (SICA)',
-            fechaAceptacion: new Date(),
-            fechaCarta: new Date()
-        };
-    }
+obtenerDatosParaDocumento() {
+    const folioCompleto = this.obtenerFolioCompleto();
+    const { servicioSocial, asesor } = this.datosOriginales;
+    
+    return {
+        folio: folioCompleto,
+        folioAceptacion: servicioSocial.tipoAutorizacion.includes('aceptacion') ? folioCompleto : null,
+        folioTermino: servicioSocial.tipoAutorizacion.includes('termino') ? folioCompleto : null,
+        nombreAsesor: asesor?.nombreAsesor || '',
+        numeroCuenta: asesor?.numeroCuenta || '',
+        carrera: asesor?.carrera || '',
+        fechaInicio: convertirFechaSegura(servicioSocial.fechaInicio),
+        fechaTermino: convertirFechaSegura(servicioSocial.fechaTermino),
+        clavePrograma: servicioSocial.clavePrograma || '',
+        tipoAutorizacion: servicioSocial.tipoAutorizacion,
+        programa: 'Sala de informática y cómputo para alumnos (SICA)',
+        fechaAceptacion: new Date(),
+        fechaCarta: new Date()
+    };
+}
 
     async generarDocumentoPDF(datos) {
         const tipoDoc = datos.tipoAutorizacion;
@@ -754,6 +752,37 @@ class AutorizacionMain {
             this.previewInterval = null;
         }
     }
+}
+
+// Función auxiliar para convertir fechas string ISO a Date
+function convertirFechaSegura(fecha) {
+    if (!fecha) return null;
+    
+    // Si ya es un objeto Date
+    if (fecha instanceof Date) {
+        return fecha;
+    }
+    
+    // Si es un string ISO (formato "2026-03-03")
+    if (typeof fecha === 'string') {
+        // Para fechas en formato "YYYY-MM-DD", agregar hora para evitar problemas de timezone
+        const fechaStr = fecha.includes('T') ? fecha : fecha + 'T00:00:00';
+        const fechaConvertida = new Date(fechaStr);
+        return isNaN(fechaConvertida.getTime()) ? null : fechaConvertida;
+    }
+    
+    // Si es un Timestamp de Firebase (por compatibilidad)
+    if (fecha && typeof fecha.toDate === 'function') {
+        return fecha.toDate();
+    }
+    
+    // Si es un número (timestamp)
+    if (typeof fecha === 'number') {
+        return new Date(fecha);
+    }
+    
+    console.warn('Formato de fecha no reconocido:', fecha, typeof fecha);
+    return null;
 }
 
 // ==========================================
