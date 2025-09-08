@@ -1,4 +1,4 @@
-// autorizacion-nuevo.js - Sistema de autorización completamente nuevo
+// autorizacion-nuevo.js - Sistema de autorización usando plantillas JS
 
 class AutorizacionSICA {
     constructor() {
@@ -70,9 +70,9 @@ class AutorizacionSICA {
         document.getElementById('btnRefresh').addEventListener('click', () => this.actualizarVistaPrevia());
         document.getElementById('btnFullscreen').addEventListener('click', () => this.toggleFullscreen());
 
-        // Campos del formulario
+        // Campos del formulario (sin actividades)
         const campos = ['folioNumber', 'nombreAsesor', 'numeroCuenta', 'carrera', 
-                       'fechaInicio', 'fechaTermino', 'actividadesDesarrolladas', 'clavePrograma'];
+                       'fechaInicio', 'fechaTermino', 'clavePrograma'];
         
         campos.forEach(campoId => {
             const campo = document.getElementById(campoId);
@@ -85,28 +85,42 @@ class AutorizacionSICA {
 
     async cargarDatosPendiente() {
         try {
-            // Obtener datos del pendiente
+            const [asesorPart, numeroCuenta, tipoAutorizacion] = this.pendienteId.split('_');
+            const servicioId = `${asesorPart}_${numeroCuenta}`;
+            
             const doc = await firebase.firestore()
                 .collection('serviciosocial')
-                .doc(this.pendienteId)
+                .doc(servicioId)
                 .get();
 
             if (!doc.exists) {
-                throw new Error('Pendiente no encontrado');
+                throw new Error('Documento de servicio social no encontrado');
             }
 
-            const pendiente = doc.data();
-            this.tipoDocumento = pendiente.tipoAutorizacion;
+            const servicioData = doc.data();
+            
+            if (!servicioData.solicitudesAutorizacion || 
+                !servicioData.solicitudesAutorizacion[tipoAutorizacion] ||
+                servicioData.solicitudesAutorizacion[tipoAutorizacion].estado !== 'Pendiente') {
+                throw new Error('Solicitud no encontrada o ya no está pendiente');
+            }
 
-            // Cargar datos del asesor
-            await this.cargarDatosAsesor(pendiente.asesorId);
+            const solicitud = servicioData.solicitudesAutorizacion[tipoAutorizacion];
+            this.tipoDocumento = tipoAutorizacion;
 
-            // Poblar formulario
-            this.poblarFormulario(pendiente);
+            await this.cargarDatosAsesor(numeroCuenta);
 
-            // Actualizar interfaz
+            // Poblar solo los campos editables
+            this.poblarFormulario({
+                tipoAutorizacion: tipoAutorizacion,
+                fechaSolicitud: solicitud.fechaSolicitud,
+                usuarioSolicita: solicitud.usuarioSolicita,
+                fechaInicio: servicioData.fechaInicio,
+                fechaTermino: servicioData.fechaTermino
+            });
+
             this.actualizarTituloDocumento();
-            this.actualizarFechaSolicitud(pendiente.fechaSolicitud);
+            this.actualizarFechaSolicitud(solicitud.fechaSolicitud);
             this.actualizarVistaPrevia();
 
         } catch (error) {
@@ -114,9 +128,8 @@ class AutorizacionSICA {
         }
     }
 
-    async cargarDatosAsesor(asesorId) {
+    async cargarDatosAsesor(numeroCuenta) {
         try {
-            const numeroCuenta = asesorId.replace('asesor_', '');
             const query = await firebase.firestore()
                 .collection('asesores')
                 .where('numeroCuenta', '==', numeroCuenta)
@@ -127,35 +140,27 @@ class AutorizacionSICA {
                 document.getElementById('nombreAsesor').value = asesor.nombreAsesor || '';
                 document.getElementById('numeroCuenta').value = asesor.numeroCuenta || '';
                 document.getElementById('carrera').value = asesor.carrera || '';
+            } else {
+                console.warn('Asesor no encontrado para número de cuenta:', numeroCuenta);
             }
         } catch (error) {
             console.warn('Error cargando asesor:', error);
         }
     }
 
-    poblarFormulario(pendiente) {
+    poblarFormulario(datos) {
         // Obtener siguiente número de folio
         this.obtenerSiguienteNumeroFolio();
 
-        // Fechas del servicio
-        if (pendiente.fechaInicio) {
-            document.getElementById('fechaInicio').value = this.formatearFechaInput(pendiente.fechaInicio);
+        // Fechas del servicio social
+        if (datos.fechaInicio) {
+            document.getElementById('fechaInicio').value = datos.fechaInicio;
         }
-        if (pendiente.fechaTermino) {
-            document.getElementById('fechaTermino').value = this.formatearFechaInput(pendiente.fechaTermino);
+        
+        if (datos.fechaTermino) {
+            document.getElementById('fechaTermino').value = datos.fechaTermino;
         }
 
-        // Actividades por defecto
-        const actividades = [
-            'Préstamo de equipos de cómputo a los alumnos',
-            'Atención al servicio de impresiones',
-            'Apoyo en departamentales',
-            'Apoyo en cursos y clases en sala de cómputo',
-            'Atención a usuarios con problemas en equipos'
-        ].join('\n• ');
-        
-        document.getElementById('actividadesDesarrolladas').value = '• ' + actividades;
-        
         this.calcularDuracion();
     }
 
@@ -192,8 +197,23 @@ class AutorizacionSICA {
     }
 
     actualizarTituloDocumento() {
-        const titulo = this.tipoDocumento?.includes('aceptacion') ? 
-            'Carta de Aceptación' : 'Carta de Término';
+        let titulo = '';
+        switch (this.tipoDocumento) {
+            case 'carta-aceptacion-fq':
+                titulo = 'Carta de Aceptación - Facultad de Química';
+                break;
+            case 'carta-aceptacion-prepa':
+                titulo = 'Carta de Aceptación - Preparatoria';
+                break;
+            case 'carta-termino-fq':
+                titulo = 'Carta de Término - Facultad de Química';
+                break;
+            case 'carta-termino-prepa':
+                titulo = 'Carta de Término - Preparatoria';
+                break;
+            default:
+                titulo = 'Documento de Autorización';
+        }
         this.elementos.tipoDocumento.textContent = titulo;
     }
 
@@ -221,7 +241,7 @@ class AutorizacionSICA {
         }
     }
 
-    actualizarVistaPrevia() {
+    async actualizarVistaPrevia() {
         const datos = this.obtenerDatosFormulario();
         
         if (!datos.nombreAsesor || !datos.folioCompleto) {
@@ -229,8 +249,35 @@ class AutorizacionSICA {
             return;
         }
 
-        const contenidoHTML = this.tipoDocumento?.includes('aceptacion') ? 
-            this.generarCartaAceptacion(datos) : this.generarCartaTermino(datos);
+        let contenidoHTML = '';
+        
+        try {
+            // Usar la clase JS correspondiente como plantilla
+            switch (this.tipoDocumento) {
+                case 'carta-aceptacion-fq':
+                    contenidoHTML = await this.generarVistaDesdeJS('CartaAceptacionFQPDF', datos);
+                    break;
+                    
+                case 'carta-aceptacion-prepa':
+                    contenidoHTML = await this.generarVistaDesdeJS('CartaAceptacionPrepaPDF', datos);
+                    break;
+                    
+                case 'carta-termino-fq':
+                    contenidoHTML = await this.generarVistaDesdeJS('CartaTerminoFQPDF', datos);
+                    break;
+                    
+                case 'carta-termino-prepa':
+                    contenidoHTML = await this.generarVistaDesdeJS('CartaTerminoPrepaPDF', datos);
+                    break;
+                    
+                default:
+                    contenidoHTML = '<p>Tipo de documento no reconocido</p>';
+            }
+            
+        } catch (error) {
+            console.error('Error generando vista previa:', error);
+            contenidoHTML = '<p>Error generando vista previa</p>';
+        }
 
         this.elementos.documentPage.innerHTML = `
             <div class="document-content">
@@ -239,109 +286,134 @@ class AutorizacionSICA {
         `;
     }
 
-    obtenerDatosFormulario() {
-        const folioNum = document.getElementById('folioNumber').value.padStart(3, '0');
-        const year = new Date().getFullYear();
+    async generarVistaDesdeJS(claseNombre, datos) {
+        try {
+            const ClaseJS = window[claseNombre];
+            if (!ClaseJS) {
+                throw new Error(`Clase ${claseNombre} no encontrada`);
+            }
+            
+            const generador = new ClaseJS();
+            
+            // Usar la configuración del JS pero generar HTML para vista previa
+            return this.convertirJSaHTML(generador, datos);
+            
+        } catch (error) {
+            console.error(`Error usando clase ${claseNombre}:`, error);
+            return `<p>Error cargando plantilla: ${error.message}</p>`;
+        }
+    }
+
+convertirJSaHTML(generador, datos) {
+    const config = generador.config;
+    
+    // Obtener actividades si existen
+    let seccionActividades = '';
+    if (config.actividades && config.actividades.length > 0) {
+        const actividadesHTML = config.actividades.map(act => `<li>${act}</li>`).join('');
+        const tituloActividades = this.tipoDocumento.includes('aceptacion') ? 
+            'ACTIVIDADES A DESARROLLAR' : 'ACTIVIDADES DESARROLLADAS';
         
-        return {
-            folioCompleto: `CI/${folioNum}/${year}`,
-            nombreAsesor: document.getElementById('nombreAsesor').value,
-            numeroCuenta: document.getElementById('numeroCuenta').value,
-            carrera: document.getElementById('carrera').value,
-            fechaInicio: document.getElementById('fechaInicio').value,
-            fechaTermino: document.getElementById('fechaTermino').value,
-            actividades: document.getElementById('actividadesDesarrolladas').value,
-            clavePrograma: document.getElementById('clavePrograma').value,
-            fechaHoy: new Date().toLocaleDateString('es-ES', {
-                day: 'numeric', month: 'long', year: 'numeric'
-            })
-        };
-    }
-
-    generarCartaAceptacion(datos) {
-        return `
-            <div class="document-header">
-                <div class="logo-section">
-                    <div class="logo-placeholder">LOGO<br>FQ</div>
-                </div>
-                <div class="header-text">
-                    <h1>FACULTAD DE QUÍMICA UNAM</h1>
-                    <h2>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</h2>
-                    <h2>CENTRO DE INFORMÁTICA Y SICAS</h2>
-                </div>
-            </div>
-            
-            <div class="folio-info">
-                <strong>FOLIO: ${datos.folioCompleto}</strong><br>
-                <strong>Asunto: Carta de aceptación</strong>
-            </div>
-            
-            <div class="document-body">
-                <p>Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta <strong>${datos.numeroCuenta}</strong>, de la Licenciatura en <strong>${datos.carrera}</strong> ha sido aceptado(a) para realizar su Servicio Social en este Centro, a partir del <strong>${this.formatearFecha(datos.fechaInicio)}</strong>.</p>
-                
-                <div class="activities-section">
-                    <p><strong>ACTIVIDADES A DESARROLLAR</strong></p>
-                    <ul class="activities-list">
-                        ${this.formatearActividades(datos.actividades)}
-                    </ul>
-                </div>
-                
-                <div class="signature-section">
-                    <p><strong>ATENTAMENTE</strong></p>
-                    <p><em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em></p>
-                    <p>Ciudad Universitaria, Cd. Mx., ${datos.fechaHoy}</p>
-                    <div class="signature-line"></div>
-                    <p><strong>RESPONSABLE DEL CENTRO DE INFORMÁTICA Y SICAS</strong></p>
-                </div>
+        seccionActividades = `
+            <div class="activities-section">
+                <p><strong>${tituloActividades}</strong></p>
+                <ul class="activities-list">
+                    ${actividadesHTML}
+                </ul>
             </div>
         `;
     }
 
-    generarCartaTermino(datos) {
-        return `
-            <div class="document-header">
-                <div class="logo-section">
-                    <div class="logo-placeholder">LOGO<br>FQ</div>
-                </div>
-                <div class="header-text">
-                    <h1>FACULTAD DE QUÍMICA UNAM</h1>
-                    <h2>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</h2>
-                    <h2>CENTRO DE INFORMÁTICA Y SICAS</h2>
-                </div>
-            </div>
-            
-            <div class="folio-info">
-                <strong>FOLIO: ${datos.folioCompleto}</strong><br>
-                <strong>Asunto: Carta de término</strong>
-            </div>
-            
-            <div class="document-body">
-                <p>Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta <strong>${datos.numeroCuenta}</strong>, de la Licenciatura en <strong>${datos.carrera}</strong> concluyó satisfactoriamente su Servicio Social, cumpliendo las <strong>480 horas reglamentarias</strong>.</p>
-                
-                <div class="activities-section">
-                    <p><strong>ACTIVIDADES DESARROLLADAS</strong></p>
-                    <ul class="activities-list">
-                        ${this.formatearActividades(datos.actividades)}
-                    </ul>
-                </div>
-                
-                <div class="signature-section">
-                    <p><strong>ATENTAMENTE</strong></p>
-                    <p><em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em></p>
-                    <p>Ciudad Universitaria, Cd. Mx., ${datos.fechaHoy}</p>
-                    <div class="signature-line"></div>
-                    <p><strong>RESPONSABLE DEL CENTRO DE INFORMÁTICA Y SICAS</strong></p>
-                </div>
-            </div>
-        `;
+    // Usar el texto completo según el tipo específico
+    let textoTrincipal = '';
+    
+    if (this.tipoDocumento === 'carta-aceptacion-fq') {
+        const programa = datos.programa || config.programa || "Sala de informática y cómputo para alumnos (SICA)";
+        const periodoMeses = config.periodoMeses || 6;
+        const horasSemanales = config.horasSemanales || 20;
+        const horasReglamentarias = config.horasReglamentarias || 480;
+        
+        textoTrincipal = `Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta <strong>${datos.numeroCuenta}</strong>, inscrito en la <strong>${datos.carrera}</strong>, ha sido aceptado para poder realizar su servicio social, durante un periodo de <strong>${periodoMeses} meses</strong>, en el programa de trabajo "<strong>${programa}</strong>" con clave <strong>${datos.clavePrograma}</strong>. Su colaboración tendrá inicio a partir del <strong>${this.formatearFecha(datos.fechaInicio)}</strong> y concluirá el <strong>${this.formatearFecha(datos.fechaTermino)}</strong>, cubriendo un total de <strong>${horasSemanales} horas</strong> a la semana y <strong>${horasReglamentarias} horas</strong> totales.`;
+        
+    } else if (this.tipoDocumento === 'carta-aceptacion-prepa') {
+        const programa = datos.programa || config.programa || "Sala de informática y cómputo para alumnos (SICA)";
+        const periodoMeses = config.periodoMeses || 6;
+        const horasReglamentarias = config.horasReglamentarias || 480;
+        
+        textoTrincipal = `Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta, <strong>${datos.numeroCuenta}</strong> inscrito en la <strong>${datos.carrera || "xxxxxxxx"}</strong>, ha sido aceptado para poder concluir su servicio social, durante un periodo de <strong>${periodoMeses} meses</strong>, en el programa de trabajo "<strong>${programa}</strong>" con clave <strong>${datos.clavePrograma}</strong>, que se llevará a cabo en las salas SICA de la facultad de Química UNAM, su colaboración tendrá inicio a partir del <strong>${this.formatearFecha(datos.fechaInicio)}</strong> y concluirá el <strong>${this.formatearFecha(datos.fechaTermino)}</strong>, en un horario de 9:00 a 13:00, cubriendo <strong>${horasReglamentarias} horas</strong> totales.`;
+        
+    } else if (this.tipoDocumento === 'carta-termino-fq') {
+        const programa = datos.programa || config.programa || "Sala de Informática y Cómputo para Alumnos (SICA)";
+        const horasReglamentarias = config.horasReglamentarias || 480;
+        
+        textoTrincipal = `Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong>, con número de cuenta <strong>${datos.numeroCuenta}</strong>, de la Licenciatura en <strong>${datos.carrera}</strong> concluyó satisfactoriamente su Servicio Social, cumpliendo las <strong>${horasReglamentarias} horas reglamentarias</strong>, en el programa "<strong>${programa}</strong>" con clave <strong>${datos.clavePrograma}</strong>, en el periodo comprendido del <strong>${this.formatearFecha(datos.fechaInicio)}</strong> al <strong>${this.formatearFecha(datos.fechaTermino)}</strong>, cumpliendo las siguientes actividades:`;
+        
+    } else if (this.tipoDocumento === 'carta-termino-prepa') {
+        const programa = datos.programa || config.programa || "Sala de informática y cómputo para alumnos (SICA)";
+        const periodoMeses = config.periodoMeses || 6;
+        const horasReglamentarias = config.horasReglamentarias || 480;
+        
+        textoTrincipal = `Por este conducto me permito informar a usted, que el alumno (a) <strong>${datos.nombreAsesor}</strong> con número de cuenta <strong>${datos.numeroCuenta}</strong>, inscrito en la <strong>${datos.carrera || "XXXXXX"}</strong>, ha concluido satisfactoriamente su servicio social, durante un periodo de <strong>${periodoMeses} meses</strong>, en el programa de trabajo "<strong>${programa}</strong>" con clave <strong>${datos.clavePrograma}</strong>, que se llevó a cabo en el área de SICA de la Facultad de Química UNAM, su colaboración en el periodo comprendido del <strong>${this.formatearFecha(datos.fechaInicio)}</strong> al <strong>${this.formatearFecha(datos.fechaTermino)}</strong>, en un horario de 9:00 a 13:00, cubriendo <strong>${horasReglamentarias} horas</strong> totales.`;
     }
 
-    formatearActividades(actividades) {
-        return actividades.split('\n')
-            .filter(linea => linea.trim())
-            .map(linea => `<li>${linea.replace(/^[•\-\*]\s*/, '')}</li>`)
-            .join('');
-    }
+    // Generar contenido según tipo de carta
+    const asunto = this.tipoDocumento.includes('aceptacion') ? 
+        'Carta de aceptación' : 'Carta de término';
+
+    return `
+        <div class="document-header">
+            <div class="logo-section">
+                <div class="logo-placeholder">LOGO<br>FQ</div>
+            </div>
+            <div class="header-text">
+                <h1>FACULTAD DE QUÍMICA UNAM</h1>
+                <h2>SECRETARÍA DE PLANEACIÓN E INFORMÁTICA</h2>
+                <h2>CENTRO DE INFORMÁTICA Y SICAS</h2>
+            </div>
+        </div>
+        
+        <div class="folio-info">
+            <strong>FOLIO: ${datos.folioCompleto}</strong><br>
+            <strong>Asunto: ${asunto}</strong>
+        </div>
+        
+        <div class="document-body">
+            <p>${textoTrincipal}</p>
+            
+            ${seccionActividades}
+            
+            <div class="signature-section">
+                <p><strong>ATENTAMENTE</strong></p>
+                <p><em>"POR MI RAZA HABLARÁ EL ESPÍRITU"</em></p>
+                <p>Ciudad Universitaria, Cd. Mx., ${datos.fechaHoy}</p>
+                <div class="signature-line"></div>
+                <p><strong>RESPONSABLE DEL CENTRO DE INFORMÁTICA Y SICAS</strong></p>
+            </div>
+        </div>
+    `;
+}
+
+obtenerDatosFormulario() {
+    const folioNum = document.getElementById('folioNumber').value.padStart(3, '0');
+    const year = new Date().getFullYear();
+    
+    return {
+        folioCompleto: `CI/${folioNum}/${year}`,
+        folioAceptacion: `CI/${folioNum}/${year}`, // Para compatibilidad
+        folioTermino: `CI/${folioNum}/${year}`, // Para compatibilidad
+        nombreAsesor: document.getElementById('nombreAsesor').value,
+        numeroCuenta: document.getElementById('numeroCuenta').value,
+        carrera: document.getElementById('carrera').value,
+        fechaInicio: document.getElementById('fechaInicio').value,
+        fechaTermino: document.getElementById('fechaTermino').value,
+        clavePrograma: document.getElementById('clavePrograma').value,
+        programa: "Sala de informática y cómputo para alumnos (SICA)", // Valor por defecto
+        fechaHoy: new Date().toLocaleDateString('es-ES', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        }),
+        tipoDocumento: this.tipoDocumento
+    };
+}
 
     mostrarCargandoDocumento() {
         this.elementos.documentPage.innerHTML = `
@@ -396,20 +468,33 @@ class AutorizacionSICA {
 
     validarFormulario() {
         const requeridos = ['folioNumber', 'nombreAsesor', 'numeroCuenta', 'carrera', 'fechaInicio', 'fechaTermino'];
-        return requeridos.every(id => document.getElementById(id).value.trim());
+        return requeridos.every(id => {
+            const elemento = document.getElementById(id);
+            return elemento && elemento.value.trim();
+        });
     }
 
     async guardarAutorizacion(datos) {
+        const [asesorPart, numeroCuenta, tipoAutorizacion] = this.pendienteId.split('_');
+        const servicioId = `${asesorPart}_${numeroCuenta}`;
+        
         const batch = firebase.firestore().batch();
 
-        // Actualizar pendiente
-        const pendienteRef = firebase.firestore().collection('serviciosocial').doc(this.pendienteId);
-        batch.update(pendienteRef, {
-            porAutorizar: 'Autorizado',
-            fechaAutorizacion: firebase.firestore.Timestamp.now(),
-            autorizadoPor: firebase.auth().currentUser?.email || 'admin',
-            folioAsignado: datos.folioCompleto
-        });
+        // Actualizar estructura anidada del documento de servicio social
+        const servicioRef = firebase.firestore().collection('serviciosocial').doc(servicioId);
+        
+        const campoEstado = `solicitudesAutorizacion.${tipoAutorizacion}.estado`;
+        const campoFechaProcesamiento = `solicitudesAutorizacion.${tipoAutorizacion}.fechaProcesamiento`;
+        const campoAutorizadoPor = `solicitudesAutorizacion.${tipoAutorizacion}.autorizadoPor`;
+        const campoFolioAsignado = `solicitudesAutorizacion.${tipoAutorizacion}.folioAsignado`;
+        
+        const camposActualizacion = {};
+        camposActualizacion[campoEstado] = 'Autorizado';
+        camposActualizacion[campoFechaProcesamiento] = firebase.firestore.Timestamp.now();
+        camposActualizacion[campoAutorizadoPor] = firebase.auth().currentUser?.email || 'admin';
+        camposActualizacion[campoFolioAsignado] = datos.folioCompleto;
+        
+        batch.update(servicioRef, camposActualizacion);
 
         // Crear registro en Edgar
         const edgarRef = firebase.firestore().collection('edgar').doc();
@@ -424,7 +509,8 @@ class AutorizacionSICA {
             tipo: 'sica',
             importancia: 'alta',
             comentarios: `Autorización SICA: ${this.tipoDocumento}`,
-            numeroCuenta: datos.numeroCuenta
+            numeroCuenta: datos.numeroCuenta,
+            asesorId: servicioId
         });
 
         await batch.commit();
@@ -439,18 +525,45 @@ class AutorizacionSICA {
         document.getElementById('btnDescargar').onclick = () => this.descargarDocumento();
     }
 
-    descargarDocumento() {
-        const contenido = this.elementos.documentPage.innerHTML;
-        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Documento</title></head><body>${contenido}</body></html>`;
+async descargarDocumento() {
+    try {
+        const datos = this.obtenerDatosFormulario();
         
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${this.obtenerDatosFormulario().folioCompleto}.html`;
-        a.click();
-        URL.revokeObjectURL(url);
+        // Usar la clase JS correspondiente para generar PDF
+        switch (this.tipoDocumento) {
+            case 'carta-aceptacion-fq':
+                if (window.generarCartaAceptacionFQPDF) {
+                    await window.generarCartaAceptacionFQPDF(datos);
+                }
+                break;
+                
+            case 'carta-aceptacion-prepa':
+                if (window.generarCartaAceptacionPrepaPDF) {
+                    await window.generarCartaAceptacionPrepaPDF(datos);
+                }
+                break;
+                
+            case 'carta-termino-fq':
+                if (window.generarCartaTerminoFQPDF) {
+                    await window.generarCartaTerminoFQPDF(datos);
+                }
+                break;
+                
+            case 'carta-termino-prepa':
+                if (window.generarCartaTerminoPrepaPDF) {
+                    await window.generarCartaTerminoPrepaPDF(datos);
+                }
+                break;
+                
+            default:
+                throw new Error('Tipo de documento no soportado para PDF');
+        }
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        this.mostrarError('Error generando PDF: ' + error.message);
     }
+}
 
     mostrarError(mensaje) {
         document.getElementById('mensajeError').textContent = mensaje;
@@ -477,4 +590,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.autorizacion.inicializar();
 });
 
-console.log('✅ Sistema de autorización cargado');
+console.log('✅ Sistema de autorización cargado (usando plantillas JS)');

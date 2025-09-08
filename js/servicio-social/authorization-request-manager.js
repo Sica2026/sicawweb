@@ -41,26 +41,23 @@ class AuthorizationRequestManager {
         try {
             this.core.showLoadingModal('Enviando solicitud...');
 
-            // Preparar datos de la solicitud
+            // Preparar datos de la solicitud para agregar al documento del asesor
             const solicitudData = {
-                asesorId: this.core.currentAsesor.id,
-                porAutorizar: 'Pendiente',
                 tipoAutorizacion: tipoAutorizacion,
+                estado: 'Pendiente',
                 fechaSolicitud: new Date(),
-                fechaCreacion: new Date(),
-                fechaActualizacion: new Date(),
                 usuarioSolicita: this.core.currentUser?.email || '',
                 sistemaOrigen: 'SICA Administrativo'
             };
 
-            // Guardar en Firestore
-            await this.guardarSolicitud(solicitudData);
+            // Actualizar el documento existente del asesor en lugar de crear uno nuevo
+            await this.agregarSolicitudAlDocumento(solicitudData);
 
             // Actualizar UI
             this.actualizarEstadoBoton(tipoAutorizacion, 'enviado');
             
             // Actualizar datos locales
-            await this.actualizarDatosLocales(solicitudData);
+            this.actualizarDatosLocales(solicitudData);
 
             this.core.showNotification(
                 'Solicitud Enviada',
@@ -83,45 +80,95 @@ class AuthorizationRequestManager {
 
     async verificarSolicitudExistente(tipoAutorizacion) {
         try {
-            const query = await this.core.db.collection('serviciosocial')
-                .where('asesorId', '==', this.core.currentAsesor.id)
-                .where('tipoAutorizacion', '==', tipoAutorizacion)
-                .where('porAutorizar', '==', 'Pendiente')
-                .get();
+            // Verificar en el documento existente del asesor
+            const docRef = this.core.db.collection('serviciosocial').doc(this.core.currentAsesor.id);
+            const doc = await docRef.get();
 
-            return !query.empty;
+            if (doc.exists) {
+                const data = doc.data();
+                // Verificar si existe una solicitud pendiente de este tipo
+                const solicitudes = data.solicitudesAutorizacion || {};
+                return solicitudes[tipoAutorizacion]?.estado === 'Pendiente';
+            }
+
+            return false;
         } catch (error) {
             console.error('Error verificando solicitud existente:', error);
             return false;
         }
     }
 
-    async guardarSolicitud(solicitudData) {
-        // Crear documento único para la solicitud
-        const solicitudId = `${this.core.currentAsesor.id}_${solicitudData.tipoAutorizacion}_${Date.now()}`;
+    async agregarSolicitudAlDocumento(solicitudData) {
+        const docRef = this.core.db.collection('serviciosocial').doc(this.core.currentAsesor.id);
         
-        const docRef = this.core.db.collection('serviciosocial').doc(solicitudId);
-        await docRef.set(solicitudData);
+        // Obtener el documento actual
+        const doc = await docRef.get();
+        let currentData = {};
+        
+        if (doc.exists) {
+            currentData = doc.data();
+        } else {
+            // Si no existe el documento, crear la estructura básica
+            currentData = {
+                asesorId: this.core.currentAsesor.id,
+                estadoTermino: this.core.currentAsesor.servicioSocial?.estadoTermino || '',
+                fechaInicio: this.core.currentAsesor.servicioSocial?.fechaInicio || '',
+                fechaTermino: this.core.currentAsesor.servicioSocial?.fechaTermino || '',
+                clavePrograma: this.core.currentAsesor.servicioSocial?.clavePrograma || '',
+                folioAceptacion: this.core.currentAsesor.servicioSocial?.folioAceptacion || '',
+                folioTermino: this.core.currentAsesor.servicioSocial?.folioTermino || '',
+                fechaEntregaCarta: this.core.currentAsesor.servicioSocial?.fechaEntregaCarta || '',
+                horasAsesor: this.core.currentAsesor.servicioSocial?.horasAsesor || 0,
+                horasServicioSocial: this.core.currentAsesor.servicioSocial?.horasServicioSocial || 0,
+                totalHoras: this.core.currentAsesor.servicioSocial?.totalHoras || 0,
+                ajustesHoras: this.core.currentAsesor.servicioSocial?.ajustesHoras || 0,
+                cartaPresentacion: this.core.currentAsesor.servicioSocial?.cartaPresentacion || null,
+                cartaAceptacion: this.core.currentAsesor.servicioSocial?.cartaAceptacion || null,
+                cartaTermino: this.core.currentAsesor.servicioSocial?.cartaTermino || null,
+                reporteSS: this.core.currentAsesor.servicioSocial?.reporteSS || null,
+                fechaCreacion: new Date(),
+                fechaActualizacion: new Date()
+            };
+        }
 
-        return solicitudId;
+        // Inicializar solicitudesAutorizacion si no existe
+        if (!currentData.solicitudesAutorizacion) {
+            currentData.solicitudesAutorizacion = {};
+        }
+
+        // Agregar la nueva solicitud
+        currentData.solicitudesAutorizacion[solicitudData.tipoAutorizacion] = solicitudData;
+        currentData.fechaActualizacion = new Date();
+
+        // Guardar el documento actualizado
+        await docRef.set(currentData, { merge: true });
     }
 
-    async actualizarDatosLocales(solicitudData) {
+    actualizarDatosLocales(solicitudData) {
         // Actualizar datos del asesor actual
-        if (!this.core.currentAsesor.solicitudesAutorizacion) {
-            this.core.currentAsesor.solicitudesAutorizacion = {};
+        if (!this.core.currentAsesor.servicioSocial) {
+            this.core.currentAsesor.servicioSocial = {};
         }
         
-        this.core.currentAsesor.solicitudesAutorizacion[solicitudData.tipoAutorizacion] = {
-            estado: 'Pendiente',
-            fechaSolicitud: solicitudData.fechaSolicitud,
-            id: solicitudData.id
-        };
+        if (!this.core.currentAsesor.servicioSocial.solicitudesAutorizacion) {
+            this.core.currentAsesor.servicioSocial.solicitudesAutorizacion = {};
+        }
+        
+        this.core.currentAsesor.servicioSocial.solicitudesAutorizacion[solicitudData.tipoAutorizacion] = solicitudData;
 
         // Actualizar en el array principal
         const asesorIndex = this.core.asesores.findIndex(a => a.id === this.core.currentAsesor.id);
         if (asesorIndex !== -1) {
             this.core.asesores[asesorIndex] = { ...this.core.currentAsesor };
+        }
+
+        // Actualizar en servicioSocialData si existe
+        const ssIndex = this.core.servicioSocialData.findIndex(ss => ss.asesorId === this.core.currentAsesor.id);
+        if (ssIndex !== -1) {
+            if (!this.core.servicioSocialData[ssIndex].solicitudesAutorizacion) {
+                this.core.servicioSocialData[ssIndex].solicitudesAutorizacion = {};
+            }
+            this.core.servicioSocialData[ssIndex].solicitudesAutorizacion[solicitudData.tipoAutorizacion] = solicitudData;
         }
     }
 
@@ -143,12 +190,20 @@ class AuthorizationRequestManager {
             
             if (text) {
                 text.textContent = 'Solicitud Enviada';
+            } else {
+                // Si no hay .btn-text, buscar el texto directamente
+                const textNode = Array.from(boton.childNodes).find(node => 
+                    node.nodeType === Node.TEXT_NODE && node.textContent.trim()
+                );
+                if (textNode) {
+                    textNode.textContent = ' Solicitud Enviada';
+                }
             }
 
-            // Agregar badge de confirmación
+            // Agregar badge de confirmación si no existe
             if (!boton.querySelector('.sent-badge')) {
                 const badge = document.createElement('span');
-                badge.className = 'sent-badge';
+                badge.className = 'sent-badge ms-2';
                 badge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Enviado';
                 boton.appendChild(badge);
             }
@@ -159,17 +214,27 @@ class AuthorizationRequestManager {
         if (!this.core.currentAsesor) return;
 
         try {
-            // Buscar el documento existente del asesor
+            // Buscar el documento del asesor
             const docRef = this.core.db.collection('serviciosocial').doc(this.core.currentAsesor.id);
             const doc = await docRef.get();
 
             if (doc.exists) {
                 const data = doc.data();
+                const solicitudes = data.solicitudesAutorizacion || {};
                 
-                // Si tiene una solicitud pendiente, actualizar el botón correspondiente
-                if (data.porAutorizar === 'Pendiente' && data.tipoAutorizacion) {
-                    this.actualizarEstadoBoton(data.tipoAutorizacion, 'enviado');
+                // Verificar cada tipo de solicitud y actualizar botones
+                Object.keys(solicitudes).forEach(tipoAutorizacion => {
+                    const solicitud = solicitudes[tipoAutorizacion];
+                    if (solicitud.estado === 'Pendiente') {
+                        this.actualizarEstadoBoton(tipoAutorizacion, 'enviado');
+                    }
+                });
+
+                // Actualizar datos locales
+                if (!this.core.currentAsesor.servicioSocial) {
+                    this.core.currentAsesor.servicioSocial = {};
                 }
+                this.core.currentAsesor.servicioSocial.solicitudesAutorizacion = solicitudes;
             }
 
         } catch (error) {
@@ -184,7 +249,6 @@ class AuthorizationRequestManager {
             boton.disabled = false;
 
             const icon = boton.querySelector('i');
-            const text = boton.querySelector('.btn-text');
             const badge = boton.querySelector('.sent-badge');
 
             // Restaurar íconos originales
@@ -198,12 +262,18 @@ class AuthorizationRequestManager {
             }
 
             // Restaurar texto original
-            if (text) {
-                const tipoAuth = boton.getAttribute('data-auth-type');
-                if (tipoAuth.includes('termino')) {
-                    text.textContent = 'Solicitar Carta Término';
-                } else if (tipoAuth.includes('aceptacion')) {
-                    text.textContent = 'Solicitar Carta Aceptación';
+            const tipoAuth = boton.getAttribute('data-auth-type');
+            if (tipoAuth.includes('termino')) {
+                if (tipoAuth.includes('fq')) {
+                    boton.innerHTML = '<i class="bi bi-file-earmark-check me-2"></i>Carta Término FQ';
+                } else {
+                    boton.innerHTML = '<i class="bi bi-file-earmark-check me-2"></i>Carta Término Prepa';
+                }
+            } else if (tipoAuth.includes('aceptacion')) {
+                if (tipoAuth.includes('fq')) {
+                    boton.innerHTML = '<i class="bi bi-file-earmark-plus me-2"></i>Carta Aceptación FQ';
+                } else {
+                    boton.innerHTML = '<i class="bi bi-file-earmark-plus me-2"></i>Carta Aceptación Prepa';
                 }
             }
 
@@ -224,29 +294,60 @@ class AuthorizationRequestManager {
         return labels[tipoAutorizacion] || tipoAutorizacion;
     }
 
-    // Método para verificar solicitudes masivas (opcional)
-    async verificarSolicitudesMasivas() {
+    // Método para obtener todas las solicitudes pendientes (para administradores)
+    async obtenerSolicitudesPendientes() {
         try {
-            const query = await this.core.db.collection('serviciosocial')
-                .where('porAutorizar', '==', 'Pendiente')
-                .get();
+            const query = await this.core.db.collection('serviciosocial').get();
+            const solicitudesPendientes = [];
 
-            const solicitudesPorTipo = {};
             query.forEach(doc => {
                 const data = doc.data();
-                const tipo = data.tipoAutorizacion;
-                if (!solicitudesPorTipo[tipo]) {
-                    solicitudesPorTipo[tipo] = 0;
-                }
-                solicitudesPorTipo[tipo]++;
+                const tiposSolicitudes = ['carta-termino-fq', 'carta-termino-prepa', 'carta-aceptacion-fq', 'carta-aceptacion-prepa'];
+                
+                tiposSolicitudes.forEach(tipoAutorizacion => {
+                    const campoEstado = `porAutorizar_${tipoAutorizacion}`;
+                    const campoFecha = `fechaSolicitud_${tipoAutorizacion}`;
+                    const campoUsuario = `usuarioSolicita_${tipoAutorizacion}`;
+                    
+                    if (data[campoEstado] === 'Pendiente') {
+                        solicitudesPendientes.push({
+                            asesorId: data.asesorId,
+                            documentId: doc.id,
+                            tipoAutorizacion: tipoAutorizacion,
+                            estado: data[campoEstado],
+                            fechaSolicitud: data[campoFecha],
+                            usuarioSolicita: data[campoUsuario]
+                        });
+                    }
+                });
             });
 
-            console.log('Solicitudes pendientes por tipo:', solicitudesPorTipo);
-            return solicitudesPorTipo;
+            return solicitudesPendientes;
 
         } catch (error) {
-            console.error('Error verificando solicitudes masivas:', error);
-            return {};
+            console.error('Error obteniendo solicitudes pendientes:', error);
+            return [];
+        }
+    }
+
+    // Método para marcar una solicitud como procesada (para administradores)
+    async marcarSolicitudProcesada(asesorId, tipoAutorizacion, resultado = 'Procesada') {
+        try {
+            const docRef = this.core.db.collection('serviciosocial').doc(asesorId);
+            const campoEstado = `porAutorizar_${tipoAutorizacion}`;
+            const campoProcesamiento = `fechaProcesamiento_${tipoAutorizacion}`;
+            
+            const updateData = {};
+            updateData[campoEstado] = resultado;
+            updateData[campoProcesamiento] = new Date();
+            updateData.fechaActualizacion = new Date();
+            
+            await docRef.update(updateData);
+            return true;
+
+        } catch (error) {
+            console.error('Error marcando solicitud como procesada:', error);
+            return false;
         }
     }
 }

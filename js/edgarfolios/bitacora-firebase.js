@@ -1,4 +1,4 @@
-// bitacora-firebase.js - Módulo de Firebase para Bitácora
+// bitacora-firebase.js - Módulo de Firebase para Bitácora (Modificado para nuevos campos)
 // Manejo de todas las operaciones con Firestore y Storage
 
 class BitacoraFirebase {
@@ -18,6 +18,14 @@ class BitacoraFirebase {
             pendientes: [],
             lastUpdate: null
         };
+
+        // Tipos de autorización válidos
+        this.tiposAutorizacion = [
+            'carta-termino-fq',
+            'carta-termino-prepa', 
+            'carta-aceptacion-fq',
+            'carta-aceptacion-prepa'
+        ];
     }
 
     // ==========================================
@@ -199,83 +207,155 @@ class BitacoraFirebase {
     }
 
     // ==========================================
-    // GESTIÓN PENDIENTES SICA
+    // GESTIÓN PENDIENTES SICA - NUEVA ESTRUCTURA
     // ==========================================
 
-    async obtenerPendientesSICA() {
-        try {
-            console.log('🔍 Obteniendo pendientes SICA...');
+async obtenerPendientesSICA() {
+    try {
+        console.log('🔍 Obteniendo pendientes SICA...');
+        
+        // CAMBIO: Obtener todos los documentos de serviciosocial, no asesores
+        const snapshot = await this.servicioSocialCollection.get();
+        
+        console.log('📊 Documentos de serviciosocial encontrados:', snapshot.size);
+        
+        const pendientes = [];
+        
+        for (const doc of snapshot.docs) {
+            const servicioData = doc.data();
+            const servicioId = doc.id;
             
-            const snapshot = await this.servicioSocialCollection
-                .where('porAutorizar', '==', 'Pendiente')
-                .orderBy('fechaSolicitud', 'desc')
-                .get();
+            console.log('📋 Procesando servicio social:', servicioId);
             
-            console.log('📊 Documentos encontrados en modal:', snapshot.size);
-            
-            const pendientes = [];
-            
-            for (const doc of snapshot.docs) {
-                const data = doc.data();
-                console.log('📋 Procesando documento:', doc.id, data);
+            // DEBUG ESPECÍFICO: Si es el documento que sabemos que tiene pendientes
+            if (servicioId.includes('314302498')) {
+                console.log('🎯 DOCUMENTO OBJETIVO ENCONTRADO:', servicioId);
+                console.log('🎯 Claves del documento:', Object.keys(servicioData));
+                console.log('🎯 Tiene solicitudesAutorizacion?', !!servicioData.solicitudesAutorizacion);
                 
-                // Obtener datos del asesor
-                // Obtener datos del asesor
-            let asesorData = null;
-            if (data.asesorId) {
-                try {
-                    console.log('🔍 asesorId completo:', data.asesorId);
-                    const asesorId = data.asesorId.replace('asesor_', '');
-                    console.log('🔍 numeroCuenta extraído:', asesorId);
-                    
-                    const asesorQuery = await this.asesoresCollection
-                        .where('numeroCuenta', '==', asesorId).get();
-                    
-                    console.log('📊 Documentos de asesor encontrados:', asesorQuery.size);
-                    
-                    if (!asesorQuery.empty) {
-                        asesorData = asesorQuery.docs[0].data();
-                        console.log('✅ Datos del asesor:', asesorData);
-                    } else {
-                        console.log('❌ No se encontró asesor con numeroCuenta:', asesorId);
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Error obteniendo asesor:', error);
+                if (servicioData.solicitudesAutorizacion) {
+                    console.log('🎯 Contenido de solicitudesAutorizacion:', servicioData.solicitudesAutorizacion);
                 }
             }
-                
-                pendientes.push({
-                    id: doc.id,
-                    ...data,
-                    asesor: asesorData,
-                    fechaSolicitud: data.fechaSolicitud?.toDate?.() || new Date()
-                });
+            
+            // Buscar solicitudes pendientes en este documento de servicio social
+            const solicitudesPendientes = this.buscarSolicitudesPendientes(servicioData);
+            
+            if (solicitudesPendientes.length > 0) {
+                console.log(`📋 ✅ Solicitudes pendientes encontradas para ${servicioId}:`, solicitudesPendientes.length);
             }
             
-            console.log('✅ Pendientes procesados:', pendientes.length);
-            return pendientes;
-            
-        } catch (error) {
-            console.error('❌ Error obteniendo pendientes SICA:', error);
-            throw error;
+            // Para cada solicitud pendiente, obtener datos del asesor
+            for (const solicitud of solicitudesPendientes) {
+                // Extraer número de cuenta del ID del documento (asumiendo formato asesor_NUMEROCUENTA)
+                const numeroCuenta = servicioId.replace('asesor_', '');
+                
+                try {
+                    // Buscar datos del asesor
+                    const asesorQuery = await this.asesoresCollection
+                        .where('numeroCuenta', '==', numeroCuenta)
+                        .get();
+                    
+                    let asesorData = null;
+                    if (!asesorQuery.empty) {
+                        asesorData = asesorQuery.docs[0].data();
+                    }
+                    
+                    pendientes.push({
+                        id: `${servicioId}_${solicitud.tipo}`, // ID único combinando servicio y tipo
+                        asesorId: servicioId,
+                        asesor: asesorData,
+                        tipoAutorizacion: solicitud.tipo,
+                        fechaSolicitud: solicitud.fechaSolicitud,
+                        usuarioSolicita: solicitud.usuarioSolicita,
+                        // Campos adicionales para compatibilidad
+                        nombreAsesor: asesorData?.nombreAsesor || 'No encontrado',
+                        numeroCuenta: numeroCuenta,
+                        carrera: asesorData?.carrera || 'No especificada'
+                    });
+                    
+                } catch (error) {
+                    console.warn('Error obteniendo datos del asesor:', error);
+                }
+            }
         }
+        
+        // Ordenar por fecha de solicitud (más recientes primero)
+        pendientes.sort((a, b) => b.fechaSolicitud - a.fechaSolicitud);
+        
+        console.log('✅ Total pendientes procesados:', pendientes.length);
+        console.log('✅ Lista completa de pendientes:', pendientes);
+        return pendientes;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo pendientes SICA:', error);
+        throw error;
     }
+}
+
+buscarSolicitudesPendientes(servicioData) {
+    const solicitudes = [];
+    
+    // Verificar si existe la estructura solicitudesAutorizacion
+    if (!servicioData.solicitudesAutorizacion) {
+        console.log('❌ No existe solicitudesAutorizacion');
+        return solicitudes;
+    }
+    
+    const solicitudesAuth = servicioData.solicitudesAutorizacion;
+    console.log('🔍 Revisando solicitudesAutorizacion:', solicitudesAuth);
+    
+    // Revisar cada tipo de autorización en la estructura anidada
+    this.tiposAutorizacion.forEach(tipo => {
+        console.log(`🔍 Buscando tipo: ${tipo}`);
+        
+        // Buscar en la estructura anidada: solicitudesAutorizacion.carta-termino-fq.estado
+        if (solicitudesAuth[tipo]) {
+            console.log(`✅ Encontrado ${tipo}:`, solicitudesAuth[tipo]);
+            
+            if (solicitudesAuth[tipo].estado === 'Pendiente') {
+                console.log(`🟡 ${tipo} está PENDIENTE`);
+                solicitudes.push({
+                    tipo: tipo,
+                    fechaSolicitud: solicitudesAuth[tipo].fechaSolicitud?.toDate?.() || new Date(),
+                    usuarioSolicita: solicitudesAuth[tipo].usuarioSolicita || 'No especificado',
+                    sistemaOrigen: solicitudesAuth[tipo].sistemaOrigen || 'No especificado',
+                    tipoAutorizacion: solicitudesAuth[tipo].tipoAutorizacion || tipo
+                });
+            } else {
+                console.log(`🔴 ${tipo} NO está pendiente, estado:`, solicitudesAuth[tipo].estado);
+            }
+        } else {
+            console.log(`❌ No encontrado ${tipo} en solicitudesAutorizacion`);
+        }
+    });
+    
+    console.log(`🔍 Total solicitudes pendientes encontradas: ${solicitudes.length}`);
+    return solicitudes;
+}
 
     async autorizarPendiente(pendienteId, datosAutorizacion) {
         try {
             console.log('✅ Autorizando pendiente:', pendienteId);
             
+            // Extraer asesorId y tipo del pendienteId
+            const [asesorId, tipoAutorizacion] = pendienteId.split('_', 2);
+            
             const batch = this.db.batch();
             
-            // 1. Actualizar servicio social
-            const pendienteRef = this.servicioSocialCollection.doc(pendienteId);
-            batch.update(pendienteRef, {
-                porAutorizar: 'Autorizado',
-                fechaAutorizacion: firebase.firestore.Timestamp.now(),
-                autorizadoPor: this.auth.currentUser?.email || 'admin',
-                folioAceptacion: datosAutorizacion.tipoAutorizacion.includes('aceptacion') ? datosAutorizacion.folio : null,
-                folioTermino: datosAutorizacion.tipoAutorizacion.includes('termino') ? datosAutorizacion.folio : null
-            });
+            // 1. Actualizar campos del asesor
+            const asesorRef = this.asesoresCollection.doc(asesorId);
+            const camposActualizacion = {};
+            
+            // Marcar como autorizado
+            camposActualizacion[`porAutorizar_${tipoAutorizacion}`] = 'Autorizado';
+            camposActualizacion[`fechaProcesamiento_${tipoAutorizacion}`] = firebase.firestore.Timestamp.now();
+            
+            // Agregar información de autorización
+            camposActualizacion[`autorizadoPor_${tipoAutorizacion}`] = this.auth.currentUser?.email || 'admin';
+            camposActualizacion[`folioAsignado_${tipoAutorizacion}`] = datosAutorizacion.folio;
+            
+            batch.update(asesorRef, camposActualizacion);
             
             // 2. Crear registro en Edgar
             const edgarRef = this.edgarCollection.doc();
@@ -283,14 +363,15 @@ class BitacoraFirebase {
                 folio: datosAutorizacion.folio,
                 nombre: datosAutorizacion.nombreAsesor,
                 carrera: datosAutorizacion.carrera,
-                tipoAutorizacion: datosAutorizacion.tipoAutorizacion,
+                tipoAutorizacion: tipoAutorizacion,
                 fecha: firebase.firestore.Timestamp.now(),
                 fechaCreacion: firebase.firestore.Timestamp.now(),
                 creadoPor: this.auth.currentUser?.email || 'admin',
                 tipo: 'sica',
                 importancia: 'alta',
-                comentarios: `Autorización SICA: ${datosAutorizacion.tipoAutorizacion}`,
-                numeroCuenta: datosAutorizacion.numeroCuenta
+                comentarios: `Autorización SICA: ${tipoAutorizacion}`,
+                numeroCuenta: datosAutorizacion.numeroCuenta,
+                asesorId: asesorId
             });
             
             await batch.commit();
@@ -361,10 +442,8 @@ class BitacoraFirebase {
         }
     }
 
-    
-
     // ==========================================
-    // ESTADÍSTICAS Y UTILIDADES
+    // ESTADÍSTICAS Y UTILIDADES - ACTUALIZADAS
     // ==========================================
 
     async obtenerEstadisticas() {
@@ -380,11 +459,8 @@ class BitacoraFirebase {
             const totalSnapshot = await this.edgarCollection.get();
             const totalFolios = totalSnapshot.size;
             
-            // Pendientes SICA
-            const pendientesSnapshot = await this.servicioSocialCollection
-                .where('porAutorizar', '==', 'Pendiente')
-                .get();
-            const pendientesSica = pendientesSnapshot.size;
+            // Pendientes SICA - nueva lógica
+            const pendientesSica = await this.contarPendientesSICA();
             
             // Autorizados hoy
             const hoySnapshot = await this.edgarCollection
@@ -416,6 +492,35 @@ class BitacoraFirebase {
             };
         }
     }
+
+async contarPendientesSICA() {
+    try {
+        const snapshot = await this.servicioSocialCollection.get();
+        let totalPendientes = 0;
+        
+        snapshot.forEach(doc => {
+            const servicioData = doc.data();
+            
+            // Verificar si existe la estructura solicitudesAutorizacion
+            if (servicioData.solicitudesAutorizacion) {
+                const solicitudesAuth = servicioData.solicitudesAutorizacion;
+                
+                // Contar solicitudes pendientes para este documento
+                this.tiposAutorizacion.forEach(tipo => {
+                    if (solicitudesAuth[tipo] && solicitudesAuth[tipo].estado === 'Pendiente') {
+                        totalPendientes++;
+                    }
+                });
+            }
+        });
+        
+        return totalPendientes;
+        
+    } catch (error) {
+        console.error('❌ Error contando pendientes SICA:', error);
+        return 0;
+    }
+}
 
     async obtenerSiguienteNumeroFolio() {
         try {
@@ -488,17 +593,18 @@ class BitacoraFirebase {
     }
 
     // ==========================================
-    // LISTENERS EN TIEMPO REAL
+    // LISTENERS EN TIEMPO REAL - ACTUALIZADOS
     // ==========================================
 
     escucharPendientesSICA(callback) {
         console.log('👂 Configurando listener para pendientes SICA...');
         
         return this.servicioSocialCollection
-            .where('porAutorizar', '==', 'Pendiente')
             .onSnapshot(snapshot => {
-                console.log('🔔 Actualización en pendientes SICA');
-                callback(snapshot.size);
+                console.log('🔔 Actualización en serviciosocial - recalculando pendientes');
+                this.contarPendientesSICA().then(cantidad => {
+                    callback(cantidad);
+                });
             }, error => {
                 console.error('❌ Error en listener de pendientes:', error);
             });
@@ -525,6 +631,36 @@ class BitacoraFirebase {
                 console.error('❌ Error en listener de folios:', error);
             });
     }
+
+    // ==========================================
+    // UTILIDADES PARA DEBUG Y DESARROLLO
+    // ==========================================
+
+    async verificarEstructuraCampos() {
+        try {
+            console.log('🔍 Verificando estructura de campos...');
+            
+            const snapshot = await this.asesoresCollection.limit(5).get();
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                console.log(`Asesor ${doc.id}:`);
+                
+                this.tiposAutorizacion.forEach(tipo => {
+                    const campoAutorizar = `porAutorizar_${tipo}`;
+                    const campoFecha = `fechaSolicitud_${tipo}`;
+                    const campoUsuario = `usuarioSolicita_${tipo}`;
+                    
+                    if (data[campoAutorizar]) {
+                        console.log(`  ${tipo}: ${data[campoAutorizar]} (${data[campoFecha]?.toDate?.()})`);
+                    }
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error verificando estructura:', error);
+        }
+    }
 }
 
 // Instancia global
@@ -541,5 +677,4 @@ firebase.auth().onAuthStateChanged(user => {
     console.log('✅ Usuario autenticado:', user.email);
 });
 
-
-console.log('✅ Módulo BitacoraFirebase cargado correctamente');
+console.log('✅ Módulo BitacoraFirebase cargado correctamente (versión campos específicos)');

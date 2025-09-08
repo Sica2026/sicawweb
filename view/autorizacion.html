@@ -121,17 +121,6 @@
                             </div>
                         </div>
 
-                        <!-- Sección Actividades -->
-                        <div class="config-section">
-                            <h4 class="section-title">
-                                <i class="bi bi-list-check"></i> Actividades Desarrolladas
-                            </h4>
-                            <div class="form-group">
-                                <textarea id="actividadesDesarrolladas" class="form-control" 
-                                          rows="6" placeholder="Describa las actividades realizadas..."></textarea>
-                            </div>
-                        </div>
-
                         <!-- Sección Información Adicional -->
                         <div class="config-section">
                             <h4 class="section-title">
@@ -221,7 +210,7 @@
                     <button class="btn btn-outline-success" id="btnDescargar">
                         <i class="bi bi-download me-2"></i>Descargar Documento
                     </button>
-                    <a href="bitacora.html" class="btn btn-success">
+                    <a href="foliosedgar.html" class="btn btn-success">
                         <i class="bi bi-arrow-left me-2"></i>Volver a Bitácora
                     </a>
                 </div>
@@ -258,6 +247,15 @@
     <script src="../firebase-config.js"></script>
     <script src="../js/components.js"></script>
     <script src="../js/navigation.js"></script>
+    
+    <!-- Plantillas JS - DEBEN CARGARSE ANTES DE autorizacion-main.js -->
+    <script src="../js/documents/carta-aceptacion-FQ.js"></script>
+    <script src="../js/documents/carta-aceptacion-prepa.js"></script>
+    <script src="../js/documents/carta-termino-FQ-pdf.js"></script>
+    <script src="../js/documents/carta-termino-prepa.js"></script>
+    
+    <!-- Sistema de autorización - DEBE IR AL FINAL -->
     <script src="../js/edgarfolios/autorizacion-main.js"></script>
+    
 </body>
 </html>
