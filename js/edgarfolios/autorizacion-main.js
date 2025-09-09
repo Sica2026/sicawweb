@@ -571,12 +571,24 @@ async descargarDocumento() {
         modal.show();
     }
 
-    formatearFecha(fechaString) {
-        if (!fechaString) return '';
-        return new Date(fechaString).toLocaleDateString('es-ES', {
-            day: 'numeric', month: 'long', year: 'numeric'
-        });
-    }
+formatearFecha(fechaString) {
+    if (!fechaString) return '';
+    
+    // Crear fecha sin problemas de zona horaria
+    const [year, month, day] = fechaString.split('-').map(Number);
+    const fecha = new Date(year, month - 1, day); // Los meses van de 0-11
+    
+    const meses = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    
+    const dia = fecha.getDate();
+    const mes = meses[fecha.getMonth()];
+    const año = fecha.getFullYear();
+    
+    return `${dia} de ${mes} de ${año}`;
+}
 
     formatearFechaInput(timestamp) {
         const fecha = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
