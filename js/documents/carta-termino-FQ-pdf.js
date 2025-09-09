@@ -200,15 +200,26 @@ class CartaTerminoFQPDF {
 
 
     // Descompone una fecha "YYYY-MM-DD" a partes con nombre de mes en español
-    descomponerFecha(fechaString) {
-        const f = new Date(fechaString);
-        const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-        return {
-            dia: f.getDate(),
-            mes: meses[f.getMonth()],
-            anio: f.getFullYear()
-        };
+descomponerFecha(fechaString) {
+    if (!fechaString) {
+        console.error('No se recibió fecha');
+        return { dia: 1, mes: 'enero', anio: 2025 };
     }
+
+    // Parsear directamente sin crear objeto Date para evitar problemas de zona horaria
+    const [year, month, day] = fechaString.split('-').map(Number);
+    
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    
+    // Usar directamente los valores parseados sin crear Date
+    const resultado = {
+        dia: day,
+        mes: meses[month - 1], // month ya viene de 1-12, restamos 1 para el índice
+        anio: year
+    };
+    
+    return resultado;
+}
 
     async generarContenido(doc, datos, logoData) {
         // Configurar fuente
@@ -458,21 +469,24 @@ class CartaTerminoFQPDF {
         doc.text("QUÍMICA", x + 8, y + 18);
     }
 
-    formatearFecha(fechaString) {
-        if (!fechaString) return '';
-        
-        const fecha = new Date(fechaString);
-        const meses = [
-            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-        ];
-        
-        const dia = fecha.getDate();
-        const mes = meses[fecha.getMonth()];
-        const año = fecha.getFullYear();
-        
-        return `${dia} de ${mes} de ${año}`;
-    }
+formatearFecha(fechaString) {
+    if (!fechaString) return '';
+    
+    // Crear fecha sin problemas de zona horaria
+    const [year, month, day] = fechaString.split('-').map(Number);
+    const fecha = new Date(year, month - 1, day);
+    
+    const meses = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    
+    const dia = fecha.getDate();
+    const mes = meses[fecha.getMonth()];
+    const año = fecha.getFullYear();
+    
+    return `${dia} de ${mes} de ${año}`;
+}
 
     // Método para actualizar configuración
     actualizarConfiguracion(nuevaConfig) {

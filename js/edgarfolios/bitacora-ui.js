@@ -556,16 +556,42 @@ class BitacoraUI {
     // ACCIONES DE FOLIOS
     // ==========================================
 
-    async editarFolio(id) {
-        try {
-            const folio = await window.bitacoraFirebase.obtenerFolioPorId(id);
-            this.mostrarModalFolio(folio);
+async editarFolio(id) {
+    try {
+        const folio = await window.bitacoraFirebase.obtenerFolioPorId(id);
+        
+        // Si es un folio de tipo SICA, redirigir al panel de autorización
+        if (folio.tipo === 'sica' && folio.tipoAutorizacion && folio.numeroCuenta) {
+            console.log('📝 Redirigiendo folio SICA a panel de autorización:', folio);
             
-        } catch (error) {
-            console.error('Error obteniendo folio:', error);
-            this.mostrarNotificacion('Error', 'No se pudo cargar el folio', 'error');
+            const pendienteId = `asesor_${folio.numeroCuenta}_${folio.tipoAutorizacion}`;
+            
+            // ESTA LÍNEA debe incluir folioId=id
+            window.location.href = `autorizacion.html?id=${pendienteId}&edit=true&folioId=${id}`;
+            return;
         }
+        
+        // Para folios manuales
+        this.mostrarModalFolio(folio);
+        
+    } catch (error) {
+        console.error('Error obteniendo folio:', error);
+        this.mostrarNotificacion('Error', 'No se pudo cargar el folio', 'error');
     }
+}
+
+determinarTipoAutorizacionDesdeComentarios(comentarios) {
+    if (!comentarios) return null;
+    
+    const comentarioLower = comentarios.toLowerCase();
+    
+    if (comentarioLower.includes('carta-aceptacion-fq')) return 'carta-aceptacion-fq';
+    if (comentarioLower.includes('carta-aceptacion-prepa')) return 'carta-aceptacion-prepa';
+    if (comentarioLower.includes('carta-termino-fq')) return 'carta-termino-fq';
+    if (comentarioLower.includes('carta-termino-prepa')) return 'carta-termino-prepa';
+    
+    return null;
+}
 
     async eliminarFolio(id, folioNumero) {
         const confirmacion = await this.mostrarConfirmacion(

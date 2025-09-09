@@ -19,29 +19,170 @@ class AutorizacionSICA {
         };
     }
 
-    async inicializar() {
-        try {
-            console.log('🚀 Iniciando sistema de autorización...');
-            
-            if (!this.pendienteId) {
-                throw new Error('No se especificó ID del pendiente');
-            }
-
-            await this.verificarAutenticacion();
-            this.configurarEventListeners();
-            await this.cargarDatosPendiente();
-            this.configurarActualizacionTiempoReal();
-            
-            // Ocultar loading
-            this.elementos.loadingScreen.style.display = 'none';
-            
-            console.log('✅ Sistema inicializado correctamente');
-            
-        } catch (error) {
-            console.error('❌ Error inicializando:', error);
-            this.mostrarError(error.message);
+async inicializar() {
+    try {
+        console.log('🚀 Iniciando sistema de autorización...');
+        
+        if (!this.pendienteId) {
+            throw new Error('No se especificó ID del pendiente');
         }
+
+        // Detectar si es modo edición de folio autorizado
+        const urlParams = new URLSearchParams(window.location.search);
+        this.modoEdicion = urlParams.get('edit') === 'true';
+        this.folioId = urlParams.get('folioId');
+        
+        console.log('📋 Modo detección:', { 
+            modoEdicion: this.modoEdicion, 
+            folioId: this.folioId, 
+            pendienteId: this.pendienteId 
+        });
+
+        await this.verificarAutenticacion();
+        this.configurarEventListeners();
+        
+        // Cargar datos según el modo
+        if (this.modoEdicion && this.folioId) {
+            console.log('📝 Modo edición: Cargando folio autorizado');
+            await this.cargarDatosFolioAutorizado();
+        } else {
+            console.log('📋 Modo normal: Cargando pendiente');
+            await this.cargarDatosPendiente();
+        }
+        
+        this.configurarActualizacionTiempoReal();
+        
+        // Ocultar loading
+        this.elementos.loadingScreen.style.display = 'none';
+        
+        console.log('✅ Sistema inicializado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando:', error);
+        this.mostrarError(error.message);
     }
+}
+
+async cargarDatosFolioAutorizado() {
+    try {
+        console.log('📄 Cargando folio autorizado para edición:', this.folioId);
+        
+        // Obtener datos del folio desde la colección Edgar
+        const folio = await firebase.firestore()
+            .collection('edgar')
+            .doc(this.folioId)
+            .get();
+            
+        if (!folio.exists) {
+            throw new Error('Folio no encontrado');
+        }
+        
+        const folioData = folio.data();
+        console.log('📋 Datos del folio cargado:', folioData);
+        
+        // Extraer tipo de documento del folio
+        this.tipoDocumento = folioData.tipoAutorizacion;
+        
+        // Cargar datos del asesor si existe numeroCuenta
+        if (folioData.numeroCuenta) {
+            await this.cargarDatosAsesor(folioData.numeroCuenta);
+        }
+        
+        // Poblar formulario con datos del folio
+        await this.poblarFormularioDesdeEdgar(folioData);
+        
+        this.actualizarTituloDocumento();
+        
+        // Mostrar información de que es modo edición
+        if (this.elementos.fechaSolicitud) {
+            const fechaCreacion = folioData.fechaCreacion?.toDate?.() || folioData.fecha?.toDate?.();
+            this.elementos.fechaSolicitud.textContent = 
+                `Autorizado: ${fechaCreacion ? fechaCreacion.toLocaleDateString('es-ES') : 'N/A'}`;
+        }
+        
+        this.actualizarVistaPrevia();
+        
+        // Cambiar el botón de "Autorizar" a "Actualizar"
+        if (this.elementos.btnAutorizar) {
+            this.elementos.btnAutorizar.innerHTML = '<i class="bi bi-save me-2"></i>Actualizar Documento';
+            this.elementos.btnAutorizar.classList.remove('btn-success');
+            this.elementos.btnAutorizar.classList.add('btn-warning');
+        }
+        
+    } catch (error) {
+        throw new Error(`Error cargando folio autorizado: ${error.message}`);
+    }
+}
+
+async poblarFormularioDesdeEdgar(folioData) {
+    try {
+        // Extraer número de folio
+        const folioMatch = folioData.folio.match(/CI\/(\d+)\/\d{4}/);
+        if (folioMatch) {
+            document.getElementById('folioNumber').value = folioMatch[1];
+        }
+        
+        // Poblar campos básicos directamente desde el folio
+        if (folioData.nombre) {
+            document.getElementById('nombreAsesor').value = folioData.nombre;
+        }
+        if (folioData.numeroCuenta) {
+            document.getElementById('numeroCuenta').value = folioData.numeroCuenta;
+        }
+        if (folioData.carrera) {
+            document.getElementById('carrera').value = folioData.carrera;
+        }
+        
+        // Para las fechas, necesitamos obtenerlas del documento de servicio social
+        // ya que Edgar solo guarda los datos básicos
+        if (folioData.asesorId) {
+            try {
+                const servicioDoc = await firebase.firestore()
+                    .collection('serviciosocial')
+                    .doc(folioData.asesorId)
+                    .get();
+                    
+                if (servicioDoc.exists) {
+                    const servicioData = servicioDoc.data();
+                    if (servicioData.fechaInicio) {
+                        document.getElementById('fechaInicio').value = servicioData.fechaInicio;
+                    }
+                    if (servicioData.fechaTermino) {
+                        document.getElementById('fechaTermino').value = servicioData.fechaTermino;
+                    }
+                }
+            } catch (error) {
+                console.warn('No se pudieron cargar fechas del servicio social:', error);
+                // Usar fechas por defecto si no se pueden obtener
+                this.establecerFechasPorDefecto();
+            }
+        } else {
+            this.establecerFechasPorDefecto();
+        }
+        
+        // Generar clave de programa por defecto si no existe
+        if (!document.getElementById('clavePrograma').value) {
+            document.getElementById('clavePrograma').value = 'SICA-' + new Date().getFullYear();
+        }
+        
+        this.calcularDuracion();
+        
+    } catch (error) {
+        console.error('Error poblando formulario desde Edgar:', error);
+        throw error;
+    }
+}
+
+// Método auxiliar para establecer fechas por defecto
+establecerFechasPorDefecto() {
+    const hoy = new Date();
+    const inicioDefecto = new Date(hoy.getFullYear(), 0, 1); // 1 enero del año actual
+    const finDefecto = new Date(hoy.getFullYear(), 5, 30);   // 30 junio del año actual
+    
+    document.getElementById('fechaInicio').value = inicioDefecto.toISOString().split('T')[0];
+    document.getElementById('fechaTermino').value = finDefecto.toISOString().split('T')[0];
+}
+
 
     obtenerParametroURL(nombre) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -397,6 +538,18 @@ obtenerDatosFormulario() {
     const folioNum = document.getElementById('folioNumber').value.padStart(3, '0');
     const year = new Date().getFullYear();
     
+    // Determinar qué fecha usar según el tipo de documento
+    let fechaParaDocumento;
+    if (this.tipoDocumento === 'carta-termino-fq' || this.tipoDocumento === 'carta-termino-prepa') {
+        // Para cartas de término: usar fecha actual
+        fechaParaDocumento = new Date().toLocaleDateString('es-ES', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
+    } else {
+        // Para cartas de aceptación: usar fecha de inicio
+        fechaParaDocumento = this.formatearFecha(document.getElementById('fechaInicio').value);
+    }
+    
     return {
         folioCompleto: `CI/${folioNum}/${year}`,
         folioAceptacion: `CI/${folioNum}/${year}`, // Para compatibilidad
@@ -408,9 +561,7 @@ obtenerDatosFormulario() {
         fechaTermino: document.getElementById('fechaTermino').value,
         clavePrograma: document.getElementById('clavePrograma').value,
         programa: "Sala de informática y cómputo para alumnos (SICA)", // Valor por defecto
-        fechaHoy: new Date().toLocaleDateString('es-ES', {
-            day: 'numeric', month: 'long', year: 'numeric'
-        }),
+        fechaHoy: fechaParaDocumento, // Fecha condicional según tipo
         tipoDocumento: this.tipoDocumento
     };
 }
@@ -443,28 +594,79 @@ obtenerDatosFormulario() {
         }
     }
 
-    async procesarAutorizacion() {
-        try {
-            if (!this.validarFormulario()) {
-                this.mostrarError('Complete todos los campos requeridos');
-                return;
-            }
-
-            // Mostrar loading en botón
-            this.elementos.btnAutorizar.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Procesando...';
-            this.elementos.btnAutorizar.disabled = true;
-
-            const datos = this.obtenerDatosFormulario();
-            await this.guardarAutorizacion(datos);
-            
-            this.mostrarExito(datos.folioCompleto);
-
-        } catch (error) {
-            this.mostrarError(error.message);
-            this.elementos.btnAutorizar.innerHTML = '<i class="bi bi-check-circle me-2"></i>Autorizar';
-            this.elementos.btnAutorizar.disabled = false;
+async procesarAutorizacion() {
+    try {
+        if (!this.validarFormulario()) {
+            this.mostrarError('Complete todos los campos requeridos');
+            return;
         }
+
+        // Cambiar texto según el modo
+        const textoBoton = this.modoEdicion ? 'Actualizando...' : 'Procesando...';
+        this.elementos.btnAutorizar.innerHTML = `<i class="bi bi-hourglass-split me-2"></i>${textoBoton}`;
+        this.elementos.btnAutorizar.disabled = true;
+
+        const datos = this.obtenerDatosFormulario();
+        
+        if (this.modoEdicion && this.folioId) {
+            await this.actualizarFolioAutorizado(datos);
+            this.mostrarExitoActualizacion(datos.folioCompleto);
+        } else {
+            await this.guardarAutorizacion(datos);
+            this.mostrarExito(datos.folioCompleto);
+        }
+
+    } catch (error) {
+        this.mostrarError(error.message);
+        const textoOriginal = this.modoEdicion ? 
+            '<i class="bi bi-save me-2"></i>Actualizar Documento' : 
+            '<i class="bi bi-check-circle me-2"></i>Autorizar';
+        this.elementos.btnAutorizar.innerHTML = textoOriginal;
+        this.elementos.btnAutorizar.disabled = false;
     }
+}
+
+// Método para actualizar folio autorizado
+async actualizarFolioAutorizado(datos) {
+    // Actualizar el documento en la colección Edgar
+    await firebase.firestore()
+        .collection('edgar')
+        .doc(this.folioId)
+        .update({
+            nombre: datos.nombreAsesor,
+            carrera: datos.carrera,
+            numeroCuenta: datos.numeroCuenta,
+            folio: datos.folioCompleto,
+            fechaModificacion: firebase.firestore.Timestamp.now(),
+            modificadoPor: firebase.auth().currentUser?.email || 'admin',
+            comentarios: `Autorización SICA: ${this.tipoDocumento} (Actualizado)`
+        });
+        
+    console.log('✅ Folio autorizado actualizado');
+}
+
+// Método para mostrar éxito de actualización
+mostrarExitoActualizacion(folio) {
+    document.getElementById('folioFinal').textContent = folio;
+    
+    // Cambiar el texto del modal para indicar que fue una actualización
+    const modalTitle = document.querySelector('#modalExito .modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Documento Actualizado';
+    }
+    
+    // Cambiar el mensaje del modal
+    const modalBody = document.querySelector('#modalExito .modal-body p');
+    if (modalBody) {
+        modalBody.textContent = 'El documento ha sido actualizado correctamente.';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalExito'));
+    modal.show();
+    
+    // Configurar descarga
+    document.getElementById('btnDescargar').onclick = () => this.descargarDocumento();
+}
 
     validarFormulario() {
         const requeridos = ['folioNumber', 'nombreAsesor', 'numeroCuenta', 'carrera', 'fechaInicio', 'fechaTermino'];
@@ -526,13 +728,18 @@ obtenerDatosFormulario() {
     }
 
 async descargarDocumento() {
+    console.log('🚨 DESCARGA - Método llamado');
+    console.log('🚨 DESCARGA - Tipo:', this.tipoDocumento);
     try {
         const datos = this.obtenerDatosFormulario();
+        console.log('🚨 DESCARGA - Datos:', datos);
         
         // Usar la clase JS correspondiente para generar PDF
         switch (this.tipoDocumento) {
             case 'carta-aceptacion-fq':
+                console.log('🚨 DESCARGA - Entrando case FQ');
                 if (window.generarCartaAceptacionFQPDF) {
+                    console.log('🚨 DESCARGA - Función existe, llamando...');
                     await window.generarCartaAceptacionFQPDF(datos);
                 }
                 break;
@@ -570,6 +777,47 @@ async descargarDocumento() {
         const modal = new bootstrap.Modal(document.getElementById('modalError'));
         modal.show();
     }
+
+    async sincronizarConServicioSocial(datosActualizados, asesorId) {
+    try {
+        console.log('🔄 Sincronizando cambios con serviciosocial...');
+        
+        // Buscar el documento original en serviciosocial
+        const servicioSocialRef = firebase.firestore()
+            .collection('serviciosocial')
+            .where('asesorId', '==', asesorId);
+        
+        const snapshot = await servicioSocialRef.get();
+        
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            const docRef = doc.ref;
+            
+            // Campos que se pueden actualizar en serviciosocial
+            const camposActualizables = {
+                nombreAsesor: datosActualizados.nombreAsesor,
+                numeroCuenta: datosActualizados.numeroCuenta,
+                carrera: datosActualizados.carrera,
+                fechaInicio: datosActualizados.fechaInicio,
+                fechaFin: datosActualizados.fechaFin,
+                clavePrograma: datosActualizados.clavePrograma,
+                // Agregar timestamp de última actualización
+                ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
+                actualizadoDesde: 'panel-autorizacion'
+            };
+            
+            await docRef.update(camposActualizables);
+            console.log('✅ Datos sincronizados con serviciosocial');
+            
+        } else {
+            console.warn('⚠️ No se encontró el documento original en serviciosocial');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error sincronizando con serviciosocial:', error);
+        // No lanzar error para no interrumpir el flujo principal
+    }
+}
 
 formatearFecha(fechaString) {
     if (!fechaString) return '';

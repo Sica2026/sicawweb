@@ -399,21 +399,24 @@ class CartaAceptacionPrepaPDF {
         doc.text("QUÍMICA", x + 8, y + 18);
     }
 
-    formatearFecha(fechaString) {
-        if (!fechaString) return '';
-        
-        const fecha = new Date(fechaString);
-        const meses = [
-            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-        ];
-        
-        const dia = fecha.getDate();
-        const mes = meses[fecha.getMonth()];
-        const año = fecha.getFullYear();
-        
-        return `${dia} de ${mes} de ${año}`;
-    }
+formatearFecha(fechaString) {
+    if (!fechaString) return '';
+    
+    // Crear fecha sin problemas de zona horaria
+    const [year, month, day] = fechaString.split('-').map(Number);
+    const fecha = new Date(year, month - 1, day);
+    
+    const meses = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    
+    const dia = fecha.getDate();
+    const mes = meses[fecha.getMonth()];
+    const año = fecha.getFullYear();
+    
+    return `${dia} de ${mes} de ${año}`;
+}
 
     // Método para actualizar configuración
     actualizarConfiguracion(nuevaConfig) {
