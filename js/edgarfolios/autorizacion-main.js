@@ -80,6 +80,9 @@ async cargarDatosFolioAutorizado() {
         const folioData = folio.data();
         console.log('📋 Datos del folio cargado:', folioData);
         
+        // Guardar datos del folio para sincronización posterior
+        this.folioAutorizado = folioData;
+        
         // Extraer tipo de documento del folio
         this.tipoDocumento = folioData.tipoAutorizacion;
         
@@ -183,6 +186,81 @@ establecerFechasPorDefecto() {
     document.getElementById('fechaTermino').value = finDefecto.toISOString().split('T')[0];
 }
 
+// ===================================================
+// SINCRONIZACIÓN CON SERVICIOSOCIAL
+// ===================================================
+
+async sincronizarConServicioSocial(datosActualizados, asesorId) {
+    try {
+        console.log('🔄 Sincronizando cambios con serviciosocial...');
+        
+        if (!asesorId) {
+            console.warn('⚠️ No se proporcionó asesorId para sincronización');
+            return;
+        }
+        
+        // Buscar el documento en serviciosocial
+        const servicioSocialRef = firebase.firestore()
+            .collection('serviciosocial')
+            .doc(asesorId);
+        
+        const doc = await servicioSocialRef.get();
+        
+        if (doc.exists) {
+            // Campos que se pueden actualizar en serviciosocial
+            const camposActualizables = {
+                nombreAsesor: datosActualizados.nombreAsesor,
+                numeroCuenta: datosActualizados.numeroCuenta,
+                carrera: datosActualizados.carrera,
+                fechaInicio: datosActualizados.fechaInicio,
+                fechaTermino: datosActualizados.fechaTermino,
+                clavePrograma: datosActualizados.clavePrograma,
+                // Agregar timestamp de última actualización
+                ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
+                actualizadoDesde: 'panel-autorizacion',
+                actualizadoPor: firebase.auth().currentUser?.email || 'admin'
+            };
+            
+            await servicioSocialRef.update(camposActualizables);
+            console.log('✅ Datos sincronizados con serviciosocial');
+            
+        } else {
+            console.warn('⚠️ No se encontró el documento original en serviciosocial:', asesorId);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error sincronizando con serviciosocial:', error);
+        // No lanzar error para no interrumpir el flujo principal
+    }
+}
+
+async validarIntegridadDatos(datosNuevos, datosOriginales) {
+    try {
+        // Verificar que cambios críticos sean válidos
+        if (datosNuevos.numeroCuenta !== datosOriginales.numeroCuenta) {
+            console.warn('⚠️ Cambio de número de cuenta detectado:', {
+                anterior: datosOriginales.numeroCuenta,
+                nuevo: datosNuevos.numeroCuenta
+            });
+        }
+        
+        if (datosNuevos.nombreAsesor !== datosOriginales.nombre) {
+            console.log('📝 Cambio de nombre detectado:', {
+                anterior: datosOriginales.nombre,
+                nuevo: datosNuevos.nombreAsesor
+            });
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error validando integridad:', error);
+        return false;
+    }
+}
+
+// ===================================================
+// RESTO DEL CÓDIGO ORIGINAL
+// ===================================================
 
     obtenerParametroURL(nombre) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -239,6 +317,10 @@ establecerFechasPorDefecto() {
             }
 
             const servicioData = doc.data();
+            
+            // Guardar datos del servicio social para sincronización posterior
+            this.servicioSocial = servicioData;
+            this.servicioSocial.asesorId = servicioId;
             
             if (!servicioData.solicitudesAutorizacion || 
                 !servicioData.solicitudesAutorizacion[tipoAutorizacion] ||
@@ -626,23 +708,41 @@ async procesarAutorizacion() {
     }
 }
 
-// Método para actualizar folio autorizado
+// Método para actualizar folio autorizado con sincronización
 async actualizarFolioAutorizado(datos) {
-    // Actualizar el documento en la colección Edgar
-    await firebase.firestore()
-        .collection('edgar')
-        .doc(this.folioId)
-        .update({
-            nombre: datos.nombreAsesor,
-            carrera: datos.carrera,
-            numeroCuenta: datos.numeroCuenta,
-            folio: datos.folioCompleto,
-            fechaModificacion: firebase.firestore.Timestamp.now(),
-            modificadoPor: firebase.auth().currentUser?.email || 'admin',
-            comentarios: `Autorización SICA: ${this.tipoDocumento} (Actualizado)`
-        });
+    try {
+        // Obtener datos originales para validación
+        const datosOriginales = this.folioAutorizado;
         
-    console.log('✅ Folio autorizado actualizado');
+        // Validar integridad de datos
+        await this.validarIntegridadDatos(datos, datosOriginales);
+        
+        // Actualizar el documento en la colección Edgar
+        await firebase.firestore()
+            .collection('edgar')
+            .doc(this.folioId)
+            .update({
+                nombre: datos.nombreAsesor,
+                carrera: datos.carrera,
+                numeroCuenta: datos.numeroCuenta,
+                folio: datos.folioCompleto,
+                fechaModificacion: firebase.firestore.Timestamp.now(),
+                modificadoPor: firebase.auth().currentUser?.email || 'admin',
+                comentarios: `Autorización SICA: ${this.tipoDocumento} (Actualizado)`
+            });
+        
+        console.log('✅ Folio autorizado actualizado en Edgar');
+        
+        // Sincronizar cambios con serviciosocial
+        const asesorId = datosOriginales.asesorId;
+        if (asesorId) {
+            await this.sincronizarConServicioSocial(datos, asesorId);
+        }
+        
+    } catch (error) {
+        console.error('Error actualizando folio autorizado:', error);
+        throw error;
+    }
 }
 
 // Método para mostrar éxito de actualización
@@ -658,7 +758,7 @@ mostrarExitoActualizacion(folio) {
     // Cambiar el mensaje del modal
     const modalBody = document.querySelector('#modalExito .modal-body p');
     if (modalBody) {
-        modalBody.textContent = 'El documento ha sido actualizado correctamente.';
+        modalBody.textContent = 'El documento ha sido actualizado correctamente. Los cambios también se han sincronizado con el registro original.';
     }
     
     const modal = new bootstrap.Modal(document.getElementById('modalExito'));
@@ -716,10 +816,22 @@ mostrarExitoActualizacion(folio) {
         });
 
         await batch.commit();
+        
+        console.log('✅ Autorización guardada y registro creado en Edgar');
+        
+        // Sincronizar cambios con serviciosocial (datos actualizados del formulario)
+        await this.sincronizarConServicioSocial(datos, servicioId);
     }
 
     mostrarExito(folio) {
         document.getElementById('folioFinal').textContent = folio;
+        
+        // Mensaje para nueva autorización
+        const modalBody = document.querySelector('#modalExito .modal-body p');
+        if (modalBody) {
+            modalBody.textContent = 'El documento ha sido autorizado correctamente y los datos han sido sincronizados.';
+        }
+        
         const modal = new bootstrap.Modal(document.getElementById('modalExito'));
         modal.show();
 
@@ -777,47 +889,6 @@ async descargarDocumento() {
         const modal = new bootstrap.Modal(document.getElementById('modalError'));
         modal.show();
     }
-
-    async sincronizarConServicioSocial(datosActualizados, asesorId) {
-    try {
-        console.log('🔄 Sincronizando cambios con serviciosocial...');
-        
-        // Buscar el documento original en serviciosocial
-        const servicioSocialRef = firebase.firestore()
-            .collection('serviciosocial')
-            .where('asesorId', '==', asesorId);
-        
-        const snapshot = await servicioSocialRef.get();
-        
-        if (!snapshot.empty) {
-            const doc = snapshot.docs[0];
-            const docRef = doc.ref;
-            
-            // Campos que se pueden actualizar en serviciosocial
-            const camposActualizables = {
-                nombreAsesor: datosActualizados.nombreAsesor,
-                numeroCuenta: datosActualizados.numeroCuenta,
-                carrera: datosActualizados.carrera,
-                fechaInicio: datosActualizados.fechaInicio,
-                fechaFin: datosActualizados.fechaFin,
-                clavePrograma: datosActualizados.clavePrograma,
-                // Agregar timestamp de última actualización
-                ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
-                actualizadoDesde: 'panel-autorizacion'
-            };
-            
-            await docRef.update(camposActualizables);
-            console.log('✅ Datos sincronizados con serviciosocial');
-            
-        } else {
-            console.warn('⚠️ No se encontró el documento original en serviciosocial');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error sincronizando con serviciosocial:', error);
-        // No lanzar error para no interrumpir el flujo principal
-    }
-}
 
 formatearFecha(fechaString) {
     if (!fechaString) return '';

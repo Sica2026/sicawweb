@@ -600,3 +600,19 @@
 .modal-backdrop {
     background-color: rgba(0, 0, 0, 0.8) !important;
 }
+/* Dark mode adjustments - Filtros */
+[data-theme="dark"] .form-label-sica {
+    color: var(--primary-gold) !important;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .search-results-count {
+    background: var(--primary-gold);
+    color: var(--primary-blue);
+    opacity: 1;
+}
+
+[data-theme="dark"] .filters-card {
+    background: rgba(32, 44, 86, 0.3);
+    border-color: rgba(172, 150, 90, 0.2);
+}

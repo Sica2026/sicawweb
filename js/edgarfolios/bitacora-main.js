@@ -97,10 +97,6 @@ async verificarAutenticacion() {
         // Configurar título y breadcrumbs
         if (window.SICAComponents) {
             window.SICAComponents.setPageTitle('Bitácora - SICA Admin');
-            window.SICAComponents.addBreadcrumbs([
-                { text: 'Dashboard', link: '../index.html' },
-                { text: 'Bitácora', active: true }
-            ]);
         }
         
         // Configurar navegación moderna si está disponible

@@ -123,7 +123,7 @@ const reglasData = [
         severity: "high"
     },
     {
-        description: "Hacer uso de las pantallas SIN autorización de RENE. El pintajee es por cada media hora de estancia.",
+        description: "Hacer uso de las pantallas SIN autorización de RENE. El puntaje es por cada media hora de estancia.",
         sanction: "REPORTE 2.0 HORAS",
         severity: "high"
     }
