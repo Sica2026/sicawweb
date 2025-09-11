@@ -329,8 +329,52 @@ function setupRuleModals() {
                 </ul>
                 <p><strong>Procedimiento:</strong> Contactar al administrador ANTES de realizar el cambio.</p>
             `
+        },
+                // Agregar estas entradas al objeto ruleDetails:
+        8: {
+            title: "Requisito de Asistencia - Detalles",
+            content: `
+                <p><strong>Límite de inasistencias:</strong></p>
+                <ul>
+                    <li>Máximo 2 inasistencias consecutivas permitidas</li>
+                    <li>La tercera inasistencia consecutiva anula el derecho</li>
+                    <li>Se reinicia el conteo después de una asistencia</li>
+                </ul>
+                <p><strong>Importante:</strong> Las inasistencias deben ser <em>consecutivas</em> para aplicar esta regla.</p>
+                <p><strong>Recomendación:</strong> Mantén un registro de tu asistencia para evitar superar el límite.</p>
+            `
+        },
+        9: {
+            title: "Penalización por Inasistencias - Detalles",
+            content: `
+                <p><strong>Aplicación de la penalización:</strong></p>
+                <ul>
+                    <li>Se activa automáticamente tras 3 inasistencias consecutivas</li>
+                    <li>Duración: 4 días calendario completos</li>
+                    <li>Durante estos días NO puedes pagar horas</li>
+                    <li>La penalización es inapelable</li>
+                </ul>
+                <p><strong>Reinicio:</strong> Después de los 4 días, puedes solicitar nuevamente el pago de horas.</p>
+                <p><strong>Prevención:</strong> Comunica tus ausencias con anticipación cuando sea posible.</p>
+            `
+        },
+        10: {
+            title: "Exclusión del Cálculo - Detalles",
+            content: `
+                <p><strong>Diferenciación importante:</strong></p>
+                <ul>
+                    <li><strong>Asistencia regular:</strong> Cuenta para el cálculo de inasistencias</li>
+                    <li><strong>Pago de horas:</strong> NO cuenta como asistencia regular</li>
+                </ul>
+                <p><strong>Implicaciones:</strong></p>
+                <ul>
+                    <li>Los días de pago de horas no interrumpen el conteo de inasistencias consecutivas</li>
+                    <li>Solo la asistencia en horario oficial cuenta para romper la secuencia</li>
+                </ul>
+                <p><strong>Ejemplo:</strong> Si faltas lunes y martes, pagar horas el miércoles no interrumpe el conteo. Si faltas el jueves, ya serían 3 inasistencias consecutivas.</p>
+            `
         }
-    };
+    }; 
     
     // Agregar listeners a las cards
     document.querySelectorAll('.rule-card').forEach(card => {
