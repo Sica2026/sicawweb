@@ -399,6 +399,13 @@ handleAsesorAction(action, button) {
             icon: 'bi-file-earmark-text',
             page: 'reportes-aesor.html'
         },
+        // ✅ NUEVA ENTRADA: Incidencias
+        'incidencias': {
+            title: 'Incidencias',
+            message: 'Accediendo al sistema de pre-reportes de incidencias...',
+            icon: 'bi-exclamation-triangle-fill',
+            page: 'pre-reportes.html'
+        },
         'horario': {
             title: 'Consulta de Horario',
             message: 'Accediendo a consulta de horarios...',

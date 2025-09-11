@@ -266,6 +266,15 @@ loadFavicon() {
             </div>
             <span>Reportes</span>
         </div>
+    </button>
+    <!-- ✅ NUEVO BOTÓN: Incidencias -->
+    <button class="option-btn" data-action="incidencias">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <span>Incidencias</span>
+        </div>
     </button>                                        
 </div>
                                 </div>
