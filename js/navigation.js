@@ -369,7 +369,7 @@ class ModernNavigation {
     }
     
     // ✅ FUNCIÓN CORREGIDA - Aquí estaba el problema principal
-    handleAsesorAction(action, button) {
+handleAsesorAction(action, button) {
     // Efecto visual en el botón seleccionado
     this.addSelectionEffect(button);
     
@@ -386,6 +386,13 @@ class ModernNavigation {
             icon: 'bi-printer',
             page: 'registro-impresiones.html'
         },
+        // ✅ NUEVA ENTRADA: Reporte de Impresiones
+        'reporte-impresiones': {
+            title: 'Reporte de Impresiones',
+            message: 'Accediendo al reporte de impresiones para asesores...',
+            icon: 'bi-file-text',
+            page: 'impresiones-asesores.html'
+        },
         'reportes': {
             title: 'Reportes',
             message: 'Generando reportes del sistema...',
@@ -398,7 +405,7 @@ class ModernNavigation {
             icon: 'bi-clock',
             page: 'consulta-horarios.html'
         },
-        'armador': {  // ← NUEVA ENTRADA
+        'armador': {
             title: 'Armador de Horarios',
             message: 'Accediendo al armador de horarios...',
             icon: 'bi-gear-fill',

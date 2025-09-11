@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Consulta de Impresiones - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link href="../css/impresiones-asesores.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="hero-title">
+                            <i class="bi bi-printer-fill me-3"></i>
+                            Consulta de Impresiones SICA
+                        </h1>
+                        <p class="hero-subtitle">
+                            Monitorea el uso de impresiones por asesor y optimiza los recursos del sistema
+                        </p>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <div class="hero-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">300</div>
+                                <div class="stat-label">Límite Máximo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="search-card">
+                            <div class="search-header">
+                                <i class="bi bi-search search-icon"></i>
+                                <h3>Buscar por Número de Cuenta</h3>
+                            </div>
+                            <form id="searchForm" class="search-form">
+                                <div class="input-group">
+                                    <input type="text" 
+                                           id="numeroCuenta" 
+                                           class="form-control search-input" 
+                                           placeholder="Ingresa el número de cuenta del asesor..." 
+                                           maxlength="20"
+                                           pattern="[0-9]+"
+                                           title="Solo se permiten números">
+                                    <button type="submit" class="btn btn-search" id="btnBuscar">
+                                        <i class="bi bi-search me-2"></i>
+                                        <span class="btn-text">Buscar</span>
+                                        <div class="btn-loading">
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div class="search-hint">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Ingresa un número de cuenta válido para consultar las impresiones
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-section d-none">
+            <div class="container-fluid">
+                <div class="loading-card">
+                    <div class="loading-animation">
+                        <div class="pulse-circle"></div>
+                        <div class="pulse-circle delay-1"></div>
+                        <div class="pulse-circle delay-2"></div>
+                    </div>
+                    <h4>Consultando datos...</h4>
+                    <p>Buscando información de impresiones en la base de datos</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section d-none">
+            <div class="container-fluid">
+                <!-- Asesor Info -->
+                <div id="asesorInfo" class="asesor-info-card">
+                    <div class="asesor-header">
+                        <div class="asesor-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="asesor-details">
+                            <h4 id="nombreAsesor" class="asesor-name">-</h4>
+                            <p id="cuentaAsesor" class="asesor-cuenta">-</p>
+                        </div>
+                        <div class="asesor-actions">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="nuevaConsulta()" title="Realizar nueva consulta">
+                                <i class="bi bi-arrow-left me-2"></i>Nueva Consulta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-5">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-card stat-primary">
+                            <div class="stat-icon">
+                                <i class="bi bi-printer-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalImpresiones" class="stat-number">0</h3>
+                                <p class="stat-label">Total Impresiones</p>
+                            </div>
+                            <div class="stat-trend">
+                                <i class="bi bi-graph-up trend-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-card stat-success">
+                            <div class="stat-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="impresionesRestantes" class="stat-number">300</h3>
+                                <p class="stat-label">Restantes</p>
+                            </div>
+                            <div class="stat-progress">
+                                <div class="progress">
+                                    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-card stat-info">
+                            <div class="stat-icon">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="registrosEncontrados" class="stat-number">0</h3>
+                                <p class="stat-label">Registros</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6">
+                        <div class="stat-card stat-warning">
+                            <div class="stat-icon">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 class="stat-number">300</h3>
+                                <p class="stat-label">Límite SICA</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4><i class="bi bi-table me-2"></i>Detalle de Impresiones</h4>
+                        <div class="table-controls">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView('table')">
+                                    <i class="bi bi-table"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView('cards')">
+                                    <i class="bi bi-grid-3x3-gap"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table View -->
+                    <div id="tableView" class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th><i class="bi bi-hash me-2"></i>#</th>
+                                    <th><i class="bi bi-calendar me-2"></i>Fecha</th>
+                                    <th><i class="bi bi-printer me-2"></i>Impresiones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Los datos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Cards View -->
+                    <div id="cardsView" class="cards-grid d-none">
+                        <div id="cardsContainer">
+                            <!-- Las cards se cargarán aquí dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-section">
+                    <nav aria-label="Navegación de páginas">
+                        <ul id="pagination" class="pagination justify-content-center">
+                            <!-- La paginación se generará dinámicamente -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state d-none">
+            <div class="container-fluid">
+                <div class="empty-card">
+                    <div class="empty-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h4>No se encontraron registros</h4>
+                    <p>No existen impresiones registradas para este número de cuenta.</p>
+                    <button class="btn btn-sica" onclick="resetSearch()">
+                        <i class="bi bi-arrow-left me-2"></i>Nueva Búsqueda
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state d-none">
+            <div class="container-fluid">
+                <div class="error-card">
+                    <div class="error-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <h4>Error en la consulta</h4>
+                    <p id="errorMessage">Ha ocurrido un error al consultar los datos.</p>
+                    <button class="btn btn-sica" onclick="resetSearch()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Intentar de nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Page Specific JS -->
+    <script src="../js/impresiones-asesores.js"></script>
+</body>
+</html>

@@ -242,6 +242,15 @@ loadFavicon() {
             <span>Impresiones</span>
         </div>
     </button>
+    <!-- ✅ NUEVO BOTÓN: Reporte de Impresiones -->
+    <button class="option-btn" data-action="reporte-impresiones">
+        <div class="option-content">
+            <div class="option-icon">
+                <i class="bi bi-file-text"></i>
+            </div>
+            <span>Reporte de Impresiones</span>
+        </div>
+    </button>
     <button class="option-btn" data-action="armador">
         <div class="option-content">
             <div class="option-icon">
