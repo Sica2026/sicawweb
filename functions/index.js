@@ -1403,6 +1403,8 @@ async function registrarLogCopia(estado, datos = {}) {
     console.error('No se pudo registrar el log de copia:', e.message);
   }
 }
+
+
 // =====================================================
 // PURGAR "asistenciasemana" (L–V 23:00 CDMX)
 // =====================================================
@@ -1415,10 +1417,16 @@ exports.purgarAsistenciasSemana = onSchedule(
   },
   async () => {
     const inicio = new Date();
-    console.log('🧹 Purgando colección asistenciasemana', inicio.toISOString());
+    console.log('🧹 Purgando colecciones: asistenciasemana + registroasistencia', inicio.toISOString());
 
     try {
-      const resumen = await borrarColeccionEnPaginas('asistenciasemana', 450);
+      const resumenAsistencias = await borrarColeccionEnPaginas('asistenciasemana', 450);
+      const resumenRegistro = await borrarColeccionEnPaginas('registroasistencia', 450);
+
+      const resumen = {
+        asistenciasemana: resumenAsistencias,
+        registroasistencia: resumenRegistro,
+      };
 
       await registrarLogPurge('exito', {
         ...resumen,

@@ -81,11 +81,6 @@ function setupPageConfiguration() {
     
     // Configurar breadcrumbs
     if (window.SICAComponents && window.SICAComponents.addBreadcrumbs) {
-        window.SICAComponents.addBreadcrumbs([
-            { text: "Inicio", link: "../index.html" },
-            { text: "Administración", link: "#" },
-            { text: "Gestión de Profesores", active: true }
-        ]);
     }
 }
 
