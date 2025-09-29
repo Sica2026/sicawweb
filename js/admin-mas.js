@@ -176,12 +176,12 @@ class AdminMasManager {
             console.log(`⚡ Acción rápida: ${action}`);
             
             switch (action) {
-                case 'backup':
-                    await this.performBackup();
+                case 'materias':
+                    await this.navigateToMaterias();
                     break;
                     
-                case 'maintenance':
-                    await this.performMaintenance();
+                case 'maestros':  // Cambiar de 'maintenance' a 'maestros'
+                    await this.navigateToMaestros();  // Cambiar método
                     break;
                     
                 case 'logs':
@@ -271,46 +271,34 @@ class AdminMasManager {
     // ACCIONES RÁPIDAS
     // ========================================
 
-    async performBackup() {
+    async navigateToMaterias() {
         this.showNotification(
-            'Respaldo de Datos',
-            'Iniciando proceso de respaldo...',
+            'Gestión de Materias',
+            'Accediendo al módulo de materias...',
             'info',
-            'bi-cloud-arrow-down'
+            'bi-book'
         );
         
-        // Simular proceso de respaldo
         setTimeout(() => {
-            this.showNotification(
-                'Respaldo Completado',
-                'Los datos han sido respaldados exitosamente',
-                'success',
-                'bi-check-circle'
-            );
-        }, 3000);
+            // ✅ NAVEGACIÓN A LA PÁGINA DE MATERIAS
+            window.location.href = 'gestion-materias.html';
+            console.log('📚 Navegando a gestión de materias...');
+        }, 1000);
     }
 
-    async performMaintenance() {
-        const confirmed = confirm('¿Está seguro de que desea iniciar el mantenimiento del sistema? Esto puede afectar temporalmente el rendimiento.');
-        
-        if (!confirmed) return;
-        
+    async navigateToMaestros() {
         this.showNotification(
-            'Mantenimiento',
-            'Ejecutando tareas de mantenimiento...',
-            'warning',
-            'bi-tools'
+            'Gestión de Maestros',
+            'Accediendo al módulo de profesores...',
+            'info',
+            'bi-person-badge'
         );
         
-        // Simular mantenimiento
         setTimeout(() => {
-            this.showNotification(
-                'Mantenimiento Completado',
-                'El sistema ha sido optimizado correctamente',
-                'success',
-                'bi-check-circle'
-            );
-        }, 4000);
+            // ✅ NAVEGACIÓN A LA PÁGINA DE PROFESORES
+            window.location.href = 'gestion-profesores.html';
+            console.log('👨‍🏫 Navegando a gestión de profesores...');
+        }, 1000);
     }
 
     async viewSystemLogs() {

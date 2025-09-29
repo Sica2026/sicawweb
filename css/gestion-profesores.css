@@ -1,0 +1,1057 @@
+/* ============================================
+   GESTIÓN DE PROFESORES - ESTILOS PRINCIPALES
+   ============================================ */
+
+/* Variables adicionales para profesores */
+:root {
+    --professor-gradient: linear-gradient(135deg, var(--primary-gold) 0%, #d4af37 100%);
+    --professor-card-bg: rgba(255, 255, 255, 0.95);
+    --professor-hover: rgba(172, 150, 90, 0.1);
+    --excel-bg: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    --manage-bg: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+    --photo-border: 3px solid var(--primary-gold);
+}
+
+[data-theme="dark"] {
+    --professor-card-bg: rgba(30, 35, 50, 0.95);
+    --professor-hover: rgba(172, 150, 90, 0.2);
+}
+
+/* ============================================
+   HEADER Y TÍTULO
+   ============================================ */
+
+.page-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-hover);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 100px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: rotate(45deg);
+    animation: float 6s ease-in-out infinite;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+}
+
+/* ============================================
+   CARDS DE ACCIÓN
+   ============================================ */
+
+.action-card {
+    background: var(--professor-card-bg);
+    border: none;
+    border-radius: 20px;
+    padding: 0;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    height: 300px;
+}
+
+.action-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.action-card .card-body {
+    padding: 2.5rem 2rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+.action-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.action-card:hover .action-icon::before {
+    transform: translateX(100%);
+}
+
+.card-manual .action-icon {
+    background: var(--professor-gradient);
+}
+
+.card-excel .action-icon {
+    background: var(--excel-bg);
+}
+
+.card-manage .action-icon {
+    background: var(--manage-bg);
+}
+
+.action-card .card-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.action-card .card-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+.btn-action {
+    background: linear-gradient(45deg, var(--primary-blue), var(--light-blue));
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(32, 44, 86, 0.4);
+    background: linear-gradient(45deg, var(--light-blue), var(--primary-blue));
+    color: white;
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+
+.form-container {
+    animation: slideInUp 0.5s ease-out;
+    margin-top: 2rem;
+}
+
+.form-card {
+    background: var(--professor-card-bg);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    backdrop-filter: blur(15px);
+}
+
+.form-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.form-header h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.btn-close-form {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-close-form:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.form-card .card-body,
+.form-card form {
+    padding: 2rem;
+}
+
+/* ============================================
+   FOTO DE PROFESOR
+   ============================================ */
+
+.photo-upload-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.photo-upload-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    border: var(--photo-border);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.photo-preview:hover {
+    transform: scale(1.05);
+    border-color: var(--light-gold);
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.photo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.photo-preview:hover .photo-overlay {
+    opacity: 1;
+}
+
+.photo-overlay i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.photo-overlay span {
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* ============================================
+   FORMULARIO EXCEL
+   ============================================ */
+
+.excel-instructions .alert {
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 4px solid var(--primary-blue);
+}
+
+.excel-upload-zone {
+    border: 3px dashed #dee2e6;
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.excel-upload-zone:hover {
+    border-color: var(--primary-gold);
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    transform: translateY(-2px);
+}
+
+.excel-upload-zone.dragover {
+    border-color: var(--primary-blue);
+    background: linear-gradient(135deg, #cce5ff 0%, #b3d9ff 100%);
+    transform: scale(1.02);
+}
+
+.upload-content {
+    color: var(--text-secondary);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: var(--primary-gold);
+    margin-bottom: 1rem;
+    animation: bounce 2s infinite;
+}
+
+.upload-content h5 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    color: #28a745;
+    font-weight: 500;
+}
+
+.file-info i {
+    font-size: 1.5rem;
+}
+
+/* ============================================
+   ANIMACIÓN DE CARGA EXCEL
+   ============================================ */
+
+.excel-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.excel-loading-overlay.active {
+    display: flex;
+}
+
+.excel-loading-content {
+    background: var(--professor-card-bg);
+    border-radius: 20px;
+    padding: 3rem 4rem;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    animation: slideInScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 500px;
+    width: 90%;
+}
+
+.excel-loading-animation {
+    margin-bottom: 2rem;
+    position: relative;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Icono principal de Excel */
+.excel-icon-main {
+    font-size: 4rem;
+    color: var(--primary-gold);
+    position: relative;
+    z-index: 2;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Círculos animados alrededor */
+.loading-circles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.loading-circle {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 4px solid transparent;
+    border-top-color: var(--primary-blue);
+    border-right-color: var(--primary-gold);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    margin: -40px 0 0 -40px;
+    animation: spin 1.5s linear infinite;
+}
+
+.loading-circle:nth-child(2) {
+    width: 100px;
+    height: 100px;
+    margin: -50px 0 0 -50px;
+    border-top-color: var(--primary-gold);
+    border-right-color: var(--primary-blue);
+    animation: spin 2s linear infinite reverse;
+    opacity: 0.5;
+}
+
+.loading-circle:nth-child(3) {
+    width: 120px;
+    height: 120px;
+    margin: -60px 0 0 -60px;
+    border-top-color: rgba(172, 150, 90, 0.3);
+    border-right-color: rgba(32, 44, 86, 0.3);
+    animation: spin 2.5s linear infinite;
+    opacity: 0.3;
+}
+
+/* Partículas flotantes */
+.loading-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--primary-gold);
+    border-radius: 50%;
+    opacity: 0;
+    animation: particleFloat 3s ease-in-out infinite;
+}
+
+.particle:nth-child(1) {
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.particle:nth-child(2) {
+    left: 30%;
+    animation-delay: 0.5s;
+}
+
+.particle:nth-child(3) {
+    left: 50%;
+    animation-delay: 1s;
+}
+
+.particle:nth-child(4) {
+    left: 70%;
+    animation-delay: 1.5s;
+}
+
+.particle:nth-child(5) {
+    left: 90%;
+    animation-delay: 2s;
+}
+
+/* Texto de carga */
+.excel-loading-text h4 {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.excel-loading-message {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+/* Barra de progreso */
+.excel-progress-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.excel-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue), var(--primary-gold), var(--primary-blue));
+    background-size: 200% 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    animation: progressShimmer 2s linear infinite;
+}
+
+/* Contador de registros */
+.excel-counter {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.counter-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.counter-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.counter-number.success {
+    color: #28a745;
+}
+
+.counter-number.update {
+    color: #17a2b8;
+}
+
+.counter-number.error {
+    color: #dc3545;
+}
+
+.counter-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Animaciones */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes particleFloat {
+    0%, 100% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(-50px);
+    }
+}
+
+@keyframes progressShimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes slideInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Dark mode para loading overlay */
+[data-theme="dark"] .excel-loading-content {
+    background: rgba(30, 35, 50, 0.95);
+}
+
+[data-theme="dark"] .excel-progress-container {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   TABLA DE GESTIÓN
+   ============================================ */
+
+.search-section {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .search-section {
+    background: rgba(30, 35, 50, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.search-input-group {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    z-index: 5;
+}
+
+.search-input-group .form-control {
+    padding-left: 2.5rem;
+}
+
+.total-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.total-count .badge {
+    font-size: 0.9rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 20px;
+    background: linear-gradient(45deg, var(--primary-blue), var(--light-blue)) !important;
+}
+
+/* Tabla de profesores */
+.table-sica {
+    background: transparent;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.table-sica thead th {
+    background: linear-gradient(135deg, var(--primary-gold) 0%, var(--light-gold) 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    padding: 1.5rem 1rem;
+}
+
+.table-sica tbody tr {
+    background: var(--professor-card-bg);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.table-sica tbody tr:hover {
+    background: var(--professor-hover);
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.table-sica tbody td {
+    padding: 1.5rem 1rem;
+    border: none;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.professor-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-gold);
+    transition: all 0.3s ease;
+}
+
+.professor-photo:hover {
+    transform: scale(1.1);
+    border-color: var(--light-gold);
+}
+
+.professor-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+/* Botones de acción en tabla */
+.btn-edit, .btn-delete {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    margin: 0 0.25rem;
+}
+
+.btn-edit {
+    background: linear-gradient(45deg, #17a2b8, #20c997);
+    color: white;
+}
+
+.btn-edit:hover {
+    background: linear-gradient(45deg, #20c997, #17a2b8);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+    color: white;
+}
+
+.btn-delete {
+    background: linear-gradient(45deg, #dc3545, #e74c3c);
+    color: white;
+}
+
+.btn-delete:hover {
+    background: linear-gradient(45deg, #e74c3c, #dc3545);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+    color: white;
+}
+
+/* Estado vacío */
+#emptyState {
+    color: var(--text-secondary);
+}
+
+#emptyState i {
+    opacity: 0.5;
+}
+
+/* ============================================
+   MODALES
+   ============================================ */
+
+.modal-sica .modal-content {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+}
+
+.modal-sica .modal-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border: none;
+}
+
+.modal-sica .modal-title {
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+.modal-sica .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.modal-sica .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-sica .modal-body {
+    padding: 2rem;
+    background: var(--professor-card-bg);
+}
+
+.modal-sica .modal-footer {
+    background: var(--professor-card-bg);
+    padding: 1.5rem 2rem;
+    border: none;
+}
+
+/* Modal de eliminación */
+.delete-icon {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* ============================================
+   FORMULARIO CAMPOS
+   ============================================ */
+
+.form-label-sica.required::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.form-control-sica:focus {
+    border-color: var(--primary-gold);
+    box-shadow: 0 0 0 0.2rem rgba(172, 150, 90, 0.25);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Estados de botón con loading */
+.btn .btn-loading {
+    display: none;
+}
+
+.btn.loading .btn-text {
+    display: none;
+}
+
+.btn.loading .btn-loading {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(45deg);
+    }
+    50% {
+        transform: translateY(-10px) rotate(45deg);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40%, 43% {
+        transform: translateY(-10px);
+    }
+    70% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .action-card {
+        height: auto;
+        margin-bottom: 1rem;
+    }
+    
+    .action-card .card-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .action-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .form-card form,
+    .form-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .photo-preview {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-section {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+    }
+    
+    .professor-photo {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .btn-edit, .btn-delete {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header {
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .excel-upload-zone {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 2rem;
+    }
+    
+    .modal-sica .modal-body,
+    .modal-sica .modal-footer {
+        padding: 1.5rem;
+    }
+}
+
+/* ============================================
+   DARK MODE ADJUSTMENTS
+   ============================================ */
+
+[data-theme="dark"] .action-card {
+    background: rgba(30, 35, 50, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .form-card {
+    background: rgba(30, 35, 50, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .excel-upload-zone {
+    background: linear-gradient(135deg, #2a2f3a 0%, #363b46 100%);
+    border-color: #495057;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .excel-upload-zone:hover {
+    background: linear-gradient(135deg, #3a3f4a 0%, #464b56 100%);
+}
+
+[data-theme="dark"] .table-sica tbody tr {
+    background: rgba(30, 35, 50, 0.8);
+}
+
+[data-theme="dark"] .table-sica tbody tr:hover {
+    background: rgba(172, 150, 90, 0.15);
+}
+
+[data-theme="dark"] .modal-sica .modal-body,
+[data-theme="dark"] .modal-sica .modal-footer {
+    background: var(--card-bg);
+}

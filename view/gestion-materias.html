@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Gestión de Materias - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/gestion-materias.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="materias-header">
+                        <div class="header-content">
+                            <div class="header-icon">
+                                <i class="bi bi-journal-bookmark"></i>
+                            </div>
+                            <div class="header-text">
+                                <h1 class="header-title">Gestión de Materias</h1>
+                                <p class="header-subtitle">Administra el catálogo completo de materias</p>
+                            </div>
+                        </div>
+                        <div class="header-stats">
+                            <div class="stat-card">
+                                <div class="stat-number" id="total-materias">0</div>
+                                <div class="stat-label">Total Materias</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Selector -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="action-selector">
+                        <h3 class="selector-title">Selecciona una acción</h3>
+                        <div class="action-grid">
+                            <div class="action-card" data-action="manual">
+                                <div class="action-icon">
+                                    <i class="bi bi-pencil-square"></i>
+                                </div>
+                                <h4 class="action-title">Agregar Manual</h4>
+                                <p class="action-description">Ingresa materias una por una</p>
+                            </div>
+                            <div class="action-card" data-action="excel">
+                                <div class="action-icon">
+                                    <i class="bi bi-file-earmark-excel"></i>
+                                </div>
+                                <h4 class="action-title">Carga Masiva</h4>
+                                <p class="action-description">Importa desde archivo Excel</p>
+                            </div>
+                            <div class="action-card" data-action="manage">
+                                <div class="action-icon">
+                                    <i class="bi bi-gear"></i>
+                                </div>
+                                <h4 class="action-title">Editar / Eliminar</h4>
+                                <p class="action-description">Gestiona materias existentes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Sections -->
+            <!-- Manual Entry Section -->
+            <div id="manual-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-6 mx-auto">
+                        <div class="form-card">
+                            <div class="form-header">
+                                <i class="bi bi-plus-circle form-icon"></i>
+                                <h3 class="form-title">Agregar Nueva Materia</h3>
+                            </div>
+                            <form id="manual-form" class="form-modern">
+                                <div class="form-floating mb-4">
+                                    <input type="text" class="form-control form-control-sica" id="clave-materia" 
+                                           placeholder="Clave de la materia" maxlength="10" required>
+                                    <label for="clave-materia">Clave de la Materia</label>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="form-floating mb-4">
+                                    <input type="text" class="form-control form-control-sica" id="nombre-materia" 
+                                           placeholder="Nombre de la materia" maxlength="100" required>
+                                    <label for="nombre-materia">Nombre de la Materia</label>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="hideSection('manual-section')">
+                                        <i class="bi bi-arrow-left"></i> Volver
+                                    </button>
+                                    <button type="submit" class="btn btn-sica">
+                                        <i class="bi bi-plus-lg"></i> Agregar Materia
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Excel Upload Section -->
+            <div id="excel-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="upload-card">
+                            <div class="upload-header">
+                                <i class="bi bi-cloud-upload upload-icon"></i>
+                                <h3 class="upload-title">Carga Masiva desde Excel</h3>
+                                <p class="upload-subtitle">Formato requerido: Columna A = Clave, Columna B = Nombre</p>
+                            </div>
+                            <div class="upload-zone" id="upload-zone">
+                                <div class="upload-content">
+                                    <i class="bi bi-file-earmark-excel upload-file-icon"></i>
+                                    <h4 class="upload-text">Arrastra tu archivo Excel aquí</h4>
+                                    <p class="upload-hint">o haz clic para seleccionar</p>
+                                    <input type="file" id="excel-file" accept=".xlsx,.xls" hidden>
+                                </div>
+                                <div class="upload-progress" id="upload-progress" style="display: none;">
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <p class="progress-text">Procesando archivo...</p>
+                                </div>
+                            </div>
+                            <div class="upload-actions">
+                                <button type="button" class="btn btn-secondary" onclick="hideSection('excel-section')">
+                                    <i class="bi bi-arrow-left"></i> Volver
+                                </button>
+                                <button type="button" class="btn btn-sica" id="process-excel" disabled>
+                                    <i class="bi bi-upload"></i> Procesar Archivo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Section -->
+            <div id="manage-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="manage-card">
+                            <div class="manage-header">
+                                <div class="manage-title-group">
+                                    <i class="bi bi-list-ul manage-icon"></i>
+                                    <h3 class="manage-title">Gestionar Materias</h3>
+                                </div>
+                                <button type="button" class="btn btn-secondary" onclick="hideSection('manage-section')">
+                                    <i class="bi bi-arrow-left"></i> Volver
+                                </button>
+                            </div>
+                            <div class="search-section">
+                                <div class="search-container">
+                                    <input type="text" class="form-control search-input" id="search-materias" 
+                                           placeholder="Buscar por clave o nombre de materia...">
+                                    <i class="bi bi-search search-icon"></i>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <div class="table-responsive">
+                                    <table class="table table-sica" id="materias-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Clave</th>
+                                                <th>Nombre</th>
+                                                <th>Fecha Creación</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="materias-tbody">
+                                            <!-- Content loaded dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="loading-state" id="loading-state">
+                                    <div class="loading-spinner"></div>
+                                    <p>Cargando materias...</p>
+                                </div>
+                                <div class="empty-state" id="empty-state" style="display: none;">
+                                    <i class="bi bi-inbox empty-icon"></i>
+                                    <h4>No se encontraron materias</h4>
+                                    <p>Comienza agregando algunas materias</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-sica">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Editar Materia</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="edit-form">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-materia-id">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control form-control-sica" id="edit-clave" required>
+                            <label for="edit-clave">Clave de la Materia</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="text" class="form-control form-control-sica" id="edit-nombre" required>
+                            <label for="edit-nombre">Nombre de la Materia</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sica">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-sica">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirmation">
+                        <i class="bi bi-exclamation-triangle delete-icon"></i>
+                        <h4>¿Estás seguro?</h4>
+                        <p>Esta acción eliminará permanentemente la materia:</p>
+                        <div class="delete-info">
+                            <strong id="delete-materia-info"></strong>
+                        </div>
+                        <p class="delete-warning">Esta acción no se puede deshacer.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- SheetJS for Excel processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Page Specific JS -->
+    <script src="../js/gestion-materias-ui.js"></script>
+    <script src="../js/gestion-materias-data.js"></script>
+    <script src="../js/gestion-materias-excel.js"></script>
+</body>
+</html>

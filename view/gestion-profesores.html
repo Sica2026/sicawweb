@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Gestión de Profesores - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/gestion-profesores.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="#">Administración</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestión de Profesores</li>
+            </ol>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid px-4">
+            <!-- Header Section -->
+            <div class="page-header mb-4">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="page-title">
+                            <i class="bi bi-person-workspace me-3"></i>
+                            Gestión de Profesores
+                        </h1>
+                        <p class="page-subtitle">Administra el catálogo de profesores de la facultad</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-lg-4 col-md-6">
+                    <div class="action-card card-manual" id="card-manual">
+                        <div class="card-body text-center">
+                            <div class="action-icon">
+                                <i class="bi bi-person-plus-fill"></i>
+                            </div>
+                            <h5 class="card-title">Registro Manual</h5>
+                            <p class="card-text">Agregar profesores uno por uno con información detallada</p>
+                            <button class="btn btn-action" onclick="showManualForm()">
+                                <i class="bi bi-plus-circle me-2"></i>Iniciar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="action-card card-excel" id="card-excel">
+                        <div class="card-body text-center">
+                            <div class="action-icon">
+                                <i class="bi bi-file-earmark-excel-fill"></i>
+                            </div>
+                            <h5 class="card-title">Carga Masiva</h5>
+                            <p class="card-text">Importar múltiples profesores desde archivo Excel</p>
+                            <button class="btn btn-action" onclick="showExcelForm()">
+                                <i class="bi bi-upload me-2"></i>Subir Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="action-card card-manage" id="card-manage">
+                        <div class="card-body text-center">
+                            <div class="action-icon">
+                                <i class="bi bi-gear-fill"></i>
+                            </div>
+                            <h5 class="card-title">Editar/Eliminar</h5>
+                            <p class="card-text">Modificar o eliminar profesores existentes</p>
+                            <button class="btn btn-action" onclick="showManageForm()">
+                                <i class="bi bi-pencil-square me-2"></i>Gestionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forms Container -->
+            <div id="forms-container">
+                <!-- Manual Form -->
+                <div id="manual-form" class="form-container" style="display: none;">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="form-card">
+                                <div class="form-header">
+                                    <h4><i class="bi bi-person-plus me-2"></i>Registro Manual de Profesor</h4>
+                                    <button type="button" class="btn-close-form" onclick="hideAllForms()">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <form id="profesorForm" enctype="multipart/form-data">
+                                    <div class="row">
+                                        <div class="col-md-7">
+                                            <div class="mb-4">
+                                                <label class="form-label-sica required">Nombre del Profesor</label>
+                                                <input type="text" class="form-control form-control-sica" 
+                                                       id="nombreProfesor" name="nombre" 
+                                                       placeholder="Ingrese el nombre completo" required>
+                                                <div class="invalid-feedback"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="photo-upload-section">
+                                                <label class="form-label-sica">Fotografía</label>
+                                                <div class="photo-upload-container">
+                                                    <div class="photo-preview" id="photoPreview">
+                                                        <img src="../image/default-avatar.png" alt="Preview" id="previewImg">
+                                                        <div class="photo-overlay">
+                                                            <i class="bi bi-camera-fill"></i>
+                                                            <span>Cambiar foto</span>
+                                                        </div>
+                                                    </div>
+                                                    <input type="file" id="photoInput" name="foto" 
+                                                           accept="image/*" style="display: none;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-secondary" onclick="hideAllForms()">
+                                            <i class="bi bi-arrow-left me-2"></i>Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-sica" id="submitBtn">
+                                            <span class="btn-text">
+                                                <i class="bi bi-check-circle me-2"></i>Guardar Profesor
+                                            </span>
+                                            <span class="btn-loading" style="display: none;">
+                                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                                Guardando...
+                                            </span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Excel Form -->
+                <div id="excel-form" class="form-container" style="display: none;">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="form-card">
+                                <div class="form-header">
+                                    <h4><i class="bi bi-file-earmark-excel me-2"></i>Carga Masiva desde Excel</h4>
+                                    <button type="button" class="btn-close-form" onclick="hideAllForms()">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="excel-instructions">
+                                    <div class="alert alert-info">
+                                        <h6><i class="bi bi-info-circle me-2"></i>Instrucciones:</h6>
+                                        <ul class="mb-0">
+                                            <li>El archivo debe tener una sola hoja de cálculo</li>
+                                            <li>Los nombres deben estar en la <strong>columna A</strong></li>
+                                            <li>Los datos inician desde la <strong>fila 2</strong> (la fila 1 es para encabezados)</li>
+                                            <li>Si un profesor ya existe, será actualizado con la nueva información</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <form id="excelForm" enctype="multipart/form-data">
+                                    <div class="excel-upload-zone" id="excelDropZone">
+                                        <div class="upload-content">
+                                            <i class="bi bi-cloud-upload upload-icon"></i>
+                                            <h5>Arrastra tu archivo Excel aquí</h5>
+                                            <p>o haz clic para seleccionarlo</p>
+                                            <input type="file" id="excelInput" name="excel" 
+                                                   accept=".xlsx,.xls" style="display: none;">
+                                        </div>
+                                        <div class="file-info" id="fileInfo" style="display: none;">
+                                            <i class="bi bi-file-earmark-excel-fill text-success"></i>
+                                            <span id="fileName"></span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="button" class="btn btn-secondary" onclick="hideAllForms()">
+                                            <i class="bi bi-arrow-left me-2"></i>Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-sica" id="excelSubmitBtn" disabled>
+                                            <span class="btn-text">
+                                                <i class="bi bi-upload me-2"></i>Procesar Excel
+                                            </span>
+                                            <span class="btn-loading" style="display: none;">
+                                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                                Procesando...
+                                            </span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Management Form -->
+                <div id="manage-form" class="form-container" style="display: none;">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-card">
+                                <div class="form-header">
+                                    <h4><i class="bi bi-gear me-2"></i>Gestionar Profesores</h4>
+                                    <button type="button" class="btn-close-form" onclick="hideAllForms()">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Search and Filters -->
+                                <div class="search-section mb-4">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-6">
+                                            <label class="form-label-sica">Buscar Profesor</label>
+                                            <div class="search-input-group">
+                                                <i class="bi bi-search search-icon"></i>
+                                                <input type="text" class="form-control form-control-sica" 
+                                                       id="searchInput" placeholder="Buscar por nombre...">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-outline-secondary w-100" onclick="clearSearch()">
+                                                <i class="bi bi-arrow-clockwise me-2"></i>Limpiar
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="total-count">
+                                                <span class="badge bg-primary" id="totalCount">0 profesores</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Professors Table -->
+                                <div class="table-responsive">
+                                    <div id="loadingTable" class="text-center p-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="mt-3 text-muted">Cargando profesores...</p>
+                                    </div>
+                                    
+                                    <table class="table table-sica" id="professorsTable" style="display: none;">
+                                        <thead>
+                                            <tr>
+                                                <th width="80">Foto</th>
+                                                <th>Nombre</th>
+                                                <th width="200">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="professorsTableBody">
+                                            <!-- Profesores se cargarán dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div id="emptyState" class="text-center p-5" style="display: none;">
+                                    <i class="bi bi-person-x display-1 text-muted"></i>
+                                    <h5 class="mt-3 text-muted">No se encontraron profesores</h5>
+                                    <p class="text-muted">Intenta con otros criterios de búsqueda</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content modal-sica">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>Editar Profesor
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="editId">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <div class="mb-3">
+                                    <label class="form-label-sica required">Nombre del Profesor</label>
+                                    <input type="text" class="form-control form-control-sica" 
+                                           id="editNombre" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="photo-upload-section">
+                                    <label class="form-label-sica">Fotografía</label>
+                                    <div class="photo-upload-container">
+                                        <div class="photo-preview" id="editPhotoPreview">
+                                            <img src="../image/default-avatar.png" alt="Preview" id="editPreviewImg">
+                                            <div class="photo-overlay">
+                                                <i class="bi bi-camera-fill"></i>
+                                                <span>Cambiar foto</span>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="editPhotoInput" accept="image/*" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-sica" id="saveEditBtn">
+                        <span class="btn-text">
+                            <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+                        </span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            Guardando...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content modal-sica">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="delete-icon mb-3">
+                        <i class="bi bi-person-dash display-1 text-danger"></i>
+                    </div>
+                    <p class="mb-0">¿Estás seguro de que deseas eliminar al profesor:</p>
+                    <h5 class="text-danger mt-2" id="deleteProfesorName"></h5>
+                    <p class="text-muted small mt-3">Esta acción no se puede deshacer.</p>
+                    <input type="hidden" id="deleteProfesorId">
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <span class="btn-text">
+                            <i class="bi bi-trash me-2"></i>Eliminar
+                        </span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            Eliminando...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Loading Overlay -->
+    <div class="excel-loading-overlay" id="excelLoadingOverlay">
+        <div class="excel-loading-content">
+            <div class="excel-loading-animation">
+                <div class="loading-circles">
+                    <div class="loading-circle"></div>
+                    <div class="loading-circle"></div>
+                    <div class="loading-circle"></div>
+                </div>
+                <div class="loading-particles">
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                </div>
+                <i class="bi bi-file-earmark-excel-fill excel-icon-main"></i>
+            </div>
+            
+            <div class="excel-loading-text">
+                <h4>Procesando Excel</h4>
+                <p class="excel-loading-message" id="excelLoadingMessage">
+                    Analizando archivo y validando datos...
+                </p>
+                
+                <div class="excel-progress-container">
+                    <div class="excel-progress-bar" id="excelProgressBar" style="width: 0%"></div>
+                </div>
+                
+                <div class="excel-counter" id="excelCounter" style="display: none;">
+                    <div class="counter-item">
+                        <div class="counter-number success" id="counterSuccess">0</div>
+                        <div class="counter-label">Nuevos</div>
+                    </div>
+                    <div class="counter-item">
+                        <div class="counter-number update" id="counterUpdate">0</div>
+                        <div class="counter-label">Actualizados</div>
+                    </div>
+                    <div class="counter-item">
+                        <div class="counter-number error" id="counterError">0</div>
+                        <div class="counter-label">Errores</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    <!-- Excel Processing Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Page Specific JS -->
+    <script src="../js/gestion-profesores-core.js"></script>
+    <script src="../js/gestion-profesores-ui.js"></script>
+    <script src="../js/gestion-profesores-main.js"></script>
+</body>
+</html>

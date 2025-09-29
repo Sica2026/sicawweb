@@ -1248,3 +1248,261 @@ exports.consultarLogsEjecuciones = onRequest(async (req, res) => {
     });
   }
 });
+
+exports.copiarRegistrosACompletos = onSchedule(
+  {
+    // 22:00 de lunes (1) a viernes (5)
+    schedule: '0 22 * * 1-5',
+    timeZone: 'America/Mexico_City',
+  },
+  async () => {
+    const inicio = new Date();
+    console.log('🚚 Copia + borrado registros ➜ registros_completos', inicio.toISOString());
+
+    try {
+      const resumen = await copiarColeccionPaginada({
+        sourceCol: 'registros',
+        destCol: 'registros_completos',
+        pageSize: 400,          // tamaño de página seguro
+        merge: true,            // conserva/actualiza si ya existe
+        deleteAfterCopy: true,  // ← BORRAR después de copiar
+      });
+
+      await registrarLogCopia('exito', {
+        ...resumen,
+        iniciadoEn: inicio.toISOString(),
+        terminadoEn: new Date().toISOString(),
+        modo: 'programado',
+      });
+
+      console.log('✅ Proceso finalizado:', resumen);
+      return resumen;
+    } catch (err) {
+      console.error('❌ Error copiando+borrando:', err);
+      await registrarLogCopia('error', {
+        error: err.message,
+        stack: err.stack,
+        iniciadoEn: inicio.toISOString(),
+        terminadoEn: new Date().toISOString(),
+        modo: 'programado',
+      });
+      throw err;
+    }
+  }
+);
+
+/**
+ * Copia paginada de una colección a otra y, si se indica, borra el origen.
+ * - Conserva el mismo ID de documento.
+ * - Añade _copiedFrom y _copiedAt.
+ * - Trabaja por páginas y batches (≤500) para cumplir límites de Firestore.
+ */
+async function copiarColeccionPaginada({
+  sourceCol,
+  destCol,
+  pageSize = 400,
+  merge = true,
+  deleteAfterCopy = false,
+}) {
+  const fieldId = admin.firestore.FieldPath.documentId();
+  let lastId = null;
+  let totalLeidos = 0;
+  let totalEscritos = 0;
+  let totalEliminados = 0;
+  let paginas = 0;
+
+  while (true) {
+    let q = db.collection(sourceCol).orderBy(fieldId).limit(pageSize);
+    if (lastId) q = q.startAfter(lastId);
+
+    const snap = await q.get();
+    if (snap.empty) break;
+
+    paginas += 1;
+    totalLeidos += snap.size;
+
+    // --- COPIA EN BATCH ---
+    let batch = db.batch();
+    let ops = 0;
+    const commits = [];
+    const idsEnPagina = [];
+
+    for (const doc of snap.docs) {
+      idsEnPagina.push(doc.id);
+
+      const data = doc.data();
+      const destRef = db.collection(destCol).doc(doc.id);
+      const payload = {
+        ...data,
+        _copiedFrom: sourceCol,
+        _copiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      batch.set(destRef, payload, { merge });
+      ops += 1;
+      totalEscritos += 1;
+
+      // Deja margen antes de 500
+      if (ops >= 450) {
+        commits.push(batch.commit());
+        batch = db.batch();
+        ops = 0;
+      }
+    }
+
+    // Commit final de la página
+    commits.push(batch.commit());
+    await Promise.all(commits);
+
+    // Guarda cursor ANTES de borrar para paginar aunque ya no existan
+    lastId = snap.docs[snap.docs.length - 1].id;
+
+    // --- BORRADO EN BATCH (OPCIONAL) ---
+    if (deleteAfterCopy) {
+      let delBatch = db.batch();
+      let delOps = 0;
+      const delCommits = [];
+
+      for (const id of idsEnPagina) {
+        const srcRef = db.collection(sourceCol).doc(id);
+        delBatch.delete(srcRef);
+        delOps += 1;
+        totalEliminados += 1;
+
+        if (delOps >= 450) {
+          delCommits.push(delBatch.commit());
+          delBatch = db.batch();
+          delOps = 0;
+        }
+      }
+      delCommits.push(delBatch.commit());
+      await Promise.all(delCommits);
+    }
+
+    console.log(
+      `📦 Página ${paginas}: leídos=${snap.size}, escritos=${totalEscritos}, ` +
+      (deleteAfterCopy ? `eliminados=${totalEliminados}, ` : '') +
+      `último id=${lastId}`
+    );
+  }
+
+  return { paginas, totalLeidos, totalEscritos, totalEliminados, sourceCol, destCol, deleteAfterCopy };
+}
+
+/**
+ * Log de auditoría (colección: logs_copias_registros)
+ */
+async function registrarLogCopia(estado, datos = {}) {
+  try {
+    await db.collection('logs_copias_registros').add({
+      estado, // 'exito' | 'error'
+      ...datos,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.error('No se pudo registrar el log de copia:', e.message);
+  }
+}
+// =====================================================
+// PURGAR "asistenciasemana" (L–V 23:00 CDMX)
+// =====================================================
+
+exports.purgarAsistenciasSemana = onSchedule(
+  {
+    // 23:00 de lunes (1) a viernes (5)
+    schedule: '0 23 * * 1-5',
+    timeZone: 'America/Mexico_City',
+  },
+  async () => {
+    const inicio = new Date();
+    console.log('🧹 Purgando colección asistenciasemana', inicio.toISOString());
+
+    try {
+      const resumen = await borrarColeccionEnPaginas('asistenciasemana', 450);
+
+      await registrarLogPurge('exito', {
+        ...resumen,
+        iniciadoEn: inicio.toISOString(),
+        terminadoEn: new Date().toISOString(),
+        modo: 'programado',
+      });
+
+      console.log('✅ Purga finalizada:', resumen);
+      return resumen;
+    } catch (err) {
+      console.error('❌ Error en purga:', err);
+      await registrarLogPurge('error', {
+        error: err.message,
+        stack: err.stack,
+        iniciadoEn: inicio.toISOString(),
+        terminadoEn: new Date().toISOString(),
+        modo: 'programado',
+      });
+      throw err;
+    }
+  }
+);
+
+/**
+ * Borra TODOS los documentos de una colección plana en páginas/batches.
+ * - Usa orderBy(documentId()) + startAfter(lastId) para paginar de forma estable.
+ * - Lotes de ~450 para respetar el límite de 500 escrituras por batch.
+ */
+async function borrarColeccionEnPaginas(colName, pageSize = 450) {
+  const fieldId = admin.firestore.FieldPath.documentId();
+  let lastId = null;
+  let totalEliminados = 0;
+  let paginas = 0;
+
+  while (true) {
+    let q = db.collection(colName).orderBy(fieldId).limit(pageSize);
+    if (lastId) q = q.startAfter(lastId);
+
+    const snap = await q.get();
+    if (snap.empty) break;
+
+    paginas += 1;
+
+    let batch = db.batch();
+    let ops = 0;
+
+    for (const doc of snap.docs) {
+      batch.delete(doc.ref);
+      ops += 1;
+      totalEliminados += 1;
+
+      if (ops >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        ops = 0;
+      }
+    }
+
+    // Commit final de la página
+    await batch.commit();
+
+    // Avanza cursor
+    lastId = snap.docs[snap.docs.length - 1].id;
+
+    console.log(
+      `🗂️ Página ${paginas}: eliminados acumulados=${totalEliminados}, último id=${lastId}`
+    );
+  }
+
+  return { collection: colName, paginas, totalEliminados };
+}
+
+/**
+ * Log de auditoría de la purga (colección: logs_purgas_asistenciasemana)
+ */
+async function registrarLogPurge(estado, datos = {}) {
+  try {
+    await db.collection('logs_purgas_asistenciasemana').add({
+      estado, // 'exito' | 'error'
+      ...datos,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.error('No se pudo registrar el log de purga:', e.message);
+  }
+}
