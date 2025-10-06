@@ -12,6 +12,8 @@
     <link href="../css/base-styles.css" rel="stylesheet">
     <!-- Page Specific Styles -->
     <link id="page-styles" href="../css/admin-mas.css" rel="stylesheet">
+    <!-- Pagination Styles -->
+    <link href="../css/admin-mas-pagination.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header Component -->
@@ -36,6 +38,24 @@
                     <div class="decoration-circle"></div>
                     <div class="decoration-circle"></div>
                     <div class="decoration-circle"></div>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8 mb-3 mb-md-0">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="searchOptions" class="form-control" 
+                                   placeholder="Buscar opciones (ej: reportes, horarios, materias...)">
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end text-center">
+                        <div class="results-info">
+                            <span id="resultsCount">5 opciones</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -89,167 +109,230 @@
                 </div>
             </div>
 
-            <!-- Main Options Grid -->
-            <div class="options-grid">
-                <div class="row g-4">
-                    <!-- Reportes -->
-                    <div class="col-xl-6 col-lg-6 col-md-6">
-                        <div class="option-card reportes-card" data-action="reportes">
-                            <div class="card-header">
-                                <div class="card-icon">
-                                    <i class="bi bi-bar-chart-fill"></i>
+            <!-- Main Options Grid with Pagination -->
+            <div class="options-container">
+                <!-- Página 1 -->
+                <div class="options-grid options-page active" data-page="1">
+                    <div class="row g-4">
+                        <!-- Reportes -->
+                        <div class="col-xl-6 col-lg-6 col-md-6" data-keywords="reportes estadisticas graficas datos asistencia analisis">
+                            <div class="option-card reportes-card" data-action="reportes">
+                                <div class="card-header">
+                                    <div class="card-icon">
+                                        <i class="bi bi-bar-chart-fill"></i>
+                                    </div>
+                                    <h3>Reportes y Estadísticas</h3>
+                                    <p>Genera reportes detallados del sistema</p>
                                 </div>
-                                <h3>Reportes y Estadísticas</h3>
-                                <p>Genera reportes detallados del sistema</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="feature-list">
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Reportes de asistencia</span>
+                                <div class="card-body">
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Reportes de asistencia</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Estadísticas de uso</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Análisis de rendimiento</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Exportación de datos</span>
+                                        </div>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Estadísticas de uso</span>
+                                    <div class="card-footer">
+                                        <button class="btn-action">
+                                            <span>Acceder</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </button>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Análisis de rendimiento</span>
-                                    </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Exportación de datos</span>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <button class="btn-action">
-                                        <span>Acceder</span>
-                                        <i class="bi bi-arrow-right"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Organigrama -->
-                    <div class="col-xl-6 col-lg-6 col-md-6">
-                        <div class="option-card organigrama-card" data-action="organigrama">
-                            <div class="card-header">
-                                <div class="card-icon">
-                                    <i class="bi bi-diagram-3-fill"></i>
+                        <!-- Organigrama -->
+                        <div class="col-xl-6 col-lg-6 col-md-6" data-keywords="organigrama estructura jerarquia roles permisos departamentos">
+                            <div class="option-card organigrama-card" data-action="organigrama">
+                                <div class="card-header">
+                                    <div class="card-icon">
+                                        <i class="bi bi-diagram-3-fill"></i>
+                                    </div>
+                                    <h3>Organigrama</h3>
+                                    <p>Gestiona la estructura organizacional</p>
                                 </div>
-                                <h3>Organigrama</h3>
-                                <p>Gestiona la estructura organizacional</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="feature-list">
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Estructura jerárquica</span>
+                                <div class="card-body">
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Estructura jerárquica</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Roles y permisos</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Asignación de responsabilidades</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Vista interactiva</span>
+                                        </div>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Roles y permisos</span>
+                                    <div class="card-footer">
+                                        <button class="btn-action">
+                                            <span>Acceder</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </button>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Asignación de responsabilidades</span>
-                                    </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Vista interactiva</span>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <button class="btn-action">
-                                        <span>Acceder</span>
-                                        <i class="bi bi-arrow-right"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Gestión de Horarios -->
-                    <div class="col-xl-6 col-lg-6 col-md-6">
-                        <div class="option-card horarios-card" data-action="horarios">
-                            <div class="card-header">
-                                <div class="card-icon">
-                                    <i class="bi bi-calendar-week-fill"></i>
+                        <!-- Gestión de Horarios -->
+                        <div class="col-xl-6 col-lg-6 col-md-6" data-keywords="horarios asesores calendario turnos salas gestion">
+                            <div class="option-card horarios-card" data-action="horarios">
+                                <div class="card-header">
+                                    <div class="card-icon">
+                                        <i class="bi bi-calendar-week-fill"></i>
+                                    </div>
+                                    <h3>Gestión de Horarios</h3>
+                                    <p>Configura horarios de asesores</p>
                                 </div>
-                                <h3>Gestión de Horarios</h3>
-                                <p>Configura horarios de asesores</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="feature-list">
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Horarios por asesor</span>
+                                <div class="card-body">
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Horarios por asesor</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Múltiples tipos de horario</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Gestión por salas</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Control de conflictos</span>
+                                        </div>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Múltiples tipos de horario</span>
-                                    </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Gestión por salas</span>
-                                    </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Control de conflictos</span>
+                                    <div class="card-footer">
+                                        <button class="btn-action">
+                                            <span>Acceder</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="card-footer">
-                                    <button class="btn-action">
-                                        <span>Acceder</span>
-                                        <i class="bi bi-arrow-right"></i>
-                                    </button>
+                                <div class="card-badge">
+                                    <span>Nuevo</span>
                                 </div>
-                            </div>
-                            <div class="card-badge">
-                                <span>Nuevo</span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Servicio Social -->
-                    <div class="col-xl-6 col-lg-6 col-md-6">
-                        <div class="option-card servicio-card" data-action="servicio">
-                            <div class="card-header">
-                                <div class="card-icon">
-                                    <i class="bi bi-heart-fill"></i>
+                        <!-- Servicio Social -->
+                        <div class="col-xl-6 col-lg-6 col-md-6" data-keywords="servicio social prestadores voluntarios comunidad horas">
+                            <div class="option-card servicio-card" data-action="servicio">
+                                <div class="card-header">
+                                    <div class="card-icon">
+                                        <i class="bi bi-heart-fill"></i>
+                                    </div>
+                                    <h3>Servicio Social</h3>
+                                    <p>Administra programas de servicio social</p>
                                 </div>
-                                <h3>Servicio Social</h3>
-                                <p>Administra programas de servicio social</p>
-                            </div>
-                            <div class="card-body">
-                                <div class="feature-list">
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Registro de prestadores</span>
+                                <div class="card-body">
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Registro de prestadores</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Seguimiento de actividades</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Evaluación de desempeño</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Certificación de horas</span>
+                                        </div>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Seguimiento de actividades</span>
+                                    <div class="card-footer">
+                                        <button class="btn-action">
+                                            <span>Acceder</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </button>
                                     </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Evaluación de desempeño</span>
-                                    </div>
-                                    <div class="feature-item">
-                                        <i class="bi bi-check-circle"></i>
-                                        <span>Certificación de horas</span>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <button class="btn-action">
-                                        <span>Acceder</span>
-                                        <i class="bi bi-arrow-right"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Página 2 -->
+                <div class="options-grid options-page" data-page="2">
+                    <div class="row g-4">
+                        <!-- Departamentales -->
+                        <div class="col-xl-6 col-lg-6 col-md-6" data-keywords="departamentales examenes evaluaciones pruebas calificaciones resultados">
+                            <div class="option-card departamentales-card" data-action="departamentales">
+                                <div class="card-header">
+                                    <div class="card-icon">
+                                        <i class="bi bi-file-earmark-check-fill"></i>
+                                    </div>
+                                    <h3>Exámenes Departamentales</h3>
+                                    <p>Gestiona exámenes y evaluaciones departamentales</p>
+                                </div>
+                                <div class="card-body">
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Programación de exámenes</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Registro de resultados</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Estadísticas de rendimiento</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span>Reportes por departamento</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <button class="btn-action">
+                                            <span>Acceder</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-badge">
+                                    <span>Nuevo</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Espacio para futuras opciones -->
+                        <!-- Puedes agregar más tarjetas aquí según sea necesario -->
+
+                    </div>
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination-controls mt-5">
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination justify-content-center" id="paginationNav">
+                            <!-- Se genera dinámicamente por JavaScript -->
+                        </ul>
+                    </nav>
                 </div>
             </div>
 
@@ -331,5 +414,7 @@
     <script src="../js/navigation.js"></script>
     <!-- Page Specific JS -->
     <script id="page-script" src="../js/admin-mas.js"></script>
+    <!-- Pagination and Search JS -->
+    <script src="../js/admin-mas-pagination.js"></script>
 </body>
 </html>

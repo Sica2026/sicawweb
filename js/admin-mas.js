@@ -129,6 +129,20 @@ class AdminMasManager {
         console.log('🎧 Event listeners configurados');
     }
 
+    async navigateToDepartamentales() {
+    this.showNotification(
+        'Exámenes Departamentales',
+        'Accediendo al sistema de evaluaciones...',
+        'info',
+        'bi-file-earmark-check'
+    );
+    
+    setTimeout(() => {
+        window.location.href = 'departamentales.html';
+        console.log('📝 Navegando a exámenes departamentales...');
+    }, 1000);
+}
+
     async handleMainAction(action, card) {
         try {
             // Efecto visual en la tarjeta
@@ -154,6 +168,10 @@ class AdminMasManager {
                     
                 case 'servicio':
                     await this.navigateToServicioSocial();
+                    break;
+
+                case 'departamentales':
+                    await this.navigateToDepartamentales();
                     break;
                     
                 default:

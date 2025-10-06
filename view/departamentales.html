@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Gestión de Exámenes Departamentales - SICA</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/gestion-examenes.css" rel="stylesheet">
+</head>
+<body class="admin-authenticated">
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
+        <div class="container">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="#">Administración</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestión de Exámenes</li>
+            </ol>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid px-4">
+            
+            <!-- Header Section -->
+            <div class="exam-header">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div>
+                        <h1 class="exam-title">Gestión de Exámenes Departamentales</h1>
+                        <p class="exam-subtitle">Viernes después de las 13:00 PM</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode Toggle -->
+            <div class="mode-toggle-container">
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="add" id="btnModeAdd">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        <span>Agregar Manual</span>
+                    </button>
+                    <button class="mode-btn" data-mode="manage" id="btnModeManage">
+                        <i class="bi bi-pencil-square"></i>
+                        <span>Editar / Eliminar</span>
+                    </button>
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+
+            <!-- Add Mode Section -->
+            <div class="content-section active" id="addSection">
+                <div class="card-modern exam-form-card">
+                    <div class="card-header-exam">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        <h3>Nuevo Examen Departamental</h3>
+                    </div>
+                    
+                    <form id="examForm" class="exam-form">
+                        <!-- Información General -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Información General</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- Curso -->
+                                <div class="col-md-6">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-book"></i> Curso
+                                    </label>
+                                    <div class="autocomplete-wrapper">
+                                        <input 
+                                            type="text" 
+                                            class="form-control form-control-sica" 
+                                            id="cursoInput"
+                                            placeholder="Buscar curso..."
+                                            autocomplete="off"
+                                            required>
+                                        <div class="autocomplete-list" id="cursoList"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Clave -->
+                                <div class="col-md-6">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-key"></i> Clave
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        class="form-control form-control-sica" 
+                                        id="claveInput"
+                                        placeholder="Se completará automáticamente"
+                                        readonly>
+                                </div>
+
+                                <!-- Hora Inicio -->
+                                <div class="col-md-6">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-clock"></i> Hora de Inicio
+                                    </label>
+                                    <input 
+                                        type="time" 
+                                        class="form-control form-control-sica" 
+                                        id="horaInicio"
+                                        min="13:00"
+                                        required>
+                                </div>
+
+                                <!-- Hora Final -->
+                                <div class="col-md-6">
+                                    <label class="form-label-sica">
+                                        <i class="bi bi-clock-history"></i> Hora Final
+                                    </label>
+                                    <input 
+                                        type="time" 
+                                        class="form-control form-control-sica" 
+                                        id="horaFinal"
+                                        required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bloques Dinámicos -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="bi bi-building"></i>
+                                <span>Salas y Profesores</span>
+                                <button type="button" class="btn btn-add-block" id="btnAddBlock">
+                                    <i class="bi bi-plus-lg"></i> Agregar Sala
+                                </button>
+                            </div>
+
+                            <div id="blocksContainer">
+                                <!-- Los bloques se agregarán dinámicamente aquí -->
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-sica-outline" id="btnCancelForm">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-sica" id="btnSaveExam">
+                                <i class="bi bi-check-circle"></i> Guardar Examen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Manage Mode Section -->
+            <div class="content-section" id="manageSection">
+                <div class="card-modern">
+                    <div class="card-header-exam">
+                        <i class="bi bi-list-ul"></i>
+                        <h3>Exámenes Registrados</h3>
+                    </div>
+
+                    <!-- Barra de Búsqueda -->
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input 
+                                type="text" 
+                                class="search-input" 
+                                id="searchInput"
+                                placeholder="Buscar por curso, clave, profesor...">
+                        </div>
+                        <div class="search-stats" id="searchStats">
+                            <span>Total: <strong id="totalExams">0</strong> exámenes</span>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Exámenes -->
+                    <div class="exams-list" id="examsList">
+                        <!-- Los exámenes se cargarán dinámicamente aquí -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Modal de Edición -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content modal-exam">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square"></i> Editar Examen
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="editModalBody">
+                    <!-- El formulario de edición se cargará aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    
+    <!-- Page Specific JS -->
+    <script src="../js/gestion-examenes-main.js"></script>
+    <script src="../js/gestion-examenes-blocks.js"></script>
+    <script src="../js/gestion-examenes-firebase.js"></script>
+</body>
+</html>

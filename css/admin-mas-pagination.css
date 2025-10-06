@@ -1,0 +1,212 @@
+/* admin-mas-pagination.css */
+
+/* Search and Filter Bar */
+.search-filter-bar {
+    margin: 0 1rem 2rem;
+}
+
+.search-box {
+    position: relative;
+    width: 100%;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    font-size: 1.1rem;
+    z-index: 2;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 1rem 1.25rem 1rem 3.5rem;
+    border: 2px solid rgba(172, 150, 90, 0.2);
+    border-radius: 50px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--admin-secondary);
+    box-shadow: 0 0 0 4px rgba(172, 150, 90, 0.1);
+    background: white;
+}
+
+.results-info {
+    padding: 1rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* Options Container */
+.options-container {
+    margin: 0 1rem;
+}
+
+.options-page {
+    display: none;
+    animation: fadeInPage 0.5s ease;
+}
+
+.options-page.active {
+    display: block;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    padding: 2rem 0;
+}
+
+.pagination {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pagination .page-item {
+    list-style: none;
+}
+
+.pagination .page-link {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(172, 150, 90, 0.2);
+    color: var(--admin-primary);
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-width: 50px;
+    text-align: center;
+}
+
+.pagination .page-link:hover {
+    background: var(--admin-secondary);
+    color: white;
+    border-color: var(--admin-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(172, 150, 90, 0.3);
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--admin-gradient-secondary);
+    border-color: var(--admin-secondary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(172, 150, 90, 0.4);
+}
+
+.pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Departamentales Card */
+.departamentales-card .card-icon {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+}
+
+/* Highlighted Search Results */
+.option-card.search-highlight {
+    animation: pulse 0.5s ease;
+    border: 2px solid var(--admin-secondary);
+}
+
+/* No Results Message */
+.no-results {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #64748b;
+}
+
+.no-results i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.no-results h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--admin-primary);
+}
+
+/* Animations */
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .search-filter-bar {
+        margin: 0 0.5rem 1.5rem;
+    }
+    
+    .search-box input {
+        padding: 0.875rem 1rem 0.875rem 3rem;
+        font-size: 0.9rem;
+    }
+    
+    .results-info {
+        text-align: center;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .pagination .page-link {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        min-width: 40px;
+    }
+    
+    .options-container {
+        margin: 0 0.5rem;
+    }
+}
+
+/* Dark Mode */
+[data-theme="dark"] .search-box input {
+    background: rgba(45, 55, 72, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .search-box input:focus {
+    background: rgba(45, 55, 72, 1);
+    border-color: var(--admin-secondary);
+}
+
+[data-theme="dark"] .pagination .page-link {
+    background: rgba(45, 55, 72, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .results-info {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .no-results h3 {
+    color: #e2e8f0;
+}
