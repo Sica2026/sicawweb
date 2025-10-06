@@ -105,6 +105,7 @@ async function loadMaestros() {
 async function loadExamenes() {
     try {
         const snapshot = await db.collection('departamentales')
+            .orderBy('fechaExamen', 'desc')
             .orderBy('horaInicio')
             .get();
         

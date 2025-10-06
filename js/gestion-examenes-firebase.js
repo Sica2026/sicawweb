@@ -82,8 +82,20 @@ async function validateAndCollectFormData() {
     // Obtener datos básicos
     const curso = document.getElementById('cursoInput').value.trim();
     const clave = document.getElementById('claveInput').value.trim();
+    const fechaExamen = document.getElementById('fechaExamen').value;
     const horaInicio = document.getElementById('horaInicio').value;
     const horaFinal = document.getElementById('horaFinal').value;
+    
+    // Validar fecha
+    if (!fechaExamen) {
+        throw new Error('Debe seleccionar una fecha para el examen');
+    }
+    
+    // Validar que sea viernes
+    const fecha = new Date(fechaExamen + 'T00:00:00');
+    if (fecha.getDay() !== 5) {
+        throw new Error('Los exámenes departamentales solo pueden ser los viernes');
+    }
     
     // Validar horario
     const horarioValidation = validateHorario(horaInicio, horaFinal);
@@ -104,6 +116,7 @@ async function validateAndCollectFormData() {
     return {
         curso,
         clave,
+        fechaExamen,
         horaInicio,
         horaFinal,
         bloques: processedBlocks,
@@ -173,8 +186,9 @@ async function uploadFile(file) {
  */
 async function checkDuplicateExam(formData) {
     try {
-        // Buscar exámenes con mismo horario y curso
+        // Buscar exámenes con misma fecha, horario y curso
         const snapshot = await db.collection('departamentales')
+            .where('fechaExamen', '==', formData.fechaExamen)
             .where('curso', '==', formData.curso)
             .where('horaInicio', '==', formData.horaInicio)
             .where('horaFinal', '==', formData.horaFinal)
@@ -290,48 +304,63 @@ function renderExamenesList(examenes = null) {
         return;
     }
     
-    examsList.innerHTML = examenesData.map(examen => `
-        <div class="exam-item">
-            <div class="exam-item-header">
-                <div>
-                    <h4 class="exam-item-title">${examen.curso}</h4>
-                    <span class="exam-item-clave">Clave: ${examen.clave}</span>
-                </div>
-                <div class="exam-item-actions">
-                    <button class="btn-edit-exam" onclick="editExamen('${examen.id}')" title="Editar">
-                        <i class="bi bi-pencil-fill"></i>
-                    </button>
-                    <button class="btn-delete-exam" onclick="deleteExamen('${examen.id}')" title="Eliminar">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="exam-item-info">
-                <div class="info-badge">
-                    <i class="bi bi-clock"></i>
-                    <span>${examen.horaInicio} - ${examen.horaFinal}</span>
-                </div>
-                <div class="info-badge">
-                    <i class="bi bi-people"></i>
-                    <span>${examen.bloques.length} ${examen.bloques.length === 1 ? 'sala' : 'salas'}</span>
-                </div>
-            </div>
-            
-            <div class="exam-blocks-preview">
-                ${examen.bloques.map((bloque, index) => `
-                    <div class="block-preview">
-                        <strong>Sala ${index + 1}:</strong> ${bloque.profesor}<br>
-                        <small style="color: var(--exam-gold);">
-                            ${bloque.ubicaciones.join(', ')}
-                        </small>
-                        ${bloque.notas ? `<br><small>${bloque.notas}</small>` : ''}
-                        ${bloque.archivoUrl ? `<br><a href="${bloque.archivoUrl}" target="_blank" style="color: var(--exam-gold);"><i class="bi bi-paperclip"></i> ${bloque.archivoNombre}</a>` : ''}
+    examsList.innerHTML = examenesData.map(examen => {
+        // Formatear fecha
+        const fechaFormateada = examen.fechaExamen ? 
+            new Date(examen.fechaExamen + 'T00:00:00').toLocaleDateString('es-MX', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }) : 'Fecha no especificada';
+        
+        return `
+            <div class="exam-item">
+                <div class="exam-item-header">
+                    <div>
+                        <h4 class="exam-item-title">${examen.curso}</h4>
+                        <span class="exam-item-clave">Clave: ${examen.clave}</span>
                     </div>
-                `).join('')}
+                    <div class="exam-item-actions">
+                        <button class="btn-edit-exam" onclick="editExamen('${examen.id}')" title="Editar">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+                        <button class="btn-delete-exam" onclick="deleteExamen('${examen.id}')" title="Eliminar">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="exam-item-info">
+                    <div class="info-badge">
+                        <i class="bi bi-calendar-event"></i>
+                        <span>${fechaFormateada}</span>
+                    </div>
+                    <div class="info-badge">
+                        <i class="bi bi-clock"></i>
+                        <span>${examen.horaInicio} - ${examen.horaFinal}</span>
+                    </div>
+                    <div class="info-badge">
+                        <i class="bi bi-people"></i>
+                        <span>${examen.bloques.length} ${examen.bloques.length === 1 ? 'sala' : 'salas'}</span>
+                    </div>
+                </div>
+                
+                <div class="exam-blocks-preview">
+                    ${examen.bloques.map((bloque, index) => `
+                        <div class="block-preview">
+                            <strong>Sala ${index + 1}:</strong> ${bloque.profesor}<br>
+                            <small style="color: var(--exam-gold);">
+                                ${bloque.ubicaciones.join(', ')}
+                            </small>
+                            ${bloque.notas ? `<br><small>${bloque.notas}</small>` : ''}
+                            ${bloque.archivoUrl ? `<br><a href="${bloque.archivoUrl}" target="_blank" style="color: var(--exam-gold);"><i class="bi bi-paperclip"></i> ${bloque.archivoNombre}</a>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
@@ -367,6 +396,7 @@ async function editExamen(examId) {
             document.getElementById('claveInput').value = examData.clave;
         }
         
+        document.getElementById('fechaExamen').value = examData.fechaExamen || '';
         document.getElementById('horaInicio').value = examData.horaInicio;
         document.getElementById('horaFinal').value = examData.horaFinal;
         

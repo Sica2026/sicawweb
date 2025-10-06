@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Calendario de Exámenes Departamentales - SICA</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Base Styles -->
+    <link href="../css/base-styles.css" rel="stylesheet">
+    <!-- Page Specific Styles -->
+    <link id="page-styles" href="../css/visualizacion-examenes.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Component -->
+    <div id="header-component"></div>
+
+    <!-- Navigation Component -->
+    <div id="navbar-component"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container-fluid px-4">
+            
+            <!-- Header Section -->
+            <div class="calendar-header">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-calendar3"></i>
+                    </div>
+                    <div>
+                        <h1 class="calendar-title">Calendario de Exámenes Departamentales</h1>
+                        <p class="calendar-subtitle">Consulta los horarios y ubicaciones de los exámenes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles -->
+            <div class="controls-container">
+                <div class="row g-3 align-items-end">
+                    <!-- Selector de Fecha -->
+                    <div class="col-md-4">
+                        <label class="form-label-sica">
+                            <i class="bi bi-calendar-event"></i> Seleccionar Fecha
+                        </label>
+                        <select class="form-control form-control-sica" id="fechaSelector">
+                            <option value="">Cargando fechas...</option>
+                        </select>
+                    </div>
+
+                    <!-- Buscador -->
+                    <div class="col-md-8">
+                        <label class="form-label-sica">
+                            <i class="bi bi-search"></i> Buscar Examen
+                        </label>
+                        <div class="search-wrapper">
+                            <input 
+                                type="text" 
+                                class="form-control form-control-sica search-input" 
+                                id="searchInput"
+                                placeholder="Buscar por curso, clave o profesor...">
+                            <button class="btn-clear-search" id="btnClearSearch">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendario -->
+            <div class="calendar-container">
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- El calendario se generará dinámicamente aquí -->
+                </div>
+            </div>
+
+            <!-- Leyenda de Colores -->
+            <div class="legend-container">
+                <h5 class="legend-title">
+                    <i class="bi bi-palette"></i> Código de Colores por Sala
+                </h5>
+                <div class="legend-grid" id="legendGrid">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #3b5998;"></span>
+                        <span>SICA 1</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #1976d2;"></span>
+                        <span>SICA 2</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #8b5cf6;"></span>
+                        <span>SICA 3</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #e91e63;"></span>
+                        <span>SICA 4</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #ff9800;"></span>
+                        <span>Salón Inteligente 1</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #f57c00;"></span>
+                        <span>Salón Inteligente 2</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Component -->
+    <div id="footer-component"></div>
+
+    <!-- Tooltip Modal -->
+    <div class="exam-tooltip" id="examTooltip">
+        <button class="tooltip-close" id="tooltipClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="tooltip-content" id="tooltipContent">
+            <!-- El contenido se generará dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Base Components JS -->
+    
+    <!-- Base Components JS -->
+    <script src="../js/components.js"></script>
+    
+    <!-- Base Navigation JS -->
+    <script src="../js/navigation.js"></script>
+    
+    <!-- Page Specific JS -->
+    <script src="../js/visualizacion-examenes.js"></script>
+</body>
+</html>

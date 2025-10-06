@@ -758,9 +758,30 @@
     background: linear-gradient(135deg, rgba(32, 44, 86, 0.1), rgba(172, 150, 90, 0.1));
 }
 
+[data-theme="dark"] .autocomplete-list {
+    background: #1a2347;
+    border-color: var(--exam-gold);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .autocomplete-item {
+    color: #e0e0e0;
+    background: #1a2347;
+    border-bottom-color: #2a3968;
+}
+
 [data-theme="dark"] .autocomplete-item:hover {
     background: var(--exam-gold);
     color: white;
+}
+
+[data-theme="dark"] .autocomplete-item.active {
+    background: var(--exam-blue);
+    color: white;
+}
+
+[data-theme="dark"] .autocomplete-item small {
+    color: var(--exam-gold) !important;
 }
 
 /* ========================================
