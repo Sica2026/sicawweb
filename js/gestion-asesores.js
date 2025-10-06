@@ -90,7 +90,7 @@ function setupEventListeners() {
         });
     }
     
-    // ✅ CONFIGURAR TODOS LOS INPUTS DE ARCHIVOS
+    // ✅ INCLUIR formatoSSInput en la lista de archivos
     const fileInputs = [
         'fotoInput',
         'comprobanteDomicilioInput', 
@@ -98,7 +98,8 @@ function setupEventListeners() {
         'historiaInput',
         'curpInput',
         'credencialUnamInput',
-        'comprobanteInscripcionInput'
+        'comprobanteInscripcionInput',
+        'formatoSSInput' // ✅ NUEVO
     ];
     
     fileInputs.forEach(inputId => {
@@ -126,7 +127,7 @@ async function loadAsesores() {
         if (loadingState) loadingState.style.display = 'flex';
         if (asesoresGrid) asesoresGrid.innerHTML = '';
         
-        // ✅ SOLO CARGAR ASESORES APROBADOS
+        // ✅ CARGAR SOLO ASESORES APROBADOS Y NO INACTIVOS
         const snapshot = await gestionDB.collection('asesores')
             .where('estado', '==', 'aprobado')
             .orderBy('fechaRegistro', 'desc')
@@ -134,10 +135,14 @@ async function loadAsesores() {
         
         asesoresList = [];
         snapshot.forEach(doc => {
-            asesoresList.push({
-                id: doc.id,
-                ...doc.data()
-            });
+            const data = doc.data();
+            // ✅ FILTRAR EXPLÍCITAMENTE LOS INACTIVOS
+            if (data.estado !== 'inactivo') {
+                asesoresList.push({
+                    id: doc.id,
+                    ...data
+                });
+            }
         });
         
         if (loadingState) loadingState.style.display = 'none';
@@ -161,6 +166,50 @@ async function loadAsesores() {
         console.error('Error cargando asesores:', error);
         if (loadingState) loadingState.style.display = 'none';
         showNotification('Error al cargar los asesores', 'error');
+    }
+}
+
+async function marcarComoExAsesor() {
+    if (!currentAsesor || !currentAsesor.id) {
+        showNotification('No hay un asesor seleccionado', 'error');
+        return;
+    }
+    
+    const nombreCompleto = getNombreCompleto(currentAsesor);
+    
+    // Confirmación con SweetAlert si está disponible, o confirm nativo
+    const confirmacion = confirm(
+        `¿Está seguro de que desea marcar a ${nombreCompleto} como Ex-Asesor?\n\n` +
+        `Esta acción cambiará su estado a "inactivo" y dejará de aparecer en el panel principal.\n\n` +
+        `El registro se conservará en la base de datos.`
+    );
+    
+    if (!confirmacion) {
+        return;
+    }
+    
+    try {
+        // Cambiar estado a inactivo
+        await gestionDB.collection('asesores').doc(currentAsesor.id).update({
+            estado: 'inactivo',
+            fechaInactivacion: firebase.firestore.FieldValue.serverTimestamp(),
+            inactivadoPor: gestionAuth.currentUser?.email,
+            observacionInactivacion: 'Marcado como ex-asesor desde panel administrativo'
+        });
+        
+        showNotification(`${nombreCompleto} ha sido marcado como Ex-Asesor`, 'success');
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('asesorModal'));
+        if (modal) modal.hide();
+        
+        // Recargar datos
+        await loadAsesores();
+        await loadEstadisticas();
+        
+    } catch (error) {
+        console.error('Error marcando como ex-asesor:', error);
+        showNotification('Error al marcar como ex-asesor: ' + error.message, 'error');
     }
 }
 
@@ -459,7 +508,8 @@ function fillAsesorForm(asesor) {
         'historiaInput': asesor.historialAcademicoUrl,
         'curpInput': asesor.curpUrl,
         'credencialUnamInput': asesor.credencialUnamUrl,
-        'comprobanteInscripcionInput': asesor.comprobanteInscripcionUrl
+        'comprobanteInscripcionInput': asesor.comprobanteInscripcionUrl,
+        'formatoSSInput': asesor.formatoSSUrl // ✅ NUEVO
     };
     
     Object.entries(documentFields).forEach(([inputId, url]) => {
@@ -467,6 +517,20 @@ function fillAsesorForm(asesor) {
             showExistingDocument({ downloadURL: url, originalName: getDocumentName(inputId) }, inputId);
         }
     });
+    
+    // ✅ ACTUALIZAR BOTÓN DE EX-ASESOR
+    const btnExAsesor = document.getElementById('btnExAsesor');
+    if (btnExAsesor) {
+        if (asesor.estado === 'inactivo') {
+            btnExAsesor.disabled = true;
+            btnExAsesor.innerHTML = '<i class="bi bi-person-x me-2"></i>Ya es Ex-Asesor';
+            btnExAsesor.classList.add('disabled');
+        } else {
+            btnExAsesor.disabled = false;
+            btnExAsesor.innerHTML = '<i class="bi bi-person-x me-2"></i>Marcar como Ex-Asesor';
+            btnExAsesor.classList.remove('disabled');
+        }
+    }
     
     console.log('✅ Formulario llenado completamente');
 }
@@ -478,7 +542,8 @@ function getDocumentName(inputId) {
         'historiaInput': 'Historia Académica',
         'curpInput': 'CURP',
         'credencialUnamInput': 'Credencial UNAM',
-        'comprobanteInscripcionInput': 'Comprobante de Inscripción'
+        'comprobanteInscripcionInput': 'Comprobante de Inscripción',
+        'formatoSSInput': 'Formato SS' // ✅ NUEVO
     };
     return names[inputId] || 'Documento';
 }
@@ -624,7 +689,8 @@ function handleDocumentPreview(file, inputId, inputElement) {
         'historiaInput': { name: 'Historia Académica', icon: 'bi-file-pdf', class: 'historia' },
         'curpInput': { name: 'CURP', icon: 'bi-file-text', class: 'curp' },
         'credencialUnamInput': { name: 'Credencial UNAM', icon: 'bi-credit-card', class: 'credencial-unam' },
-        'comprobanteInscripcionInput': { name: 'Comprobante de Inscripción', icon: 'bi-file-earmark-check', class: 'comprobante-inscripcion' }
+        'comprobanteInscripcionInput': { name: 'Comprobante de Inscripción', icon: 'bi-file-earmark-check', class: 'comprobante-inscripcion' },
+        'formatoSSInput': { name: 'Formato SS', icon: 'bi-file-earmark-medical', class: 'formato-ss' } // ✅ NUEVO
     };
     
     const docInfo = docTypeMap[inputId];
@@ -650,7 +716,6 @@ function handleDocumentPreview(file, inputId, inputElement) {
         <input type="file" id="${inputId}" accept="image/*,application/pdf" style="display: none;">
     `;
     
-    // ✅ ANIMACIÓN DE ÉXITO
     const documentContainer = container.querySelector('.document-loaded');
     if (documentContainer) {
         documentContainer.classList.add('document-upload-success');
@@ -659,17 +724,14 @@ function handleDocumentPreview(file, inputId, inputElement) {
         }, 600);
     }
     
-    // ✅ RECONFIGURAR EVENT LISTENER
     setTimeout(() => {
         const newInput = document.getElementById(inputId);
         if (newInput) {
             newInput.addEventListener('change', (e) => handleFileChange(e, inputId));
-            console.log(`✅ Event listener reconfigurado para ${inputId}`);
         }
     }, 100);
     
     showNotification(`${docInfo.name} seleccionado: ${file.name}`, 'success', 3000);
-    console.log(`✅ Archivo ${file.name} listo para ${inputId}`);
 }
 
 // ✅ FUNCIÓN CORREGIDA - guardarAsesorCompleto
@@ -695,7 +757,6 @@ async function guardarAsesorCompleto() {
         
         const asesorData = collectFormData();
         
-        // ✅ VERIFICAR QUE TENEMOS NÚMERO DE CUENTA PARA LA CARPETA
         const numeroCuenta = asesorData.numeroCuenta || asesorData.numeroAsesor;
         if (!numeroCuenta) {
             throw new Error('Se requiere número de cuenta o número de asesor para organizar documentos');
@@ -703,17 +764,11 @@ async function guardarAsesorCompleto() {
         
         console.log(`📂 Usando carpeta: asesor_${numeroCuenta}`);
         
-        // ✅ SUBIR ARCHIVOS USANDO ARCHIVOS TEMPORALES
-        console.log('📤 Verificando archivos para subir...');
-        console.log('🗂️ Archivos temporales disponibles:', window.tempFiles);
-        
-        // FOTO
+        // SUBIR FOTO
         if (window.tempFiles && window.tempFiles['fotoInput']) {
-            console.log('📸 Subiendo foto desde tempFiles:', window.tempFiles['fotoInput'].name);
             try {
                 const fotoUrl = await uploadFoto(window.tempFiles['fotoInput'], numeroCuenta);
                 asesorData.fotoUrl = fotoUrl;
-                console.log('✅ Foto subida:', fotoUrl);
                 delete window.tempFiles['fotoInput'];
             } catch (error) {
                 console.error('❌ Error subiendo foto:', error);
@@ -721,14 +776,15 @@ async function guardarAsesorCompleto() {
             }
         }
         
-        // DOCUMENTOS
+        // ✅ DOCUMENTOS ACTUALIZADOS CON formatoSSInput
         const documentInputs = [
             'comprobanteDomicilioInput',
             'ineInput', 
             'historiaInput',
             'curpInput',
             'credencialUnamInput',
-            'comprobanteInscripcionInput'
+            'comprobanteInscripcionInput',
+            'formatoSSInput' // ✅ NUEVO
         ];
         
         const documentUrlFields = {
@@ -737,17 +793,16 @@ async function guardarAsesorCompleto() {
             'historiaInput': 'historialAcademicoUrl',
             'curpInput': 'curpUrl',
             'credencialUnamInput': 'credencialUnamUrl',
-            'comprobanteInscripcionInput': 'comprobanteInscripcionUrl'
+            'comprobanteInscripcionInput': 'comprobanteInscripcionUrl',
+            'formatoSSInput': 'formatoSSUrl' // ✅ NUEVO
         };
         
         for (const inputId of documentInputs) {
             if (window.tempFiles && window.tempFiles[inputId]) {
-                console.log(`📄 Subiendo ${inputId} desde tempFiles:`, window.tempFiles[inputId].name);
                 try {
                     const documentUrl = await uploadDocument(window.tempFiles[inputId], numeroCuenta, inputId);
                     const urlField = documentUrlFields[inputId];
                     asesorData[urlField] = documentUrl;
-                    console.log(`✅ ${inputId} subido:`, documentUrl);
                     delete window.tempFiles[inputId];
                 } catch (error) {
                     console.error(`❌ Error subiendo ${inputId}:`, error);
@@ -760,34 +815,27 @@ async function guardarAsesorCompleto() {
         
         // Guardar en Firebase
         if (editingMode && currentAsesor && currentAsesor.id) {
-            // Si estamos editando, mantener el ID existente
             const docRef = gestionDB.collection('asesores').doc(currentAsesor.id);
             const docSnap = await docRef.get();
             
             if (docSnap.exists) {
                 await docRef.update(asesorData);
-                console.log('✅ Asesor actualizado');
                 showNotification('Asesor actualizado exitosamente', 'success');
             } else {
                 asesorData.fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
                 await gestionDB.collection('asesores').add(asesorData);
-                console.log('✅ Asesor creado');
                 showNotification('Asesor creado exitosamente', 'success');
             }
         } else {
-            // ✅ CREAR NUEVO REGISTRO CON ID PERSONALIZADO
             const customId = `asesor_${asesorData.numeroCuenta}`;
             asesorData.fechaRegistro = firebase.firestore.FieldValue.serverTimestamp();
             asesorData.registradoPor = gestionAuth.currentUser?.email;
             await gestionDB.collection('asesores').doc(customId).set(asesorData);
-            console.log('✅ Asesor creado con ID personalizado:', customId);
             showNotification('Asesor creado exitosamente', 'success');
         }
         
-        // ✅ LIMPIAR ARCHIVOS TEMPORALES AL FINAL
         if (window.tempFiles) {
             window.tempFiles = {};
-            console.log('🧹 Archivos temporales limpiados');
         }
         
         const modal = bootstrap.Modal.getInstance(document.getElementById('asesorModal'));
@@ -1020,14 +1068,14 @@ async function uploadDocument(file, numeroCuenta, documentType) {
     try {
         console.log(`📄 Subiendo ${documentType} para asesor ${numeroCuenta}`);
         
-        // Mapeo de tipos de documentos a nombres de archivos
         const fileNameMap = {
             'comprobanteDomicilioInput': 'comprobante_domicilio',
             'ineInput': 'ine',
             'historiaInput': 'historial_academico',
             'curpInput': 'curp',
             'credencialUnamInput': 'credencial_unam',
-            'comprobanteInscripcionInput': 'comprobante_inscripcion'
+            'comprobanteInscripcionInput': 'comprobante_inscripcion',
+            'formatoSSInput': 'formato_ss' // ✅ NUEVO
         };
         
         const fileName = fileNameMap[documentType];
@@ -1035,7 +1083,6 @@ async function uploadDocument(file, numeroCuenta, documentType) {
             throw new Error(`Tipo de documento no reconocido: ${documentType}`);
         }
         
-        // Eliminar documento anterior si existe
         await deleteExistingFile(`documentos_asesores/asesor_${numeroCuenta}/${fileName}`);
         
         const filePath = `documentos_asesores/asesor_${numeroCuenta}/${fileName}`;
@@ -1650,3 +1697,4 @@ window.deleteExistingFile = deleteExistingFile;
 window.handleFotoPreview = handleFotoPreview;
 window.handleDocumentPreview = handleDocumentPreview;
 window.getDocumentName = getDocumentName;
+window.marcarComoExAsesor = marcarComoExAsesor;

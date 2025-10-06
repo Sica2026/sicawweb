@@ -146,67 +146,56 @@ function renderCalendar() {
         horas.push(h);
     }
     
-    // Construir grid
+    // Calcular número de filas para el grid (cada hora = 1 fila)
+    const numFilas = horas.length;
+    
+    // Construir grid con CSS Grid
+    calendarGrid.style.gridTemplateRows = `repeat(${numFilas}, minmax(80px, auto))`;
+    
     let gridHTML = '';
     
-    horas.forEach(hora => {
+    // Primero, agregar todas las columnas de tiempo
+    horas.forEach((hora, index) => {
         const horaStr = `${hora.toString().padStart(2, '0')}:00`;
-        
-        // Columna de hora
         gridHTML += `
-            <div class="time-slot">${horaStr}</div>
+            <div class="time-slot" style="grid-row: ${index + 1}; grid-column: 1;">${horaStr}</div>
         `;
-        
-        // Columna de eventos
-        const examenesEnHora = getExamenesEnHora(hora);
-        
+    });
+    
+    // Ahora, agregar los slots de eventos vacíos
+    horas.forEach((hora, index) => {
         gridHTML += `
-            <div class="events-slot">
-                <div class="events-wrapper">
-                    ${renderExamBlocks(examenesEnHora)}
-                </div>
-            </div>
+            <div class="events-slot" style="grid-row: ${index + 1}; grid-column: 2;" data-hora="${hora}"></div>
         `;
     });
     
     calendarGrid.innerHTML = gridHTML;
+    
+    // Ahora agregar los bloques de exámenes con posicionamiento absoluto
+    renderExamBlocksWithSpan(horas, minHora);
     
     // Agregar event listeners a los bloques
     attachBlockListeners();
 }
 
 /**
- * Obtener exámenes que están activos en una hora específica
+ * Crear wrapper si no existe
  */
-function getExamenesEnHora(hora) {
-    const examenes = [];
-    
-    viewState.examenesDelDia.forEach(examen => {
-        const [horaI] = examen.horaInicio.split(':').map(Number);
-        const [horaF] = examen.horaFinal.split(':').map(Number);
-        
-        // Si el examen cubre esta hora
-        if (hora >= horaI && hora < horaF) {
-            // Solo agregar en la primera hora del examen
-            if (hora === horaI) {
-                examenes.push(examen);
-            }
-        }
-    });
-    
-    return examenes;
+function createWrapper(slotEl) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'events-wrapper';
+    slotEl.appendChild(wrapper);
+    return wrapper;
 }
 
 /**
- * Renderizar bloques de exámenes
+ * Renderizar bloques de exámenes con span de múltiples filas
  */
-function renderExamBlocks(examenes) {
-    if (examenes.length === 0) return '';
-    
+function renderExamBlocksWithSpan(horas, minHora) {
     // Aplicar filtro de búsqueda
-    let filtered = examenes;
+    let filtered = viewState.examenesDelDia;
     if (viewState.searchTerm) {
-        filtered = examenes.filter(examen => {
+        filtered = viewState.examenesDelDia.filter(examen => {
             const searchIn = [
                 examen.curso,
                 examen.clave,
@@ -217,32 +206,77 @@ function renderExamBlocks(examenes) {
         });
     }
     
-    if (filtered.length === 0) return '';
+    // Agrupar bloques por hora de inicio para organizarlos en columnas
+    const bloquesPorHora = {};
     
-    return filtered.map(examen => {
-        // Un examen puede tener múltiples bloques (salas)
-        return examen.bloques.map(bloque => {
-            // Para cada ubicación en el bloque, crear un bloque visual
-            return bloque.ubicaciones.map(sala => {
-                const salaKey = sala.trim();
+    filtered.forEach(examen => {
+        examen.bloques.forEach(bloque => {
+            bloque.ubicaciones.forEach(sala => {
+                const [horaI] = examen.horaInicio.split(':').map(Number);
                 
-                return `
-                    <div class="exam-block" 
-                         data-exam-id="${examen.id}" 
-                         data-block="${JSON.stringify(bloque).replace(/"/g, '&quot;')}"
-                         data-exam="${JSON.stringify(examen).replace(/"/g, '&quot;')}"
-                         data-sala="${salaKey}">
-                        <div class="exam-block-title">${examen.curso}</div>
-                        <div class="exam-block-clave">${examen.clave}</div>
-                        <div class="exam-block-time">
-                            <i class="bi bi-clock"></i>
-                            ${examen.horaInicio} - ${examen.horaFinal}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }).join('');
-    }).join('');
+                if (!bloquesPorHora[horaI]) {
+                    bloquesPorHora[horaI] = [];
+                }
+                
+                bloquesPorHora[horaI].push({
+                    examen,
+                    bloque,
+                    sala
+                });
+            });
+        });
+    });
+    
+    // Renderizar bloques en sus respectivos slots
+    Object.keys(bloquesPorHora).forEach(horaInicio => {
+        const hora = parseInt(horaInicio);
+        const slotEl = document.querySelector(`.events-slot[data-hora="${hora}"]`);
+        
+        if (slotEl) {
+            const wrapper = slotEl.querySelector('.events-wrapper') || createWrapper(slotEl);
+            
+            // Limpiar wrapper
+            wrapper.innerHTML = '';
+            
+            bloquesPorHora[hora].forEach(({examen, bloque, sala}) => {
+                const [horaI] = examen.horaInicio.split(':').map(Number);
+                const [horaF] = examen.horaFinal.split(':').map(Number);
+                const duracionHoras = horaF - horaI;
+                
+                // Calcular altura total que debe ocupar el bloque
+                // Cada slot tiene 81px (80px + 1px border)
+                const alturaTotal = (duracionHoras * 81) - 1;
+                
+                const blockHTML = createExamBlockAbsolute(examen, bloque, sala, alturaTotal);
+                wrapper.insertAdjacentHTML('beforeend', blockHTML);
+            });
+        }
+    });
+}
+
+/**
+ * Crear bloque de examen con altura absoluta
+ */
+function createExamBlockAbsolute(examen, bloque, sala, altura) {
+    const salaKey = sala.trim();
+    
+    return `
+        <div class="exam-block" 
+             data-exam-id="${examen.id}" 
+             data-block="${JSON.stringify(bloque).replace(/"/g, '&quot;')}"
+             data-exam="${JSON.stringify(examen).replace(/"/g, '&quot;')}"
+             data-sala="${salaKey}"
+             style="height: ${altura}px; min-height: ${altura}px;">
+            <div>
+                <div class="exam-block-title">${examen.curso}</div>
+                <div class="exam-block-clave">${examen.clave}</div>
+            </div>
+            <div class="exam-block-time">
+                <i class="bi bi-clock"></i>
+                ${examen.horaInicio} - ${examen.horaFinal}
+            </div>
+        </div>
+    `;
 }
 
 /**
