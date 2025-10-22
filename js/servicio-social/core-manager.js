@@ -176,6 +176,56 @@ class ServicioSocialCore {
         }
     }
 
+    // ✅ NUEVO MÉTODO: Obtener folio de aceptación desde solicitudesAutorizacion
+    getFolioAceptacion() {
+        if (!this.currentAsesor || !this.currentAsesor.servicioSocial) {
+            return '';
+        }
+        
+        const solicitudes = this.currentAsesor.servicioSocial.solicitudesAutorizacion;
+        if (!solicitudes) {
+            return '';
+        }
+        
+        // Primero buscar en carta-aceptacion-fq
+        if (solicitudes['carta-aceptacion-fq']?.folioAsignado) {
+            return solicitudes['carta-aceptacion-fq'].folioAsignado;
+        }
+        
+        // Si no existe, buscar en carta-aceptacion-prepa
+        if (solicitudes['carta-aceptacion-prepa']?.folioAsignado) {
+            return solicitudes['carta-aceptacion-prepa'].folioAsignado;
+        }
+        
+        // Si no existe ninguno, retornar vacío
+        return '';
+    }
+
+    // ✅ NUEVO MÉTODO: Obtener folio de término desde solicitudesAutorizacion
+    getFolioTermino() {
+        if (!this.currentAsesor || !this.currentAsesor.servicioSocial) {
+            return '';
+        }
+        
+        const solicitudes = this.currentAsesor.servicioSocial.solicitudesAutorizacion;
+        if (!solicitudes) {
+            return '';
+        }
+        
+        // Primero buscar en carta-termino-fq
+        if (solicitudes['carta-termino-fq']?.folioAsignado) {
+            return solicitudes['carta-termino-fq'].folioAsignado;
+        }
+        
+        // Si no existe, buscar en carta-termino-prepa
+        if (solicitudes['carta-termino-prepa']?.folioAsignado) {
+            return solicitudes['carta-termino-prepa'].folioAsignado;
+        }
+        
+        // Si no existe ninguno, retornar vacío
+        return '';
+    }
+
     prepareAsesorData() {
         const nombreCompleto = this.currentAsesor.nombreAsesor || 'Sin nombre';
         
@@ -185,8 +235,8 @@ class ServicioSocialCore {
             escuela: this.currentAsesor.escuela || '',
             carrera: this.currentAsesor.carrera || '',
             avance: this.currentAsesor.avance || '',
-            folioTermino: document.getElementById('folioTermino')?.value || '',
-            folioAceptacion: document.getElementById('folioAceptacion')?.value || '',
+            folioTermino: this.getFolioTermino(), // ✅ MODIFICADO: Ahora usa el nuevo método
+            folioAceptacion: this.getFolioAceptacion(), // ✅ MODIFICADO: Ahora usa el nuevo método
             clavePrograma: document.getElementById('clavePrograma')?.value || '',
             fechaInicio: document.getElementById('fechaInicio')?.value || '',
             fechaTermino: document.getElementById('fechaTermino')?.value || '',

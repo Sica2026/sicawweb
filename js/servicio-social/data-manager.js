@@ -218,8 +218,9 @@ class DataManager {
             fechaInicio: document.getElementById('fechaInicio')?.value || '',
             fechaTermino: document.getElementById('fechaTermino')?.value || '',
             clavePrograma: document.getElementById('clavePrograma')?.value || '',
-            folioAceptacion: document.getElementById('folioAceptacion')?.value || '',
-            folioTermino: document.getElementById('folioTermino')?.value || '',
+            // ✅ MODIFICADO: Ahora obtiene los folios desde solicitudesAutorizacion
+            folioAceptacion: this.core.getFolioAceptacion(),
+            folioTermino: this.core.getFolioTermino(),
             fechaEntregaCarta: document.getElementById('fechaEntregaCarta')?.value || '',
             horasAsesor: parseFloat(document.getElementById('horasAsesor')?.value) || 0,
             horasServicioSocial: parseFloat(document.getElementById('horasServicioSocial')?.value) || 0,

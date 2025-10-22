@@ -96,8 +96,11 @@ class DetailModal {
         this.core.setElementValue('fechaInicio', ss.fechaInicio || '');
         this.core.setElementValue('fechaTermino', ss.fechaTermino || '');
         this.core.setElementValue('clavePrograma', ss.clavePrograma || '');
-        this.core.setElementValue('folioAceptacion', ss.folioAceptacion || '');
-        this.core.setElementValue('folioTermino', ss.folioTermino || '');
+        
+        // ✅ MODIFICADO: Ahora obtiene los folios desde solicitudesAutorizacion
+        this.core.setElementValue('folioAceptacion', this.core.getFolioAceptacion());
+        this.core.setElementValue('folioTermino', this.core.getFolioTermino());
+        
         this.core.setElementValue('fechaEntregaCarta', ss.fechaEntregaCarta || '');
         this.core.setElementValue('horasAsesor', ss.horasAsesor || 0);
         this.core.setElementValue('horasServicioSocial', ss.horasServicioSocial || 0);
