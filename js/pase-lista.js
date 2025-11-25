@@ -29,8 +29,11 @@ class PaseLista {
     // 🚨 CORREGIDO: Inicializar configuración mejorada
     async initializeConfiguration() {
         try {
+            // 🚨 NUEVO: Auto-detectar sala si no está configurada
+            await this.autoDetectSalaIfNeeded();
+
             const configSnapshot = await this.db.collection('configuracion').get();
-            
+
             if (configSnapshot.empty) {
                 // Solo crear si la colección está completamente vacía
                 await this.db.collection('configuracion').add({
@@ -47,7 +50,7 @@ class PaseLista {
                         tieneTipoBloque = true;
                     }
                 });
-                
+
                 if (!tieneTipoBloque) {
                     console.warn('⚠️ No se encontró campo tipoBloque en los documentos existentes');
                 } else {
@@ -56,6 +59,32 @@ class PaseLista {
             }
         } catch (error) {
             console.error('❌ Error inicializando configuración:', error);
+        }
+    }
+
+    // 🚨 NUEVO: Auto-detectar sala automáticamente si no está configurada
+    async autoDetectSalaIfNeeded() {
+        try {
+            // Verificar si ya hay configuración guardada
+            const ipConfigManual = localStorage.getItem('sica_ip_configurada');
+
+            if (ipConfigManual) {
+                console.log('✅ Configuración de sala ya existe:', ipConfigManual);
+                return;
+            }
+
+            // Si no hay configuración, intentar auto-detectar
+            console.log('🔍 No hay configuración de sala, intentando auto-detectar...');
+            const salaDetectada = await this.salaValidator.autoDetectAndConfigureIP();
+
+            if (salaDetectada) {
+                console.log('✅ Sala auto-configurada:', salaDetectada);
+            } else {
+                console.log('⚠️ No se pudo auto-detectar sala. Usa setSica1() o setSica2() en la consola.');
+            }
+
+        } catch (error) {
+            console.warn('⚠️ Error en auto-detección de sala:', error);
         }
     }
 

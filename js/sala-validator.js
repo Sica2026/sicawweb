@@ -176,35 +176,42 @@ class SalaValidator {
         }
     }
 
-    // WebRTC para obtener IP local - mejorado
+    // WebRTC para obtener IP local - mejorado para detectar IPs privadas
     getIPViaWebRTC() {
         return new Promise((resolve) => {
             console.log('🌐 Iniciando detección WebRTC...');
-            
+
             const pc = new RTCPeerConnection({
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' }
                 ]
             });
-            
+
             let foundIPs = new Set();
+            let foundPrivateIPs = new Set();
             let foundValidIP = null;
-            
+
             pc.onicecandidate = (ice) => {
                 if (!ice || !ice.candidate || !ice.candidate.candidate) return;
-                
+
                 const candidate = ice.candidate.candidate;
                 console.log('📋 Candidate encontrado:', candidate);
-                
+
                 // Buscar todas las IPs en el candidate
                 const ipMatches = candidate.match(/(\d+\.\d+\.\d+\.\d+)/g);
-                
+
                 if (ipMatches) {
                     ipMatches.forEach(ip => {
                         foundIPs.add(ip);
                         console.log('🔍 IP detectada:', ip);
-                        
+
+                        // Identificar IPs privadas (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+                        if (this.isPrivateIP(ip)) {
+                            foundPrivateIPs.add(ip);
+                            console.log('🏠 IP privada detectada:', ip);
+                        }
+
                         // Verificar si es una IP que reconocemos
                         if (this.ipToSala[ip] && !foundValidIP) {
                             foundValidIP = ip;
@@ -214,7 +221,7 @@ class SalaValidator {
                     });
                 }
             };
-            
+
             // Crear canal de datos y oferta
             pc.createDataChannel('test');
             pc.createOffer().then(offer => {
@@ -222,19 +229,51 @@ class SalaValidator {
             }).catch(err => {
                 console.warn('Error creando oferta WebRTC:', err);
             });
-            
+
             // Timeout más largo y logging detallado
             setTimeout(() => {
                 if (!foundValidIP) {
                     console.log('📊 Resumen WebRTC:');
-                    console.log('- IPs encontradas:', Array.from(foundIPs));
+                    console.log('- IPs totales encontradas:', Array.from(foundIPs));
+                    console.log('- IPs privadas encontradas:', Array.from(foundPrivateIPs));
                     console.log('- IPs válidas esperadas:', Object.keys(this.ipToSala));
-                    console.log('- Ninguna IP válida encontrada');
-                    resolve(null);
+
+                    // Si encontramos IPs privadas, devolver la primera que sea 192.168.x.x
+                    const localIP = Array.from(foundPrivateIPs).find(ip => ip.startsWith('192.168.'));
+                    if (localIP) {
+                        console.log('🔄 Devolviendo IP privada detectada:', localIP);
+                        resolve(localIP);
+                    } else {
+                        console.log('- Ninguna IP privada válida encontrada');
+                        resolve(null);
+                    }
                 }
                 pc.close();
             }, 5000); // Aumentar timeout a 5 segundos
         });
+    }
+
+    // Nuevo método: Verificar si una IP es privada
+    isPrivateIP(ip) {
+        const parts = ip.split('.');
+        if (parts.length !== 4) return false;
+
+        const first = parseInt(parts[0]);
+        const second = parseInt(parts[1]);
+
+        // 192.168.x.x
+        if (first === 192 && second === 168) return true;
+
+        // 10.x.x.x
+        if (first === 10) return true;
+
+        // 172.16.x.x - 172.31.x.x
+        if (first === 172 && second >= 16 && second <= 31) return true;
+
+        // Localhost
+        if (first === 127) return true;
+
+        return false;
     }
 
     // NUEVO: Override manual para testing
@@ -266,17 +305,28 @@ class SalaValidator {
             const hostname = window.location.hostname;
             const href = window.location.href;
             const pathname = window.location.pathname;
-            
+
             console.log('🌐 Analizando hostname:', hostname);
             console.log('🌐 URL completa:', href);
             console.log('🌐 Path:', pathname);
-            
+
             // 🚨 NUEVO: Si el hostname ES una IP directa, usarla
             if (this.ipToSala[hostname]) {
                 console.log('✅ Hostname es IP directa válida:', hostname);
                 return hostname;
             }
-            
+
+            // 🚨 PRIORIDAD #1: Configuración manual persistente (más confiable)
+            try {
+                const ipConfigManual = localStorage.getItem('sica_ip_configurada');
+                if (ipConfigManual && this.ipToSala[ipConfigManual]) {
+                    console.log('✅ IP configurada manualmente encontrada:', ipConfigManual, '→', this.ipToSala[ipConfigManual]);
+                    return ipConfigManual;
+                }
+            } catch (e) {
+                console.log('📱 localStorage no disponible');
+            }
+
             // 🚨 FIREBASE HOSTING: Detectar por parámetros URL
             const urlParams = new URLSearchParams(window.location.search);
             const salaParam = urlParams.get('sala');
@@ -288,7 +338,7 @@ class SalaValidator {
                 console.log('✅ Detectado SICA-2 por parámetro URL');
                 return '192.168.16.161';
             }
-            
+
             // 🚨 FIREBASE HOSTING: Detectar por localStorage de la máquina
             try {
                 const salaLocal = localStorage.getItem('sica_sala_local');
@@ -303,12 +353,12 @@ class SalaValidator {
             } catch (e) {
                 console.log('📱 localStorage no disponible');
             }
-            
+
             // 🚨 FIREBASE HOSTING: Detectar por hostname específico
-            if (hostname.includes('sica-e5c24.web.app')) {
+            if (hostname.includes('sica-a5c24.web.app') || hostname.includes('sica-e5c24.web.app')) {
                 // Para Firebase, intentar detectar por IP real de la máquina
                 console.log('🔥 Detectado Firebase Hosting, usando método alternativo');
-                
+
                 // Aquí podrías configurar una lógica específica
                 // Por ejemplo, si siempre acceden desde una URL específica por sala
                 if (href.includes('?sala=1') || href.includes('sica1')) {
@@ -317,7 +367,7 @@ class SalaValidator {
                 if (href.includes('?sala=2') || href.includes('sica2')) {
                     return '192.168.16.161';
                 }
-                
+
                 // Si no hay parámetros, intentar detectar por configuración previa
                 const lastSala = localStorage.getItem('sica_last_sala');
                 if (lastSala && this.ipToSala[lastSala]) {
@@ -325,32 +375,32 @@ class SalaValidator {
                     return lastSala;
                 }
             }
-            
+
             // Detección por patrones específicos de SICA
             if (href.includes('192.168.16.161')) {
                 console.log('✅ Detectada IP SICA-2 en URL');
                 return '192.168.16.161';
             }
-            
+
             if (href.includes('192.168.14.42')) {
                 console.log('✅ Detectada IP SICA-1 en URL');
                 return '192.168.14.42';
             }
-            
+
             // Buscar patrones en la URL que indiquen la sala
             if (href.includes('sica1') || href.includes('sica-1')) {
                 console.log('✅ Detectado patrón SICA-1 en URL');
                 return '192.168.14.42';
             }
-            
+
             if (href.includes('sica2') || href.includes('sica-2')) {
                 console.log('✅ Detectado patrón SICA-2 en URL');
                 return '192.168.16.161';
             }
-            
+
             console.log('⚠️ No se pudo determinar IP por hostname');
             return null;
-            
+
         } catch (error) {
             console.warn('Error analizando hostname:', error);
             return null;
@@ -706,12 +756,15 @@ class SalaValidator {
     // MÉTODOS DE CONFIGURACIÓN Y TESTING
     // ======================================
     
-    // Configurar IP manualmente para testing
+    // Configurar IP manualmente para testing y producción
     setManualIP(ip) {
         if (this.ipToSala[ip]) {
+            // Guardar en localStorage para persistencia
             localStorage.setItem('sica_manual_ip', ip);
+            localStorage.setItem('sica_ip_configurada', ip); // Nueva clave prioritaria
             window.SICA_MANUAL_IP = ip;
             console.log('✅ IP manual configurada:', ip, '→', this.ipToSala[ip]);
+            console.log('💾 Configuración guardada en localStorage - persistirá entre sesiones');
             return true;
         } else {
             console.error('❌ IP no válida:', ip);
@@ -720,11 +773,46 @@ class SalaValidator {
         }
     }
 
+    // NUEVO: Configurar automáticamente la IP detectada en la red local
+    async autoDetectAndConfigureIP() {
+        console.log('🔍 Intentando auto-detectar y configurar IP...');
+
+        // Intentar detectar IP privada vía WebRTC
+        const webrtcIP = await this.getIPViaWebRTC();
+        if (webrtcIP && webrtcIP.startsWith('192.168.')) {
+            console.log('🎯 IP privada detectada:', webrtcIP);
+
+            // Determinar a qué sala pertenece basándose en la subred
+            const ipParts = webrtcIP.split('.');
+            const subnet = `${ipParts[0]}.${ipParts[1]}.${ipParts[2]}`;
+
+            let salaDetectada = null;
+
+            if (subnet === '192.168.14') {
+                salaDetectada = 'SICA-1';
+                this.setManualIP('192.168.14.42'); // Configurar IP de SICA-1
+            } else if (subnet === '192.168.16') {
+                salaDetectada = 'SICA-2';
+                this.setManualIP('192.168.16.161'); // Configurar IP de SICA-2
+            }
+
+            if (salaDetectada) {
+                console.log('✅ Sala detectada automáticamente:', salaDetectada);
+                return salaDetectada;
+            }
+        }
+
+        console.log('⚠️ No se pudo auto-detectar la sala');
+        return null;
+    }
+
     // Limpiar configuración manual
     clearManualIP() {
         localStorage.removeItem('sica_manual_ip');
+        localStorage.removeItem('sica_ip_configurada');
         delete window.SICA_MANUAL_IP;
         console.log('🧹 Configuración manual eliminada');
+        console.log('⚠️ Recarga la página para que los cambios surtan efecto');
     }
 
     // Mostrar todas las IPs detectadas
@@ -963,6 +1051,16 @@ window.clearSicaIP = function() {
     }
 };
 
+// NUEVO: Configurar automáticamente basándose en la subred detectada
+window.autoConfigSica = async function() {
+    if (window.paseLista && window.paseLista.salaValidator) {
+        return await window.paseLista.salaValidator.autoDetectAndConfigureIP();
+    } else {
+        console.error('PaseLista no inicializado');
+        return null;
+    }
+};
+
 // Mostrar todas las IPs detectadas
 window.showAllIPs = async function() {
     if (window.paseLista && window.paseLista.salaValidator) {
@@ -1002,15 +1100,20 @@ window.testRealValidation = async function(numeroCuenta = '314302498') {
     }
 };
 
-console.log('🏢 SalaValidator cargado con funciones de testing:');
+console.log('🏢 SalaValidator cargado con funciones de configuración:');
 console.log('📋 Funciones disponibles:');
-console.log('- setSica1() → Configurar como SICA-1');
-console.log('- setSica2() → Configurar como SICA-2');
+console.log('- autoConfigSica() → 🆕 AUTO-DETECTAR Y CONFIGURAR SALA (Recomendado)');
+console.log('- setSica1() → Configurar manualmente como SICA-1');
+console.log('- setSica2() → Configurar manualmente como SICA-2');
 console.log('- setSicaIP("192.168.x.x") → Configurar IP específica');
 console.log('- clearSicaIP() → Limpiar configuración manual');
 console.log('- showAllIPs() → Mostrar todas las IPs detectadas');
-console.log('- testValidationScreen() → 🆕 Probar pantalla de validación');
-console.log('- testRealValidation() → 🆕 Probar validación real con pantalla');
+console.log('- testValidationScreen() → Probar pantalla de validación');
+console.log('- testRealValidation() → Probar validación real con pantalla');
+console.log('');
+console.log('💡 SOLUCIÓN RECOMENDADA para tu problema:');
+console.log('   Ejecuta en la consola: await autoConfigSica()');
+console.log('   Esto detectará automáticamente si estás en SICA-1 o SICA-2');
 
 // ======================================
 // EXPORTAR PARA USO GLOBAL
