@@ -122,46 +122,52 @@ async function loadAsesores() {
     const loadingState = document.getElementById('loadingState');
     const asesoresGrid = document.getElementById('asesoresGrid');
     const emptyState = document.getElementById('emptyState');
-    
+
     try {
         if (loadingState) loadingState.style.display = 'flex';
         if (asesoresGrid) asesoresGrid.innerHTML = '';
-        
-        // ✅ CARGAR SOLO ASESORES APROBADOS Y NO INACTIVOS
+
+        // ✅ CARGAR TODOS LOS ASESORES (no filtrar en la query)
         const snapshot = await gestionDB.collection('asesores')
-            .where('estado', '==', 'aprobado')
             .orderBy('fechaRegistro', 'desc')
             .get();
-        
+
         asesoresList = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            // ✅ FILTRAR EXPLÍCITAMENTE LOS INACTIVOS
-            if (data.estado !== 'inactivo') {
-                asesoresList.push({
-                    id: doc.id,
-                    ...data
-                });
-            }
+            asesoresList.push({
+                id: doc.id,
+                ...data
+            });
         });
-        
+
         if (loadingState) loadingState.style.display = 'none';
-        
-        if (asesoresList.length === 0) {
+
+        // ✅ APLICAR FILTRO POR DEFECTO: ACTIVOS (aprobados)
+        const filterSelect = document.getElementById('filterSelect');
+        if (filterSelect && !filterSelect.value) {
+            // Establecer "activo" como valor por defecto
+            filterSelect.value = 'activo';
+        }
+
+        // Filtrar solo aprobados para mostrar por defecto
+        const asesoresParaMostrar = asesoresList.filter(asesor => asesor.estado === 'aprobado');
+
+        if (asesoresParaMostrar.length === 0) {
             if (emptyState) emptyState.style.display = 'block';
             if (asesoresGrid) asesoresGrid.style.display = 'none';
         } else {
             if (emptyState) emptyState.style.display = 'none';
             if (asesoresGrid) asesoresGrid.style.display = 'grid';
-            renderAsesores(asesoresList);
+            renderAsesores(asesoresParaMostrar);
         }
-        
-        // Actualizar contador
+
+        // Actualizar contador (solo activos)
         const totalAsesoresElement = document.getElementById('totalAsesores');
         if (totalAsesoresElement) {
-            totalAsesoresElement.textContent = asesoresList.length;
+            totalAsesoresElement.textContent = asesoresParaMostrar.length;
         }
-        
+
     } catch (error) {
         console.error('Error cargando asesores:', error);
         if (loadingState) loadingState.style.display = 'none';
@@ -315,15 +321,36 @@ function handleSearch(event) {
 
 function handleFilter(event) {
     const filterValue = event.target.value;
-    
+
+    // ✅ MAPEO CORRECTO DE FILTROS A ESTADOS DE FIRESTORE
+    // "activos" en filtro = "aprobado" en Firestore
+    // "inactivos" en filtro = "inactivo" en Firestore
+    // "pendientes" en filtro = "pendiente" en Firestore
+
     if (filterValue === 'todos') {
         filteredAsesores = [...asesoresList];
+    } else if (filterValue === 'activo') {
+        // Mostrar solo aprobados
+        filteredAsesores = asesoresList.filter(asesor =>
+            asesor.estado === 'aprobado'
+        );
+    } else if (filterValue === 'inactivo') {
+        // Mostrar solo inactivos
+        filteredAsesores = asesoresList.filter(asesor =>
+            asesor.estado === 'inactivo'
+        );
+    } else if (filterValue === 'pendiente') {
+        // Mostrar solo pendientes
+        filteredAsesores = asesoresList.filter(asesor =>
+            asesor.estado === 'pendiente'
+        );
     } else {
-        filteredAsesores = asesoresList.filter(asesor => 
+        // Fallback al método anterior
+        filteredAsesores = asesoresList.filter(asesor =>
             getAsesorStatus(asesor) === filterValue
         );
     }
-    
+
     renderAsesores(filteredAsesores);
 }
 
