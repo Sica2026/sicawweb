@@ -167,27 +167,26 @@ class ConsultaHorariosManager {
     async loadCurrentConfig() {
         try {
             this.showLoading('Cargando configuración...');
-            
-            // Obtener configuración actual
-            const configSnapshot = await this.db.collection('configuracion').limit(1).get();
-            
-            if (!configSnapshot.empty) {
-                const configDoc = configSnapshot.docs[0];
-                this.currentTipoBloque = configDoc.data().tipoBloque || 'definitivo';
+
+            // Obtener configuración actual del documento específico
+            const configDoc = await this.db.collection('configuracion').doc('qkLlvrqIPsI7HEPKIhyh').get();
+
+            if (configDoc.exists) {
+                this.currentTipoBloque = configDoc.data().tipoBloque || 'bloque-1';
             } else {
-                this.currentTipoBloque = 'definitivo'; // Valor por defecto
+                this.currentTipoBloque = 'bloque-1'; // Valor por defecto
             }
-            
+
             console.log('📋 Tipo de bloque actual:', this.currentTipoBloque);
-            
+
             // Cargar asesores
             await this.loadAsesores();
-            
+
             this.hideLoading();
-            
+
         } catch (error) {
             console.error('❌ Error cargando configuración:', error);
-            this.currentTipoBloque = 'definitivo'; // Fallback
+            this.currentTipoBloque = 'bloque-1'; // Fallback
             await this.loadAsesores();
             this.hideLoading();
         }
