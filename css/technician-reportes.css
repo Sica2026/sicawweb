@@ -1,0 +1,583 @@
+/* =====================================================================
+   TECHNICIAN REPORTES STYLES
+   ===================================================================== */
+
+/* Control Panel */
+.control-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.control-panel .btn,
+.control-panel .form-control,
+.control-panel .form-select {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.control-panel .form-control:focus,
+.control-panel .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+/* Reports Container */
+.reports-container {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 500px;
+}
+
+/* Salas Grid Layout */
+.salas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.sala-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.sala-card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+}
+
+/* Sala Header */
+.sala-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sala-header h5 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.sala-header .estado-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.sala-header .estado-badge.operativa {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: rgba(34, 197, 94, 0.6);
+}
+
+.sala-header .estado-badge.mantenimiento {
+    background: rgba(249, 115, 22, 0.3);
+    border-color: rgba(249, 115, 22, 0.6);
+}
+
+.sala-header .estado-badge.problemas {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+
+/* Sala Body */
+.sala-body {
+    padding: 20px;
+}
+
+/* Sala Stats */
+.sala-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stat-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+}
+
+.stat-item.urgentes:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+.stat-item.pendientes:hover {
+    background: #fef3c7;
+    border-color: #fcd34d;
+}
+
+.stat-item.resueltos:hover {
+    background: #dcfce7;
+    border-color: #bbf7d0;
+}
+
+.stat-item.servicios:hover {
+    background: #e0e7ff;
+    border-color: #c7d2fe;
+}
+
+.stat-item .stat-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-item .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.stat-item.urgentes .stat-value {
+    color: #dc2626;
+}
+
+.stat-item.pendientes .stat-value {
+    color: #d97706;
+}
+
+.stat-item.resueltos .stat-value {
+    color: #16a34a;
+}
+
+.stat-item.servicios .stat-value {
+    color: #667eea;
+}
+
+/* Sala Categories */
+.sala-categories {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.categoria-box {
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.categoria-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.categoria-box.software {
+    border-color: #0284c7;
+}
+
+.categoria-box.software:hover {
+    background: #dbeafe;
+    border-color: #0284c7;
+}
+
+.categoria-box.hardware {
+    border-color: #be185d;
+}
+
+.categoria-box.hardware:hover {
+    background: #fce7f3;
+    border-color: #be185d;
+}
+
+.categoria-box .categoria-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.categoria-box .categoria-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.categoria-box .categoria-count {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.categoria-box.software .categoria-count {
+    color: #0284c7;
+}
+
+.categoria-box.hardware .categoria-count {
+    color: #be185d;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.loading-state .spinner-border {
+    width: 40px;
+    height: 40px;
+}
+
+.loading-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.empty-state .empty-icon {
+    font-size: 64px;
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    color: #374151;
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.empty-state p {
+    color: #9ca3af;
+    margin: 0 0 20px 0;
+    font-size: 14px;
+}
+
+/* Form Styles */
+.modal-body {
+    padding: 24px;
+}
+
+.modal-body .form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.modal-body .form-control,
+.modal-body .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.modal-body .form-control::placeholder {
+    color: #9ca3af;
+}
+
+/* Modal Header */
+.modal-header {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 20px 24px;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 16px;
+}
+
+/* Modal Footer */
+.modal-footer {
+    border-top: 1px solid #e5e7eb;
+    padding: 16px 24px;
+    background: #f9fafb;
+}
+
+.modal-footer .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modal-footer .btn-secondary {
+    background: white;
+    border: 1px solid #d1d5db;
+    color: #374151;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.modal-footer .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #764ba2);
+    border: none;
+    color: white;
+}
+
+.modal-footer .btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Details Modal */
+#detailsContent {
+    padding: 20px 0;
+}
+
+#detailsContent .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+#detailsContent .detail-row:last-child {
+    border-bottom: none;
+}
+
+#detailsContent .detail-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+#detailsContent .detail-value {
+    color: #6b7280;
+    text-align: right;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .salas-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .control-panel {
+        padding: 15px;
+    }
+
+    .control-panel .row {
+        gap: 10px !important;
+    }
+
+    .control-panel .col-md-4 {
+        flex: 1;
+    }
+
+    .salas-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .control-panel .row {
+        flex-direction: column;
+    }
+
+    .control-panel .col-md-4 {
+        flex: 1 1 100%;
+    }
+
+    .salas-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .sala-card {
+        border-radius: 10px;
+    }
+
+    .sala-header {
+        padding: 14px 16px;
+    }
+
+    .sala-header h5 {
+        font-size: 16px;
+    }
+
+    .sala-body {
+        padding: 16px;
+    }
+
+    .modal-dialog {
+        margin: 10px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-header,
+    .modal-footer {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .control-panel {
+        padding: 12px;
+    }
+
+    .reports-container {
+        padding: 12px;
+    }
+
+    .salas-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .sala-card {
+        border-radius: 8px;
+    }
+
+    .sala-header {
+        padding: 12px 14px;
+    }
+
+    .sala-header h5 {
+        font-size: 15px;
+    }
+
+    .sala-body {
+        padding: 12px;
+    }
+
+    .sala-stats {
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+    }
+
+    .stat-item {
+        padding: 10px;
+    }
+
+    .stat-item .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-item .stat-value {
+        font-size: 20px;
+    }
+
+    .sala-categories {
+        gap: 10px;
+    }
+
+    .categoria-box {
+        padding: 10px;
+    }
+
+    .categoria-box .categoria-icon {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+
+    .categoria-box .categoria-name {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .categoria-box .categoria-count {
+        font-size: 18px;
+    }
+
+    .empty-state .empty-icon {
+        font-size: 48px;
+    }
+
+    .empty-state h3 {
+        font-size: 16px;
+    }
+
+    .empty-state p {
+        font-size: 12px;
+    }
+}
+
+/* Utility Classes */
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Success/Error States */
+.form-control.is-invalid {
+    border-color: #dc2626;
+}
+
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.invalid-feedback {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}

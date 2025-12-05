@@ -36,17 +36,17 @@
                         <!-- Header con logo UNAM -->
                         <div class="login-header">
                             <div class="logo-container">
-                                <div class="logo-circle">
+                                <div class="logo-circle" id="headerIcon">
                                     <i class="bi bi-shield-lock-fill"></i>
                                 </div>
                                 <div class="logo-glow"></div>
                             </div>
-                            <h1 class="login-title">Acceso Administrador</h1>
-                            <p class="login-subtitle">Sistema SICA - UNAM</p>
+                            <h1 class="login-title" id="headerTitle">Acceso Administrador</h1>
+                            <p class="login-subtitle" id="headerSubtitle">Sistema SICA - UNAM</p>
                         </div>
 
-                        <!-- Formulario -->
-                        <div class="login-body">
+                        <!-- Formulario Administrador -->
+                        <div class="login-body" id="adminForm" style="display: block;">
                             <form id="loginForm" class="login-form">
                                 <!-- Campo Email -->
                                 <div class="form-group">
@@ -54,10 +54,10 @@
                                         <div class="input-icon">
                                             <i class="bi bi-envelope-fill"></i>
                                         </div>
-                                        <input 
-                                            type="email" 
-                                            id="email" 
-                                            class="form-input" 
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            class="form-input"
                                             placeholder="Correo electrónico"
                                             required
                                             autocomplete="email"
@@ -72,10 +72,10 @@
                                         <div class="input-icon">
                                             <i class="bi bi-lock-fill"></i>
                                         </div>
-                                        <input 
-                                            type="password" 
-                                            id="password" 
-                                            class="form-input" 
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            class="form-input"
                                             placeholder="Contraseña"
                                             required
                                             autocomplete="current-password"
@@ -115,9 +115,74 @@
                             </form>
                         </div>
 
+                        <!-- Formulario Técnico (Oculto por defecto) -->
+                        <div class="login-body" id="technicianForm" style="display: none;">
+                            <form id="technicianLoginForm" class="login-form">
+                                <!-- Campo Usuario -->
+                                <div class="form-group">
+                                    <div class="input-container">
+                                        <div class="input-icon">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="techUsername"
+                                            class="form-input"
+                                            placeholder="Usuario"
+                                            required
+                                            autocomplete="username"
+                                        >
+                                        <div class="input-line"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Campo Password -->
+                                <div class="form-group">
+                                    <div class="input-container">
+                                        <div class="input-icon">
+                                            <i class="bi bi-lock-fill"></i>
+                                        </div>
+                                        <input
+                                            type="password"
+                                            id="techPassword"
+                                            class="form-input"
+                                            placeholder="Contraseña"
+                                            required
+                                            autocomplete="current-password"
+                                        >
+                                        <button type="button" class="password-toggle" id="techPasswordToggle">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </button>
+                                        <div class="input-line"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Botón de login técnico -->
+                                <div class="form-group">
+                                    <button type="submit" class="login-btn tech-btn" id="techLoginBtn">
+                                        <span class="btn-text">Acceso Técnico</span>
+                                        <div class="btn-loader">
+                                            <div class="spinner"></div>
+                                        </div>
+                                        <div class="btn-success">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <!-- Botón para volver al admin -->
+                                <div class="form-group">
+                                    <button type="button" class="back-to-admin-btn" id="backToAdminBtn">
+                                        <i class="bi bi-arrow-left me-2"></i>
+                                        Volver al Acceso Administrador
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
                         <!-- Footer -->
                         <div class="login-footer">
-                            <p class="footer-text">
+                            <p class="footer-text" id="footerText">
                                 <i class="bi bi-shield-check me-2"></i>
                                 Acceso seguro protegido por Firebase
                             </p>
@@ -154,5 +219,23 @@
     
     <!-- Login JS -->
     <script src="../js/admin-login.js"></script>
+
+    <!-- ✅ SCRIPT PARA ACTIVAR MODO TÉCNICO SI VIENE CON #tecnico -->
+    <script>
+        // Detectar si la página fue abierta con #tecnico (desde Alt+T en otra página)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.hash === '#tecnico') {
+                console.log('📍 Detectado parámetro #tecnico - Activando modo técnico automáticamente');
+
+                // Esperar a que se carguen los elementos del DOM
+                setTimeout(() => {
+                    if (typeof toggleTechnicianMode === 'function') {
+                        toggleTechnicianMode();
+                        console.log('✅ Modo técnico activado automáticamente');
+                    }
+                }, 500);
+            }
+        });
+    </script>
 </body>
 </html>

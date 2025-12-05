@@ -1,0 +1,106 @@
+// =====================================================================
+// FIRESTORE SECURITY RULES FOR TECHNICIAN REPORTS
+// =====================================================================
+// Add these rules to your Firestore Security Rules in Firebase Console
+// (Project Settings > Rules tab)
+
+// Add this to your existing rules:
+
+match /reportes/{document=**} {
+  // Allow any authenticated user to read reports
+  allow read: if request.auth != null;
+
+  // Allow technicians to create reports
+  allow create: if request.auth != null ||
+                   (exists(/databases/$(database)/documents/tecnico/$(request.auth.uid)));
+
+  // Allow users to update their own reports
+  allow update: if request.auth != null;
+
+  // Allow technicians to delete their own reports
+  allow delete: if request.auth != null;
+}
+
+// Alternative: More open rules (for development - use with caution in production)
+match /reportes/{document=**} {
+  allow read, write: if true;
+}
+
+// =====================================================================
+// EXPECTED FIRESTORE COLLECTION STRUCTURE
+// =====================================================================
+
+Collection: reportes
+  Documents will be auto-created with these fields:
+  {
+    fecha: string (YYYY-MM-DD),
+    sala: string (e.g., "Sica 1", "Salon inteligente 2"),
+    salon: string (e.g., "A101"),
+    urgencia: string (Urgente, Moderado, Normal),
+    categoria: string (Software, Hardware),
+    subcategoria: string (e.g., "Activación de Office", "Teclado"),
+    especificar: string (optional - for "Otros" options),
+    descripcion: string (problem description),
+    tecnico: string (technician name),
+    tecnicoId: string (technician ID from session),
+    fechaCreacion: timestamp (server-generated),
+    fechaActualizacion: timestamp (server-generated)
+  }
+
+// =====================================================================
+// DATA VALIDATION NOTES
+// =====================================================================
+
+1. The fecha field stores today's date in YYYY-MM-DD format
+2. The dashboard filters reports WHERE fecha == TODAY
+3. Only reports from "today" are displayed in the table
+4. Stats on the home page are also filtered by today's date only
+5. When updating reports, fechaActualizacion is auto-updated to server timestamp
+
+// =====================================================================
+// ADDING THESE RULES TO FIREBASE
+// =====================================================================
+
+1. Go to Firebase Console: https://console.firebase.google.com
+2. Select your project: sica-a5c24
+3. Go to Firestore Database
+4. Click on "Rules" tab
+5. Replace the existing rules with:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Admin and Technician logins
+    match /admin_logins/{document=**} {
+      allow create: if true;
+      allow read: if request.auth != null;
+    }
+
+    match /technician_logins/{document=**} {
+      allow create: if true;
+      allow read: if request.auth != null;
+    }
+
+    // Technician collection
+    match /tecnico/{document=**} {
+      allow read, list: if request.query.limit <= 1;
+      allow write: if request.auth != null;
+    }
+
+    // Reports collection
+    match /reportes/{document=**} {
+      allow read: if request.auth != null || true;  // Allow reading
+      allow create: if true;  // Allow creating new reports
+      allow update: if true;  // Allow updating reports
+      allow delete: if true;  // Allow deleting reports
+    }
+
+    // Other existing collections...
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+6. Click "Publish"
+7. Done! Rules are now active

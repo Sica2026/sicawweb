@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Reports Page</title>
+</head>
+<body>
+    <h1>Testing Reports Implementation</h1>
+    <p>Check the browser console for any errors</p>
+    
+    <script>
+        // Test the structure
+        console.log('🧪 Testing reports implementation...');
+        
+        // Check if reportEquipo is the correct field
+        const testForm = {
+            fecha: '2024-12-04',
+            sala: 'Sica 1',
+            equipo: 'PC-001',  // Changed from salon to equipo
+            urgencia: 'Urgente',
+            categoria: 'Software',
+            subcategoria: 'Activación de Office',
+            especificar: '',
+            descripcion: 'Test description',
+            tecnico: 'Test Tech'
+        };
+        
+        console.log('✅ Form structure:', testForm);
+        
+        // Test SALAS array
+        const SALAS = ['Sica 1', 'Sica 2', 'Sica 3', 'Sica 4', 'Salon inteligente 1', 'Salon inteligente 2'];
+        console.log('✅ SALAS defined:', SALAS);
+        
+        // Test subcategories
+        const subcategorias = {
+            'Software': [
+                'Activación de Office',
+                'Activación de Windows',
+                'Solicitud de nuevos programas',
+                'ANSYS',
+                'Otros - Especificar'
+            ],
+            'Hardware': [
+                'Teclado',
+                'Pantalla',
+                'Fuente',
+                'Red',
+                'Mouse',
+                'Disco',
+                'RAM',
+                'Otros - Especificar'
+            ]
+        };
+        console.log('✅ Subcategories defined:', Object.keys(subcategorias));
+    </script>
+</body>
+</html>

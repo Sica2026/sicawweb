@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Técnico - SICA</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Technician Dashboard CSS -->
+    <link href="../css/technician-dashboard.css" rel="stylesheet">
+    <!-- Technician Reportes CSS -->
+    <link href="../css/technician-reportes.css" rel="stylesheet">
+</head>
+<body>
+    <div class="technician-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <!-- Header del Sidebar -->
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <i class="bi bi-gear-fill"></i>
+                    <span class="brand-text">SICA Técnico</span>
+                </div>
+                <button class="sidebar-toggle d-lg-none" id="sidebarToggle">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- User Info -->
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="user-details">
+                    <h6 class="user-name" id="technicianName">Técnico</h6>
+                    <small class="user-role">Personal Técnico</small>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link active" data-section="inicio">
+                            <i class="bi bi-house-fill"></i>
+                            <span class="nav-text">Inicio</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link" data-section="reportes">
+                            <i class="bi bi-file-text-fill"></i>
+                            <span class="nav-text">Reportes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link" data-section="inventario">
+                            <i class="bi bi-box-fill"></i>
+                            <span class="nav-text">Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link" data-section="mapas">
+                            <i class="bi bi-map-fill"></i>
+                            <span class="nav-text">Mapas</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Logout Button -->
+            <div class="sidebar-footer">
+                <button class="btn btn-logout w-100" id="logoutBtn">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navigation Bar -->
+            <nav class="top-navbar">
+                <div class="navbar-content">
+                    <button class="navbar-toggle d-lg-none" id="sidebarToggleMobile">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h2 class="page-title" id="pageTitle">Inicio</h2>
+                    <div class="navbar-actions">
+                        <button class="btn-icon" title="Notificaciones">
+                            <i class="bi bi-bell-fill"></i>
+                            <span class="badge">0</span>
+                        </button>
+                        <div class="divider"></div>
+                        <button class="btn-profile" id="profileBtn">
+                            <i class="bi bi-person-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Sección Inicio -->
+                <section id="section-inicio" class="section active">
+                    <div class="section-header">
+                        <h1>Bienvenido al Panel Técnico</h1>
+                        <p class="text-muted">Resumen de actividades del día</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                                    <i class="bi bi-file-text"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h6 class="stat-label">Reportes Hoy</h6>
+                                    <h2 class="stat-number" id="todayReports">0</h2>
+                                    <small class="stat-change positive">+0 desde ayer</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h6 class="stat-label">Pendientes</h6>
+                                    <h2 class="stat-number" id="pendingReports">0</h2>
+                                    <small class="stat-change warning">Requieren atención</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h6 class="stat-label">Completados</h6>
+                                    <h2 class="stat-number" id="completedReports">0</h2>
+                                    <small class="stat-change positive">Bien hecho</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+                                    <i class="bi bi-tools"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h6 class="stat-label">En Progreso</h6>
+                                    <h2 class="stat-number" id="inProgressReports">0</h2>
+                                    <small class="stat-change">Trabajando en ello</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log -->
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="card activity-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-clock-history me-2"></i>
+                                        Actividad Reciente
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="activity-list" id="activityList">
+                                        <div class="activity-item">
+                                            <div class="activity-icon pending">
+                                                <i class="bi bi-file-text"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-title">Nuevo reporte creado</p>
+                                                <small class="activity-time">Hace 2 horas</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon completed">
+                                                <i class="bi bi-check-circle"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-title">Reporte completado</p>
+                                                <small class="activity-time">Hace 4 horas</small>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item">
+                                            <div class="activity-icon in-progress">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <p class="activity-title">Reporte en progreso</p>
+                                                <small class="activity-time">Hace 6 horas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card quick-actions-card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-lightning-fill me-2"></i>
+                                        Acciones Rápidas
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary">
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                            Nuevo Reporte
+                                        </button>
+                                        <button class="btn btn-outline-primary">
+                                            <i class="bi bi-eye me-2"></i>
+                                            Ver Todos los Reportes
+                                        </button>
+                                        <button class="btn btn-outline-primary">
+                                            <i class="bi bi-box me-2"></i>
+                                            Verificar Inventario
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sección Reportes -->
+                <section id="section-reportes" class="section">
+                    <div class="section-header mb-4">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h1>Gestión de Reportes</h1>
+                                <p class="text-muted">Reportes organizados por sala y categoría</p>
+                            </div>
+                            <button class="btn btn-primary" id="newReportBtn">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Nuevo Reporte
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Control Panel -->
+                    <div class="control-panel mb-4">
+                        <input type="text" class="form-control" id="reportSearchInput" placeholder="Buscar en reportes...">
+                    </div>
+
+                    <!-- Salas Grid -->
+                    <div class="salas-grid" id="salasGrid">
+                        <!-- Se llenarán dinámicamente con JavaScript -->
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="loading-state" id="reportsLoadingState">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando reportes...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Cargando reportes...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-state" id="reportsEmptyState" style="display: none;">
+                        <div class="empty-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <h3>No hay reportes</h3>
+                        <p>Comienza creando tu primer reporte técnico</p>
+                        <button class="btn btn-primary" id="emptyStateNewBtn">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Crear Reporte
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Sección Inventario (Por ahora vacía) -->
+                <section id="section-inventario" class="section">
+                    <div class="section-header">
+                        <h1>Inventario</h1>
+                        <p class="text-muted">Esta sección se habilitará pronto</p>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Próximamente:</strong> La gestión de inventario estará disponible aquí.
+                    </div>
+                </section>
+
+                <!-- Sección Mapas (Por ahora vacía) -->
+                <section id="section-mapas" class="section">
+                    <div class="section-header">
+                        <h1>Mapas</h1>
+                        <p class="text-muted">Esta sección se habilitará pronto</p>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Próximamente:</strong> Visualización de mapas disponible aquí.
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Crear/Editar Reporte -->
+    <div class="modal fade" id="reportModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportModalTitle">
+                        <i class="bi bi-file-earmark-plus me-2"></i>
+                        Nuevo Reporte
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportForm">
+                        <!-- Fecha -->
+                        <div class="mb-3">
+                            <label for="reportFecha" class="form-label">Fecha de Inicio</label>
+                            <input type="date" class="form-control" id="reportFecha" required>
+                        </div>
+
+                        <!-- Sala -->
+                        <div class="mb-3">
+                            <label for="reportSala" class="form-label">Sala</label>
+                            <select class="form-select" id="reportSala" required>
+                                <option value="">Seleccionar sala...</option>
+                                <option value="Sica 1">Sica 1</option>
+                                <option value="Sica 2">Sica 2</option>
+                                <option value="Sica 3">Sica 3</option>
+                                <option value="Sica 4">Sica 4</option>
+                                <option value="Salon inteligente 1">Salón Inteligente 1</option>
+                                <option value="Salon inteligente 2">Salón Inteligente 2</option>
+                            </select>
+                        </div>
+
+                        <!-- Equipo -->
+                        <div class="mb-3">
+                            <label for="reportEquipo" class="form-label">Equipo</label>
+                            <input type="text" class="form-control" id="reportEquipo" placeholder="Ej: PC-001, PC-002, etc.">
+                        </div>
+
+                        <!-- Nivel de Urgencia -->
+                        <div class="mb-3">
+                            <label for="reportUrgencia" class="form-label">Nivel de Urgencia</label>
+                            <select class="form-select" id="reportUrgencia" required>
+                                <option value="">Seleccionar urgencia...</option>
+                                <option value="Urgente">Urgente</option>
+                                <option value="Moderado">Moderado</option>
+                                <option value="Normal">Normal</option>
+                            </select>
+                        </div>
+
+                        <!-- Categoría -->
+                        <div class="mb-3">
+                            <label for="reportCategoria" class="form-label">Categoría</label>
+                            <select class="form-select" id="reportCategoria" required>
+                                <option value="">Seleccionar categoría...</option>
+                                <option value="Software">Software</option>
+                                <option value="Hardware">Hardware</option>
+                            </select>
+                        </div>
+
+                        <!-- Subcategoría -->
+                        <div class="mb-3">
+                            <label for="reportSubcategoria" class="form-label">Subcategoría</label>
+                            <select class="form-select" id="reportSubcategoria" required>
+                                <option value="">Seleccionar subcategoría...</option>
+                            </select>
+                        </div>
+
+                        <!-- Especificar (si aplica) -->
+                        <div class="mb-3" id="especificarContainer" style="display: none;">
+                            <label for="reportEspecificar" class="form-label">Especificar</label>
+                            <input type="text" class="form-control" id="reportEspecificar" placeholder="Describe con más detalle...">
+                        </div>
+
+                        <!-- Descripción del Problema -->
+                        <div class="mb-3">
+                            <label for="reportDescripcion" class="form-label">Descripción del Problema</label>
+                            <textarea class="form-control" id="reportDescripcion" rows="4" placeholder="Detalla el problema que encontraste..." required></textarea>
+                        </div>
+
+                        <!-- Técnico (Auto-filled, readonly) -->
+                        <div class="mb-3">
+                            <label for="reportTecnico" class="form-label">Técnico Responsable</label>
+                            <input type="text" class="form-control" id="reportTecnico" readonly>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveReportBtn">
+                        <i class="bi bi-save me-2"></i>Guardar Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ver Detalles -->
+    <div class="modal fade" id="reportDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        Detalles del Reporte
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailsContent">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="editDetailsBtn">
+                        <i class="bi bi-pencil me-2"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+    <!-- Technician Dashboard JS -->
+    <script src="../js/technician-dashboard.js"></script>
+    <!-- Technician Reportes JS -->
+    <script src="../js/technician-reportes.js"></script>
+</body>
+</html>

@@ -612,12 +612,112 @@ body {
     .login-header {
         padding: 1.5rem 1rem;
     }
-    
+
     .login-body {
         padding: 1.5rem 1rem;
     }
-    
+
     .login-footer {
         padding: 1rem;
     }
+}
+
+/* =====================================================================
+   ESTILOS PARA MODO TÉCNICO (Alt + T)
+   ===================================================================== */
+
+/* Transición suave entre formularios */
+.login-body {
+    animation: fadeIn 0.5s ease-out;
+    transition: opacity 0.3s ease, display 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Cambios en header para modo técnico */
+.login-card.technician-mode .login-header {
+    background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 100%);
+}
+
+.login-card.technician-mode .logo-circle {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: #1a472a;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+}
+
+.login-card.technician-mode .logo-glow {
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.3), transparent);
+}
+
+.login-card.technician-mode .login-card::before {
+    background: linear-gradient(90deg, #1a472a, #10b981, #2d5a3d);
+}
+
+/* Botón para técnico */
+.tech-btn {
+    background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #10b981 100%) !important;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3) !important;
+}
+
+.tech-btn:hover {
+    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4) !important;
+}
+
+.tech-btn.success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+/* Botón para volver al admin */
+.back-to-admin-btn {
+    width: 100%;
+    padding: 0.75rem 2rem;
+    background: rgba(26, 71, 42, 0.1);
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    color: #2d5a3d;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-to-admin-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.6);
+    color: #1a472a;
+}
+
+/* Input icon color para técnico */
+.login-card.technician-mode .form-input:focus ~ .input-icon,
+.login-card.technician-mode .form-input:not(:placeholder-shown) ~ .input-icon {
+    color: #10b981;
+}
+
+.login-card.technician-mode .input-line::after {
+    background: linear-gradient(90deg, #1a472a, #10b981);
+}
+
+/* Línea superior del header */
+.login-card.technician-mode::before {
+    background: linear-gradient(90deg, #1a472a, #10b981, #2d5a3d);
+}
+
+/* Estilos en modo oscuro */
+[data-theme="dark"] .back-to-admin-btn {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+[data-theme="dark"] .back-to-admin-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.8);
 }
