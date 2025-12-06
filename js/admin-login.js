@@ -556,11 +556,12 @@ async function handleTechnicianLogin(e) {
             nombre: techData.nombre || username,
             id: techDoc.id,
             rol: techData.rol || 'tecnico',
+            salasAsignadas: techData.salasAsignadas || [],  // NUEVO: Salas asignadas
             loginTime: new Date().toISOString()
         };
 
         sessionStorage.setItem('technicianSession', JSON.stringify(techSession));
-        console.log('📋 Sesión técnica creada');
+        console.log('📋 Sesión técnica creada con salas:', techSession.salasAsignadas);
 
         // Mostrar estado de éxito
         setButtonState(techLoginBtn, 'success');

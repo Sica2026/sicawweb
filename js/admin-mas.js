@@ -136,12 +136,26 @@ class AdminMasManager {
         'info',
         'bi-file-earmark-check'
     );
-    
+
     setTimeout(() => {
         window.location.href = 'departamentales.html';
         console.log('📝 Navegando a exámenes departamentales...');
     }, 1000);
 }
+
+    async navigateToTecnicos() {
+        this.showNotification(
+            'Gestión de Técnicos',
+            'Accediendo al módulo de administración de técnicos...',
+            'success',
+            'bi-tools'
+        );
+
+        setTimeout(() => {
+            window.location.href = 'gestion-tecnicos.html';
+            console.log('🔧 Navegando a gestión de técnicos...');
+        }, 1000);
+    }
 
     async handleMainAction(action, card) {
         try {
@@ -173,7 +187,11 @@ class AdminMasManager {
                 case 'departamentales':
                     await this.navigateToDepartamentales();
                     break;
-                    
+
+                case 'tecnicos':
+                    await this.navigateToTecnicos();
+                    break;
+
                 default:
                     console.warn(`❓ Acción no reconocida: ${action}`);
                     this.showNotification('Función en desarrollo', 'info');

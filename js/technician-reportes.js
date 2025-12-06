@@ -8,7 +8,18 @@ let filteredReportes = [];
 let currentReporte = null;
 let editingMode = false;
 
-// Salas configuration
+// Salas configuration - Se obtienen de la sesión del técnico
+function getSalasDisponibles() {
+    const session = getTechnicianSession();
+    if (session && session.salasAsignadas && session.salasAsignadas.length > 0) {
+        console.log('🏢 Salas asignadas al técnico:', session.salasAsignadas);
+        return session.salasAsignadas;
+    }
+    // Si no hay salas asignadas, mostrar todas (compatibilidad)
+    console.warn('⚠️ Técnico sin salas asignadas, mostrando todas');
+    return ['Sica 1', 'Sica 2', 'Sica 3', 'Sica 4', 'Salon inteligente 1', 'Salon inteligente 2'];
+}
+
 const SALAS = ['Sica 1', 'Sica 2', 'Sica 3', 'Sica 4', 'Salon inteligente 1', 'Salon inteligente 2'];
 
 // Subcategories mapping
@@ -98,6 +109,7 @@ function openNewReportModal() {
     `;
 
     setDefaultDate();
+    fillSalasSelector();  // NUEVO: Llenar selector con salas asignadas
     document.getElementById('reportSubcategoria').innerHTML = '<option value="">Seleccionar subcategoría...</option>';
     document.getElementById('especificarContainer').style.display = 'none';
     fillTechnicianName();
@@ -106,6 +118,26 @@ function openNewReportModal() {
     modal.show();
 
     console.log('📝 New report modal opened');
+}
+
+function fillSalasSelector() {
+    const salasPermitidas = getSalasDisponibles();
+    const salaSelect = document.getElementById('reportSala');
+
+    if (!salaSelect) return;
+
+    // Limpiar opciones existentes
+    salaSelect.innerHTML = '<option value="">Seleccionar sala...</option>';
+
+    // Agregar solo las salas asignadas al técnico
+    salasPermitidas.forEach(sala => {
+        const option = document.createElement('option');
+        option.value = sala;
+        option.textContent = sala;
+        salaSelect.appendChild(option);
+    });
+
+    console.log('🏢 Selector de salas actualizado con:', salasPermitidas);
 }
 
 function openEditReportModal(reporte) {
@@ -117,6 +149,7 @@ function openEditReportModal(reporte) {
         Editar Reporte
     `;
 
+    fillSalasSelector();  // NUEVO: Llenar selector con salas asignadas
     fillReportForm(reporte);
 
     const modal = new bootstrap.Modal(document.getElementById('reportModal'));
@@ -588,7 +621,10 @@ function renderSalasGrid() {
 
     let html = '';
 
-    SALAS.forEach(sala => {
+    // Usar salas asignadas del técnico en lugar de todas las salas
+    const salasPermitidas = getSalasDisponibles();
+
+    salasPermitidas.forEach(sala => {
         const reportesSala = filteredReportes.filter(r => r.sala === sala);
 
         if (reportesSala.length > 0) {
