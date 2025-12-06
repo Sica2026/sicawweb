@@ -72,7 +72,13 @@ function setupReportesEventListeners() {
 
     // Details Modal
     const editDetailsBtn = document.getElementById('editDetailsBtn');
+    const resolveDetailsBtn = document.getElementById('resolveDetailsBtn');
     if (editDetailsBtn) editDetailsBtn.addEventListener('click', editFromDetails);
+    if (resolveDetailsBtn) resolveDetailsBtn.addEventListener('click', openResolveModal);
+
+    // Resolve Modal
+    const confirmResolveBtn = document.getElementById('confirmResolveBtn');
+    if (confirmResolveBtn) confirmResolveBtn.addEventListener('click', handleResolveReport);
 
     console.log('🎧 Reportes event listeners configured');
 }
@@ -121,8 +127,17 @@ function openEditReportModal(reporte) {
 
 function openDetailsModal(reporte) {
     const detailsContent = document.getElementById('detailsContent');
+    const resolveBtn = document.getElementById('resolveDetailsBtn');
 
     detailsContent.innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Estado</span>
+            <span class="detail-value">
+                ${reporte.resuelto ?
+                    '<span class="badge bg-success">✓ RESUELTO</span>' :
+                    '<span class="badge bg-warning text-dark">⏳ PENDIENTE</span>'}
+            </span>
+        </div>
         <div class="detail-row">
             <span class="detail-label">Fecha</span>
             <span class="detail-value">${formatDate(reporte.fecha)}</span>
@@ -158,14 +173,45 @@ function openDetailsModal(reporte) {
             </span>
         </div>
         <div class="detail-row">
-            <span class="detail-label">Técnico</span>
+            <span class="detail-label">Técnico Asignado</span>
             <span class="detail-value">${reporte.tecnico}</span>
         </div>
         <div class="detail-row">
-            <span class="detail-label">Descripción</span>
+            <span class="detail-label">Descripción del Problema</span>
             <span class="detail-value">${reporte.descripcion}</span>
         </div>
+        ${reporte.resuelto ? `
+        <hr style="margin: 20px 0; border-color: #22c55e;">
+        <h6 style="color: #22c55e; margin-bottom: 15px;">
+            <i class="bi bi-check-circle-fill me-2"></i>Información de Resolución
+        </h6>
+        <div class="detail-row">
+            <span class="detail-label">Fecha de Resolución</span>
+            <span class="detail-value">${formatDate(reporte.fechaResolucion)}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Resuelto Por</span>
+            <span class="detail-value">${reporte.resueltoPor || 'N/A'}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Solución Aplicada</span>
+            <span class="detail-value">${reporte.solucion || 'N/A'}</span>
+        </div>
+        ${reporte.notasResolucion ? `
+        <div class="detail-row">
+            <span class="detail-label">Notas Adicionales</span>
+            <span class="detail-value">${reporte.notasResolucion}</span>
+        </div>
+        ` : ''}
+        ` : ''}
     `;
+
+    // Mostrar u ocultar botón de resolver según el estado
+    if (reporte.resuelto) {
+        resolveBtn.style.display = 'none';
+    } else {
+        resolveBtn.style.display = 'inline-block';
+    }
 
     currentReporte = reporte;
     const modal = new bootstrap.Modal(document.getElementById('reportDetailsModal'));
@@ -179,6 +225,85 @@ function editFromDetails() {
     setTimeout(() => {
         openEditReportModal(currentReporte);
     }, 300);
+}
+
+function openResolveModal() {
+    if (!currentReporte) {
+        console.error('❌ No current reporte to resolve');
+        return;
+    }
+
+    // Cerrar modal de detalles
+    const detailsModal = bootstrap.Modal.getInstance(document.getElementById('reportDetailsModal'));
+    if (detailsModal) detailsModal.hide();
+
+    // Limpiar formulario
+    document.getElementById('resolveSolucion').value = '';
+    document.getElementById('resolveNotas').value = '';
+
+    // Abrir modal de resolución
+    setTimeout(() => {
+        const resolveModal = new bootstrap.Modal(document.getElementById('resolveModal'));
+        resolveModal.show();
+    }, 300);
+
+    console.log('🔧 Resolve modal opened for:', currentReporte.id);
+}
+
+async function handleResolveReport() {
+    const solucion = document.getElementById('resolveSolucion').value.trim();
+    const notas = document.getElementById('resolveNotas').value.trim();
+
+    if (!solucion) {
+        showNotification('Por favor describe la solución aplicada', 'error');
+        return;
+    }
+
+    if (!currentReporte) {
+        console.error('❌ No current reporte to resolve');
+        return;
+    }
+
+    const confirmBtn = document.getElementById('confirmResolveBtn');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+
+    try {
+        const session = getTechnicianSession();
+        const today = new Date().toISOString().split('T')[0];
+
+        const resolutionData = {
+            resuelto: true,
+            solucion: solucion,
+            notasResolucion: notas || '',
+            fechaResolucion: today,
+            resueltoPor: session?.nombre || session?.usuario || 'Técnico',
+            resueltoPorId: session?.id || 'unknown',
+            fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await window.firebaseDB.collection('reportes').doc(currentReporte.id).update(resolutionData);
+
+        console.log('✅ Report resolved:', currentReporte.id);
+        showNotification('Reporte marcado como resuelto exitosamente', 'success');
+
+        // Cerrar modal
+        const resolveModal = bootstrap.Modal.getInstance(document.getElementById('resolveModal'));
+        if (resolveModal) resolveModal.hide();
+
+        // Recargar reportes
+        setTimeout(() => {
+            loadReportes();
+        }, 500);
+
+    } catch (error) {
+        console.error('❌ Error resolving report:', error);
+        showNotification('Error al resolver el reporte: ' + error.message, 'error');
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalText;
+    }
 }
 
 // =====================================================================
@@ -469,9 +594,13 @@ function renderSalasGrid() {
         if (reportesSala.length > 0) {
             const softwareCount = reportesSala.filter(r => r.categoria === 'Software').length;
             const hardwareCount = reportesSala.filter(r => r.categoria === 'Hardware').length;
-            const urgenteCount = reportesSala.filter(r => r.urgencia === 'Urgente').length;
-            const moderadoCount = reportesSala.filter(r => r.urgencia === 'Moderado').length;
-            const normalCount = reportesSala.filter(r => r.urgencia === 'Normal').length;
+
+            // Nuevas categorías basadas en urgencia y estado de resolución
+            const urgenteCount = reportesSala.filter(r => r.urgencia === 'Urgente' && !r.resuelto).length;
+            const pendientesCount = reportesSala.filter(r => r.urgencia === 'Moderado' && !r.resuelto).length;
+            const normalCount = reportesSala.filter(r => r.urgencia === 'Normal' && !r.resuelto).length;
+            const resueltosCount = reportesSala.filter(r => r.resuelto === true).length;
+            const serviciosCount = reportesSala.length; // Total de reportes
 
             // Determinar estado
             let estado = 'OPERATIVA';
@@ -479,7 +608,7 @@ function renderSalasGrid() {
             if (urgenteCount > 0) {
                 estado = 'CON PROBLEMAS';
                 estadoColor = 'danger';
-            } else if (moderadoCount > 0) {
+            } else if (pendientesCount > 0) {
                 estado = 'MANTENIMIENTO';
                 estadoColor = 'warning';
             }
@@ -492,20 +621,24 @@ function renderSalasGrid() {
                     </div>
                     <div class="sala-body">
                         <div class="sala-stats">
-                            <div class="stat-item urgentes" onclick="filterBySalaAndUrgency('${sala}', 'Urgente')">
+                            <div class="stat-item urgentes" onclick="filterBySalaAndStatus('${sala}', 'urgente')">
                                 <div class="stat-value">${urgenteCount}</div>
                                 <div class="stat-label">URGENTES</div>
                             </div>
-                            <div class="stat-item pendientes" onclick="filterBySalaAndUrgency('${sala}', 'Moderado')">
-                                <div class="stat-value">${moderadoCount}</div>
+                            <div class="stat-item pendientes" onclick="filterBySalaAndStatus('${sala}', 'pendiente')">
+                                <div class="stat-value">${pendientesCount}</div>
                                 <div class="stat-label">PENDIENTES</div>
                             </div>
-                            <div class="stat-item resueltos" onclick="filterBySalaAndUrgency('${sala}', 'Normal')">
+                            <div class="stat-item normales" onclick="filterBySalaAndStatus('${sala}', 'normal')">
                                 <div class="stat-value">${normalCount}</div>
+                                <div class="stat-label">NORMALES</div>
+                            </div>
+                            <div class="stat-item resueltos" onclick="filterBySalaAndStatus('${sala}', 'resuelto')">
+                                <div class="stat-value">${resueltosCount}</div>
                                 <div class="stat-label">RESUELTOS</div>
                             </div>
                             <div class="stat-item servicios">
-                                <div class="stat-value">${reportesSala.length}</div>
+                                <div class="stat-value">${serviciosCount}</div>
                                 <div class="stat-label">SERVICIOS</div>
                             </div>
                         </div>
@@ -535,9 +668,22 @@ function filterBySalaAndCategory(sala, categoria) {
     showReportesModal(sala, categoria);
 }
 
-function filterBySalaAndUrgency(sala, urgencia) {
-    filteredReportes = reportesList.filter(r => r.sala === sala && r.urgencia === urgencia);
-    showReportesModal(sala, urgencia);
+function filterBySalaAndStatus(sala, status) {
+    console.log('🔍 Filtering by sala:', sala, 'status:', status);
+
+    if (status === 'urgente') {
+        filteredReportes = reportesList.filter(r => r.sala === sala && r.urgencia === 'Urgente' && !r.resuelto);
+        showReportesModal(sala, 'Urgentes');
+    } else if (status === 'pendiente') {
+        filteredReportes = reportesList.filter(r => r.sala === sala && r.urgencia === 'Moderado' && !r.resuelto);
+        showReportesModal(sala, 'Pendientes (Moderado)');
+    } else if (status === 'normal') {
+        filteredReportes = reportesList.filter(r => r.sala === sala && r.urgencia === 'Normal' && !r.resuelto);
+        showReportesModal(sala, 'Normales');
+    } else if (status === 'resuelto') {
+        filteredReportes = reportesList.filter(r => r.sala === sala && r.resuelto === true);
+        showReportesModal(sala, 'Resueltos');
+    }
 }
 
 function showReportesModal(sala, filtro) {
@@ -566,7 +712,7 @@ function showReportesModal(sala, filtro) {
                     ` : `
                         <div class="reportes-list">
                             ${filteredReportes.map(r => `
-                                <div class="reporte-item" style="padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.backgroundColor='#f9fafb'" onmouseleave="this.style.backgroundColor='white'" onclick="openDetailsModal(reportesList.find(x => x.id === '${r.id}'))">
+                                <div class="reporte-item" style="padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseenter="this.style.backgroundColor='#f9fafb'" onmouseleave="this.style.backgroundColor='white'" onclick="openDetailsFromFilteredModal('${r.id}')">
                                     <div style="display: flex; justify-content: space-between; align-items: start;">
                                         <div style="flex: 1;">
                                             <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${r.categoria}: ${r.subcategoria}</div>
@@ -604,6 +750,25 @@ function showReportesModal(sala, filtro) {
     modalHtml.addEventListener('hidden.bs.modal', () => {
         modalHtml.remove();
     });
+}
+
+function openDetailsFromFilteredModal(reporteId) {
+    // Cerrar el modal filtrado primero
+    const filteredModal = document.getElementById('filteredReportesModal');
+    if (filteredModal) {
+        const bsModal = bootstrap.Modal.getInstance(filteredModal);
+        if (bsModal) {
+            bsModal.hide();
+        }
+    }
+
+    // Esperar a que se cierre y luego abrir detalles
+    setTimeout(() => {
+        const reporte = reportesList.find(r => r.id === reporteId);
+        if (reporte) {
+            openDetailsModal(reporte);
+        }
+    }, 300);
 }
 
 // =====================================================================

@@ -429,8 +429,50 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success" id="resolveDetailsBtn" style="display: none;">
+                        <i class="bi bi-check-circle me-2"></i>Marcar como Resuelto
+                    </button>
                     <button type="button" class="btn btn-primary" id="editDetailsBtn">
                         <i class="bi bi-pencil me-2"></i>Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Resolver Reporte -->
+    <div class="modal fade" id="resolveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Resolver Reporte
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Describe la solución aplicada a este reporte
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="resolveSolucion" class="form-label">Solución Aplicada *</label>
+                        <textarea class="form-control" id="resolveSolucion" rows="4"
+                                  placeholder="Describe detalladamente la solución aplicada..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="resolveNotas" class="form-label">Notas Adicionales (opcional)</label>
+                        <textarea class="form-control" id="resolveNotas" rows="2"
+                                  placeholder="Agrega notas adicionales si es necesario..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="confirmResolveBtn">
+                        <i class="bi bi-check-circle me-2"></i>Confirmar Resolución
                     </button>
                 </div>
             </div>
