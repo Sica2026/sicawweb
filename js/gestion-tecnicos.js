@@ -709,6 +709,28 @@ function getNotificationIcon(type) {
 }
 
 // =====================================================================
+// FUNCIONES DE UI ADICIONALES
+// =====================================================================
+
+/**
+ * Alternar visibilidad de la contraseña
+ */
+function togglePassword() {
+    const passwordInput = document.getElementById('contrasena');
+    const toggleIcon = document.getElementById('passwordToggleIcon');
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('bi-eye');
+        toggleIcon.classList.add('bi-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('bi-eye-slash');
+        toggleIcon.classList.add('bi-eye');
+    }
+}
+
+// =====================================================================
 // EXPORTAR FUNCIONES GLOBALES
 // =====================================================================
 
@@ -717,3 +739,4 @@ window.verTecnico = verTecnico;
 window.editarTecnico = editarTecnico;
 window.eliminarTecnico = eliminarTecnico;
 window.guardarTecnico = guardarTecnico;
+window.togglePassword = togglePassword;

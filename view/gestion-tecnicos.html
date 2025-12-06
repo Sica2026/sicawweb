@@ -144,7 +144,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Contraseña *</label>
-                                    <input type="password" class="form-control" id="contrasena" required>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" class="form-control" id="contrasena" required>
+                                        <button type="button" class="password-toggle-btn" onclick="togglePassword()">
+                                            <i class="bi bi-eye" id="passwordToggleIcon"></i>
+                                        </button>
+                                    </div>
                                     <small class="text-muted">Se guardará en texto plano</small>
                                 </div>
                                 <div class="col-md-12">
